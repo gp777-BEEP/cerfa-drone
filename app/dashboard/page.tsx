@@ -21,6 +21,8 @@ export default async function Dashboard() {
     .select("id, title, mission_type, status, date_debut, created_at")
     .order("created_at", { ascending: false });
 
+  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
       <div className="mb-8 flex items-center justify-between">
@@ -32,6 +34,17 @@ export default async function Dashboard() {
           <SignOutButton />
         </div>
       </div>
+
+      {!profile?.full_name && (
+        <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+          Ton profil (nom, adresse, drones) n'est pas encore rempli — ces infos sont nécessaires pour générer
+          un Cerfa complet.{" "}
+          <Link href="/profile" className="font-medium underline">
+            Le compléter maintenant
+          </Link>
+          {" "}(ou importe un Cerfa déjà rempli lors de la création d'une mission, ça le remplira automatiquement).
+        </div>
+      )}
 
       <Link
         href="/missions/new"

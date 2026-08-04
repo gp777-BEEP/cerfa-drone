@@ -106,12 +106,18 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
       sts01: mission.regime?.sts01 ?? false,
       s3: mission.regime?.s3 ?? false,
     },
-    dates: {
-      debut_date: toDdMmYyyy(mission.date_debut),
-      debut_heure: mission.heure_debut || "",
-      fin_date: toDdMmYyyy(mission.date_fin),
-      fin_heure: mission.heure_fin || "",
-    },
+    dates: (() => {
+      const [debutHeure, debutMin] = (mission.heure_debut || "").split(":");
+      const [finHeure, finMin] = (mission.heure_fin || "").split(":");
+      return {
+        debut_date: toDdMmYyyy(mission.date_debut),
+        debut_heure: debutHeure || "",
+        debut_min: debutMin || "",
+        fin_date: toDdMmYyyy(mission.date_fin),
+        fin_heure: finHeure || "",
+        fin_min: finMin || "",
+      };
+    })(),
     signature: {
       nom,
       prenom,

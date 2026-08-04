@@ -7,6 +7,13 @@ import { createClient } from "@/lib/supabase/client";
 type Question = { key: string; label: string; type: "text" | "textarea" | "boolean" | "number" };
 type MissionType = { slug: string; label: string; description: string; question_schema: Question[] };
 
+function frToIso(dmy?: string): string {
+  if (!dmy) return "";
+  const [d, m, y] = dmy.split("/");
+  if (!d || !m || !y) return "";
+  return `${y}-${m}-${d}`;
+}
+
 export default function NewMissionForm({ missionTypes }: { missionTypes: MissionType[] }) {
   const supabase = createClient();
   const router = useRouter();
@@ -22,7 +29,49 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
+  const [importedData, setImportedData] = useState<any | null>(null);
+
   const selectedType = useMemo(() => missionTypes.find((t) => t.slug === typeSlug), [typeSlug, missionTypes]);
+
+  async function handleImportCerfa(file: File) {
+    setImporting(true);
+    setImportMsg("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/parse-cerfa", { method: "POST", body });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Erreur d'import");
+
+      const data = json.data;
+      setImportedData(data);
+
+      // pré-remplit ce qu'on peut
+      if (data.site1?.objet_mission) setTitle(data.site1.objet_mission);
+      else if (data.site1?.adresse) setTitle(`Mission — ${data.site1.adresse}`);
+
+      if (data.dates?.debut_date) setDateDebut(frToIso(data.dates.debut_date));
+      if (data.dates?.debut_heure) setHeureDebut(`${data.dates.debut_heure}:${data.dates.debut_min || "00"}`);
+      if (data.dates?.fin_date) setDateFin(frToIso(data.dates.fin_date));
+      if (data.dates?.fin_heure) setHeureFin(`${data.dates.fin_heure}:${data.dates.fin_min || "00"}`);
+
+      if (data.regime?.sous_categorie_a1) setSousCategorie("a1");
+      else if (data.regime?.sous_categorie_a2) setSousCategorie("a2");
+      else if (data.regime?.sous_categorie_a3) setSousCategorie("a3");
+
+      const nbZones = [data.site1, data.site2].filter(Boolean).length;
+      const nbDrones = [1, 2, 3, 4, 5].filter((i) => data[`aeronef${i}`]?.constructeur).length;
+      setImportMsg(
+        `Importé : ${nbZones} zone(s) et ${nbDrones} drone(s) détectés. Ils seront ajoutés automatiquement à la mission (et à ton profil si vide).`
+      );
+    } catch (e: any) {
+      setImportMsg(`Erreur : ${e.message}`);
+    } finally {
+      setImporting(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,7 +83,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data, error } = await supabase
+    const { data: mission, error } = await supabase
       .from("missions")
       .insert({
         user_id: user.id,
@@ -55,16 +104,89 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
       .select()
       .single();
 
-    setSaving(false);
-    if (error) {
-      setErrorMsg(error.message);
+    if (error || !mission) {
+      setSaving(false);
+      setErrorMsg(error?.message || "Erreur inconnue");
       return;
     }
-    router.push(`/missions/${data.id}`);
+
+    // Zones importées depuis le Cerfa -> créées automatiquement (sans image, à
+    // compléter ensuite avec une capture de carte)
+    if (importedData) {
+      const zonesToInsert = [importedData.site1, importedData.site2]
+        .filter(Boolean)
+        .map((s: any, i: number) => ({
+          mission_id: mission.id,
+          order_index: i,
+          title: s.adresse || `Zone ${i + 1}`,
+          code_postal: s.code_postal || null,
+          localite: s.localite || null,
+          adresse: s.adresse || null,
+          en_agglomeration: !!s.en_agglomeration,
+          rassemblement: !!s.rassemblement,
+          rassemblement_description: s.rassemblement_description || null,
+          distance_max_m: s.eloignement_max_m ? Number(s.eloignement_max_m) : null,
+          hauteur_max_m: s.hauteur_max_m ? Number(s.hauteur_max_m) : null,
+          notes: s.autres_infos || null,
+          image_paths: [],
+        }));
+      if (zonesToInsert.length > 0) {
+        await supabase.from("zones").insert(zonesToInsert);
+      }
+
+      // Complète le profil si vide (nom/adresse/drones), sans écraser ce qui existe déjà
+      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      if (profile && !profile.full_name && importedData.telepilote1?.nom) {
+        const drones = [1, 2, 3, 4, 5]
+          .map((i) => importedData[`aeronef${i}`])
+          .filter((d) => d && d.constructeur)
+          .map((d) => ({
+            constructeur: d.constructeur || "",
+            modele: d.modele || "",
+            type: d.type || "Drone",
+            numero_serie: d.numero_serie || "",
+            masse_kg: d.masse_kg || "",
+            classe_c5: d.classe_c5 || "non",
+            captif: d.captif || "non",
+            numero_enregistrement: d.numero_enregistrement || "",
+            numero_signalement: d.numero_signalement || "",
+          }));
+
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: `${importedData.telepilote1.prenom || ""} ${importedData.telepilote1.nom || ""}`.trim(),
+            address: importedData.telepilote1.adresse || profile.address,
+            phone: importedData.telepilote1.telephone_portable || profile.phone,
+            drones: profile.drones?.length ? profile.drones : drones,
+          })
+          .eq("id", user.id);
+      }
+    }
+
+    setSaving(false);
+    router.push(`/missions/${mission.id}`);
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="rounded-xl border-2 border-dashed border-brand/40 bg-brand/5 p-5">
+        <h2 className="mb-1 font-medium">Importer un Cerfa déjà rempli (optionnel)</h2>
+        <p className="mb-3 text-xs text-slate-500">
+          Tu as déjà un Cerfa généré par DroneKeeper (ou autre) ? Dépose-le ici : le site en extrait
+          automatiquement tes infos, tes drones, les dates et les zones — tu n'as plus qu'à vérifier.
+        </p>
+        <input
+          type="file"
+          accept="application/pdf"
+          disabled={importing}
+          onChange={(e) => e.target.files?.[0] && handleImportCerfa(e.target.files[0])}
+          className="w-full text-sm"
+        />
+        {importing && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
+        {importMsg && <p className="mt-2 text-sm text-brand">{importMsg}</p>}
+      </div>
+
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <label className="mb-4 block text-sm">
           <span className="mb-1 block text-slate-600">Type de mission</span>

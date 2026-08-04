@@ -64,7 +64,7 @@ insert into mission_types (slug, label, description, question_schema, sort_order
     {"key":"eloignement_max","label":"Éloignement maximal du télépilote (m)","type":"number"}
   ]', 1),
   ('inspection', 'Inspection technique', 'Inspection de bâtiment, ouvrage, ligne, toiture...', '[
-    {"key":"objet_inspecte","label":"Quel est l\'objet inspecté (bâtiment, ligne, toiture...) ?","type":"text"},
+    {"key":"objet_inspecte","label":"Objet inspecté (bâtiment, ligne, toiture...)","type":"text"},
     {"key":"presence_public","label":"Zone accessible au public pendant le vol ?","type":"boolean"},
     {"key":"hauteur_max","label":"Hauteur maximale de vol envisagée (m)","type":"number"},
     {"key":"eloignement_max","label":"Éloignement maximal du télépilote (m)","type":"number"}
