@@ -1,0 +1,205 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+
+type Drone = {
+  constructeur: string;
+  modele: string;
+  type: string;
+  numero_serie: string;
+  masse_kg: string;
+  classe_c5: "oui" | "non";
+  captif: "oui" | "non";
+  numero_enregistrement: string;
+  numero_signalement: string;
+};
+
+const EMPTY_DRONE: Drone = {
+  constructeur: "",
+  modele: "",
+  type: "Drone",
+  numero_serie: "",
+  masse_kg: "",
+  classe_c5: "non",
+  captif: "non",
+  numero_enregistrement: "",
+  numero_signalement: "",
+};
+
+export default function ProfileForm({ initialProfile }: { initialProfile: any }) {
+  const supabase = createClient();
+  const router = useRouter();
+  const [fullName, setFullName] = useState(initialProfile?.full_name || "");
+  const [address, setAddress] = useState(initialProfile?.address || "");
+  const [phone, setPhone] = useState(initialProfile?.phone || "");
+  const [email, setEmail] = useState(initialProfile?.email || "");
+  const [qualite, setQualite] = useState(initialProfile?.qualite || "Télépilote");
+  const [drones, setDrones] = useState<Drone[]>(initialProfile?.drones?.length ? initialProfile.drones : [EMPTY_DRONE]);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  function updateDrone(i: number, patch: Partial<Drone>) {
+    setDrones((prev) => prev.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setSaved(false);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase
+      .from("profiles")
+      .update({
+        full_name: fullName,
+        address,
+        phone,
+        email,
+        qualite,
+        drones: drones.filter((d) => d.constructeur || d.modele),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id);
+
+    setSaving(false);
+    setSaved(true);
+    router.refresh();
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="mb-4 font-medium">Toi</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Nom complet" value={fullName} onChange={setFullName} />
+          <Field label="Qualité" value={qualite} onChange={setQualite} />
+          <Field label="Adresse" value={address} onChange={setAddress} className="sm:col-span-2" />
+          <Field label="Téléphone" value={phone} onChange={setPhone} />
+          <Field label="Email" value={email} onChange={setEmail} type="email" />
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-medium">Mes drones</h2>
+          <button
+            type="button"
+            onClick={() => setDrones((prev) => [...prev, { ...EMPTY_DRONE }])}
+            className="text-sm text-brand hover:underline"
+            disabled={drones.length >= 5}
+          >
+            + Ajouter un drone
+          </button>
+        </div>
+        <div className="space-y-4">
+          {drones.map((d, i) => (
+            <div key={i} className="rounded-lg border border-slate-100 bg-slate-50 p-4">
+              <div className="mb-2 flex items-center justify-between text-sm text-slate-500">
+                <span>Drone {i + 1}</span>
+                {drones.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setDrones((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="text-red-500 hover:underline"
+                  >
+                    Retirer
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <Field label="Constructeur" value={d.constructeur} onChange={(v) => updateDrone(i, { constructeur: v })} />
+                <Field label="Modèle" value={d.modele} onChange={(v) => updateDrone(i, { modele: v })} />
+                <Field label="N° de série" value={d.numero_serie} onChange={(v) => updateDrone(i, { numero_serie: v })} />
+                <Field label="Masse (kg)" value={d.masse_kg} onChange={(v) => updateDrone(i, { masse_kg: v })} />
+                <Field
+                  label="N° enregistrement UAS"
+                  value={d.numero_enregistrement}
+                  onChange={(v) => updateDrone(i, { numero_enregistrement: v })}
+                />
+                <Field
+                  label="N° signalement électronique"
+                  value={d.numero_signalement}
+                  onChange={(v) => updateDrone(i, { numero_signalement: v })}
+                />
+                <Select
+                  label="Classe C5"
+                  value={d.classe_c5}
+                  onChange={(v) => updateDrone(i, { classe_c5: v as "oui" | "non" })}
+                />
+                <Select
+                  label="Aéronef captif"
+                  value={d.captif}
+                  onChange={(v) => updateDrone(i, { captif: v as "oui" | "non" })}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        disabled={saving}
+        className="rounded-lg bg-brand px-6 py-2.5 font-medium text-white shadow hover:bg-brand-dark disabled:opacity-50"
+      >
+        {saving ? "Enregistrement..." : "Enregistrer"}
+      </button>
+      {saved && <span className="ml-3 text-sm text-green-600">Enregistré ✓</span>}
+    </form>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+  className = "",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  className?: string;
+}) {
+  return (
+    <label className={`block text-sm ${className}`}>
+      <span className="mb-1 block text-slate-600">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-brand focus:outline-none"
+      />
+    </label>
+  );
+}
+
+function Select({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block text-slate-600">{label}</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-brand focus:outline-none"
+      >
+        <option value="non">Non</option>
+        <option value="oui">Oui</option>
+      </select>
+    </label>
+  );
+}
