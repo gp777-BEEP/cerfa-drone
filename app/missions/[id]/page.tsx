@@ -4,6 +4,7 @@ import ZoneManager from "./ZoneManager";
 import GenerateButton from "./GenerateButton";
 import MissionTitle from "./MissionTitle";
 import MissionActions from "./MissionActions";
+import DocumentsList from "./DocumentsList";
 import AppHeader from "../../components/AppHeader";
 
 export default async function MissionPage({ params }: { params: { id: string } }) {
@@ -43,16 +44,7 @@ export default async function MissionPage({ params }: { params: { id: string } }
         <div className="mt-8 border border-slate-200 bg-white p-5">
           <h2 className="mb-3 font-medium text-ink">Générer le dossier</h2>
           <GenerateButton missionId={mission.id} />
-          {(documents || []).length > 0 && (
-            <div className="mt-4 space-y-1 text-sm">
-              <p className="text-slate-500">Dossiers déjà générés :</p>
-              {documents!.map((d) => (
-                <p key={d.id} className="text-slate-400">
-                  {new Date(d.created_at).toLocaleString("fr-FR")}
-                </p>
-              ))}
-            </div>
-          )}
+          <DocumentsList documents={documents || []} />
         </div>
       </main>
     </>

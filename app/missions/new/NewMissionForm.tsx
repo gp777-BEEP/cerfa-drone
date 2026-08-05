@@ -34,7 +34,15 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
   const [importMsg, setImportMsg] = useState("");
   const [importedData, setImportedData] = useState<any | null>(null);
 
+  const [kmlFile, setKmlFile] = useState<File | null>(null);
+  const [kmlMsg, setKmlMsg] = useState("");
+
   const selectedType = useMemo(() => missionTypes.find((t) => t.slug === typeSlug), [typeSlug, missionTypes]);
+
+  function handleSelectKml(file: File) {
+    setKmlFile(file);
+    setKmlMsg(`"${file.name}" prêt. Les zones seront importées (avec carte) une fois la mission créée.`);
+  }
 
   async function handleImportCerfa(file: File) {
     setImporting(true);
@@ -111,15 +119,51 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
       return;
     }
 
-    // Zones importées depuis le Cerfa -> créées automatiquement (sans image, à
-    // compléter ensuite avec une capture de carte)
+    // Jusqu'à 2 zones au total sur une mission. Le KML (plus précis : carte,
+    // adresse géolocalisée, hauteur/éloignement calculés) passe en premier,
+    // le Cerfa comble les emplacements restants s'il y en a.
+    let slotsUsed = 0;
+
+    if (kmlFile) {
+      try {
+        const body = new FormData();
+        body.append("file", kmlFile);
+        body.append("missionId", mission.id);
+        const res = await fetch("/api/parse-kml", { method: "POST", body });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Erreur d'import KML");
+
+        const toInsert = (json.zones || []).slice(0, 2).map((z: any, i: number) => ({
+          mission_id: mission.id,
+          order_index: i,
+          title: z.title || null,
+          adresse: z.adresse || null,
+          code_postal: z.code_postal || null,
+          localite: z.localite || null,
+          distance_max_m: z.distance_max_m,
+          hauteur_max_m: z.hauteur_max_m,
+          notes: z.notes || null,
+          image_paths: z.image_paths || [],
+        }));
+        if (toInsert.length > 0) {
+          await supabase.from("zones").insert(toInsert);
+          slotsUsed = toInsert.length;
+        }
+      } catch (e: any) {
+        setKmlMsg(`Erreur d'import KML : ${e.message} (la mission a quand même été créée)`);
+      }
+    }
+
+    // Zones importées depuis le Cerfa -> complètent les emplacements
+    // restants (sans image, à compléter ensuite avec une capture de carte)
     if (importedData) {
       const zonesToInsert = [importedData.site1, importedData.site2]
         .filter(Boolean)
+        .slice(0, Math.max(0, 2 - slotsUsed))
         .map((s: any, i: number) => ({
           mission_id: mission.id,
-          order_index: i,
-          title: s.adresse || `Zone ${i + 1}`,
+          order_index: slotsUsed + i,
+          title: s.adresse || `Zone ${slotsUsed + i + 1}`,
           code_postal: s.code_postal || null,
           localite: s.localite || null,
           adresse: s.adresse || null,
@@ -172,20 +216,35 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="border border-slate-200 bg-white p-5">
-        <h2 className="mb-1 font-medium text-ink">Importer un Cerfa déjà rempli (optionnel)</h2>
+        <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
         <p className="mb-3 text-xs text-slate-500">
-          Tu as déjà un Cerfa généré par DroneKeeper (ou autre) ? Dépose-le ici : le site en extrait
-          automatiquement tes infos, tes drones, les dates et les zones. Il ne reste plus qu'à vérifier.
+          Les deux sont indépendants, dépose ce que tu as : le KML apporte la carte des zones (avec
+          échelle) et calcule hauteur/éloignement, le Cerfa préremplit tes infos, tes drones et les dates.
         </p>
-        <FileDropzone
-          label="Glisser le Cerfa ici, ou cliquer pour parcourir"
-          hint="Fichier PDF rempli (DroneKeeper ou autre)"
-          accept="application/pdf"
-          disabled={importing}
-          onFiles={(files) => handleImportCerfa(files[0])}
-        />
-        {importing && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
-        {importMsg && <p className="mt-2 text-sm text-brand">{importMsg}</p>}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <span className="mb-2 block text-sm font-medium text-ink">Zones de vol (KML)</span>
+            <FileDropzone
+              label={kmlFile ? kmlFile.name : "Glisser le fichier KML ici, ou cliquer pour parcourir"}
+              hint="Export des zones de vol (DroneKeeper ou autre)"
+              accept=".kml"
+              onFiles={(files) => handleSelectKml(files[0])}
+            />
+            {kmlMsg && <p className="mt-2 text-sm text-brand">{kmlMsg}</p>}
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-medium text-ink">Cerfa déjà rempli</span>
+            <FileDropzone
+              label="Glisser le Cerfa ici, ou cliquer pour parcourir"
+              hint="Fichier PDF rempli (DroneKeeper ou autre)"
+              accept="application/pdf"
+              disabled={importing}
+              onFiles={(files) => handleImportCerfa(files[0])}
+            />
+            {importing && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
+            {importMsg && <p className="mt-2 text-sm text-brand">{importMsg}</p>}
+          </div>
+        </div>
       </div>
 
       <div className="border border-slate-200 bg-white p-5">

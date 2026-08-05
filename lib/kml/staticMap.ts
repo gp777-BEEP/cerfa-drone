@@ -27,6 +27,39 @@ function latToWorldY(lat: number, zoom: number): number {
 
 export type MapPoint = { lat: number; lon: number };
 
+// Distances "rondes" candidates pour l'échelle, en mètres.
+const NICE_DISTANCES_M = [
+  5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 25000, 50000,
+];
+
+/**
+ * Choisit une distance ronde dont la barre à l'écran fait entre ~60 et
+ * ~160px, à partir de la résolution réelle (mètres/pixel) à la latitude et
+ * au zoom du rendu (projection Web Mercator : la résolution dépend de la
+ * latitude, cf. formule standard OSM/Google).
+ */
+function pickScaleBar(metersPerPixel: number): { distanceM: number; widthPx: number } {
+  for (const d of NICE_DISTANCES_M) {
+    const px = d / metersPerPixel;
+    if (px >= 60 && px <= 160) return { distanceM: d, widthPx: px };
+  }
+  // fallback : la plus proche de 100px parmi les distances candidates
+  let best = NICE_DISTANCES_M[0];
+  let bestDiff = Infinity;
+  for (const d of NICE_DISTANCES_M) {
+    const diff = Math.abs(d / metersPerPixel - 100);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = d;
+    }
+  }
+  return { distanceM: best, widthPx: best / metersPerPixel };
+}
+
+function formatDistance(m: number): string {
+  return m >= 1000 ? `${m / 1000} km` : `${m} m`;
+}
+
 export type StaticMapOptions = {
   width?: number;
   height?: number;
@@ -113,11 +146,28 @@ export async function renderZoneMap(
     .map((p) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="7" fill="#1d4ed8" stroke="white" stroke-width="2"/>`)
     .join("");
 
+  // Échelle graphique : résolution réelle (m/px) à la latitude du centre de
+  // la carte, formule standard de la projection Web Mercator utilisée par
+  // les tuiles OSM. Obligatoire sur le plan fourni à la préfecture.
+  const metersPerPixel = (156543.03392 * Math.cos((centerLat * Math.PI) / 180)) / Math.pow(2, zoom);
+  const { distanceM, widthPx } = pickScaleBar(metersPerPixel);
+  const barX = 12;
+  const barY = height - 28;
+  const scaleBar = `
+    <g>
+      <rect x="${barX - 6}" y="${barY - 16}" width="${widthPx + 12}" height="30" fill="white" fill-opacity="0.75" />
+      <line x1="${barX}" y1="${barY}" x2="${barX + widthPx}" y2="${barY}" stroke="#1a1d21" stroke-width="2" />
+      <line x1="${barX}" y1="${barY - 5}" x2="${barX}" y2="${barY + 5}" stroke="#1a1d21" stroke-width="2" />
+      <line x1="${barX + widthPx}" y1="${barY - 5}" x2="${barX + widthPx}" y2="${barY + 5}" stroke="#1a1d21" stroke-width="2" />
+      <text x="${barX + widthPx / 2}" y="${barY - 8}" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1a1d21" text-anchor="middle">${formatDistance(distanceM)}</text>
+    </g>`;
+
   const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
     <polygon points="${polyPts}" fill="#e05a4e" fill-opacity="0.3" stroke="#e05a4e" stroke-width="3" />
     ${pilotCircles}
+    ${scaleBar}
     <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#94a3b8" stroke-width="1" />
-    <text x="8" y="${height - 8}" font-family="sans-serif" font-size="10" fill="#64748b">© OpenStreetMap contributors</text>
+    <text x="${width - 8}" y="${height - 8}" font-family="sans-serif" font-size="10" fill="#64748b" text-anchor="end">© OpenStreetMap contributors</text>
   </svg>`;
 
   return sharp({
