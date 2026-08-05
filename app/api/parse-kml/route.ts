@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { parseKml, estimateDistanceMaxM } from "@/lib/kml/parseKml";
+import { renderZoneMap } from "@/lib/kml/staticMap";
 
 export const runtime = "nodejs";
 
@@ -12,6 +13,7 @@ type ParsedZone = {
   hauteur_max_m: number | null;
   distance_max_m: number | null;
   notes: string;
+  image_paths: string[];
 };
 
 async function reverseGeocode(lat: number, lon: number): Promise<{ adresse: string; code_postal: string; localite: string } | null> {
@@ -45,22 +47,44 @@ export async function POST(req: NextRequest) {
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
+  const missionId = formData.get("missionId") as string | null;
   if (!file) {
     return NextResponse.json({ error: "Aucun fichier reçu" }, { status: 400 });
+  }
+  if (!missionId) {
+    return NextResponse.json({ error: "missionId manquant" }, { status: 400 });
   }
 
   try {
     const text = await file.text();
     const { zones: kmlZones, pilots, warnings } = parseKml(text);
+    const admin = createAdminClient();
 
     const zones: ParsedZone[] = [];
+    let i = 0;
     for (const zone of kmlZones) {
+      i++;
       const geo = await reverseGeocode(zone.centroid.lat, zone.centroid.lon);
       if (!geo) {
         warnings.push(
           `Adresse introuvable pour "${zone.name}" (coordonnées ${zone.centroid.lat.toFixed(5)}, ${zone.centroid.lon.toFixed(5)}) : à compléter à la main.`
         );
       }
+
+      const image_paths: string[] = [];
+      try {
+        const png = await renderZoneMap(zone.vertices, pilots);
+        const imgPath = `${user.id}/${missionId}/kml-map-${Date.now()}-${i}.png`;
+        const { error: upErr } = await admin.storage.from("zone-images").upload(imgPath, png, {
+          contentType: "image/png",
+          upsert: true,
+        });
+        if (!upErr) image_paths.push(imgPath);
+        else warnings.push(`Carte non générée pour "${zone.name}" : ${upErr.message}`);
+      } catch (e: any) {
+        warnings.push(`Carte non générée pour "${zone.name}" (${e.message}).`);
+      }
+
       zones.push({
         title: zone.name,
         adresse: geo?.adresse || "",
@@ -69,11 +93,13 @@ export async function POST(req: NextRequest) {
         hauteur_max_m: zone.altitude_m,
         distance_max_m: estimateDistanceMaxM(zone, pilots),
         notes: "Zone importée depuis un fichier KML. Hauteur et éloignement estimés à vérifier.",
+        image_paths,
       });
     }
 
     return NextResponse.json({ ok: true, zones, warnings });
   } catch (e: any) {
+    console.error("parse-kml error:", e);
     return NextResponse.json(
       { error: "Impossible de lire ce fichier. Vérifie que c'est bien un export KML de zones de vol." },
       { status: 400 }

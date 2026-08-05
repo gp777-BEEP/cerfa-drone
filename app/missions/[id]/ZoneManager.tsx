@@ -45,6 +45,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     try {
       const body = new FormData();
       body.append("file", file);
+      body.append("missionId", missionId);
       const res = await fetch("/api/parse-kml", { method: "POST", body });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur d'import");
@@ -70,7 +71,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             distance_max_m: z.distance_max_m,
             hauteur_max_m: z.hauteur_max_m,
             notes: z.notes || null,
-            image_paths: [],
+            image_paths: z.image_paths || [],
           })
           .select()
           .single();

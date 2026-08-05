@@ -87,6 +87,7 @@ create table if not exists missions (
   mission_type text not null references mission_types(slug),
   title text not null,
   status text not null default 'draft', -- draft | ready | dossier_genere
+  archived boolean default false,
   answers jsonb not null default '{}',
   date_debut date,
   heure_debut text,

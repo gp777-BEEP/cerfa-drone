@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import ZoneManager from "./ZoneManager";
 import GenerateButton from "./GenerateButton";
 import MissionTitle from "./MissionTitle";
+import MissionActions from "./MissionActions";
 import AppHeader from "../../components/AppHeader";
 
 export default async function MissionPage({ params }: { params: { id: string } }) {
@@ -32,6 +33,7 @@ export default async function MissionPage({ params }: { params: { id: string } }
       <AppHeader />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <MissionTitle missionId={mission.id} initialTitle={mission.title} />
+        <MissionActions missionId={mission.id} title={mission.title} initialArchived={!!mission.archived} />
         <p className="mb-6 text-sm text-slate-500">
           {mission.date_debut} {mission.heure_debut} → {mission.date_fin} {mission.heure_fin}
         </p>
