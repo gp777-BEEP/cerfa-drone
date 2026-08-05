@@ -77,7 +77,26 @@ export async function parseCerfa(bytes: Uint8Array | ArrayBuffer) {
   // "des champs remplis mais aucun ne correspond à notre cartographie"
   // (export d'un autre outil que DroneKeeper, avec des noms de champs
   // différents) plutôt que de laisser un "aucune zone trouvée" muet.
-  const debug = { totalFields: allFields.length, textFieldsWithValue, matched };
+  // Diagnostic bas niveau : compare getText() (API haut niveau) à une
+  // lecture directe du dictionnaire /V du champ, pour un champ connu. Si les
+  // deux divergent, le bug est dans getText() lui-même (ou son cache) plutôt
+  // que dans les données du PDF.
+  let rawProbe: string | null = null;
+  try {
+    const { PDFName } = await import("pdf-lib");
+    const probeField = allFields.find((f) => f.getName() === "Code postalRow1");
+    if (probeField) {
+      const acroField: any = (probeField as any).acroField;
+      const vRaw = acroField?.dict?.get(PDFName.of("V"));
+      rawProbe = vRaw ? String(vRaw) : "(pas de /V sur ce champ)";
+    } else {
+      rawProbe = "(champ Code postalRow1 introuvable)";
+    }
+  } catch (e: any) {
+    rawProbe = `(sonde en erreur: ${e.message})`;
+  }
+
+  const debug = { totalFields: allFields.length, textFieldsWithValue, matched, rawProbe };
   if (allFields.length === 0) {
     warnings.push(
       "Ce PDF n'a aucun champ de formulaire interactif (probablement aplati/exporté en image) : impossible d'en extraire les données automatiquement."

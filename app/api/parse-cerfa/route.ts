@@ -21,11 +21,28 @@ export async function POST(req: NextRequest) {
 
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
+    // Diagnostic temporaire : un même fichier donne 0 valeur lue en
+    // production alors qu'il en a bien (vérifié en local avec le même
+    // code) -> on capture la taille reçue et les octets de tête/queue pour
+    // voir si le fichier arrive tronqué/corrompu côté serveur Vercel.
+    const head = Array.from(bytes.slice(0, 16))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join(" ");
+    const tail = Array.from(bytes.slice(-16))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join(" ");
     const { data, warnings, debug } = await parseCerfa(bytes);
-    return NextResponse.json({ ok: true, data, warnings, debug });
+    return NextResponse.json({
+      ok: true,
+      data,
+      warnings,
+      debug: { ...debug, bytesReceived: bytes.length, head, tail },
+    });
   } catch (e: any) {
     return NextResponse.json(
-      { error: "Impossible de lire ce PDF. Vérifie que c'est bien un Cerfa 15476*04 (formulaire PDF interactif)." },
+      {
+        error: `Impossible de lire ce PDF (${e?.message || "erreur inconnue"}). Vérifie que c'est bien un Cerfa 15476*04 (formulaire PDF interactif).`,
+      },
       { status: 400 }
     );
   }

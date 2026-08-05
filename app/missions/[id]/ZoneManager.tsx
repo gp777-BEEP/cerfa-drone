@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 
+function frToIso(dmy?: string): string {
+  if (!dmy) return "";
+  const [d, m, y] = dmy.split("/");
+  if (!d || !m || !y) return "";
+  return `${y}-${m}-${d}`;
+}
+
 type Zone = {
   id: string;
   title: string | null;
@@ -175,6 +182,30 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur d'import");
 
+      // Dates et régime de vol : importés indépendamment des zones (même si
+      // aucune zone n'est détectée, ces infos-là restent récupérables).
+      const missionUpdate: Record<string, any> = {};
+      const d = json.data.dates;
+      if (d?.debut_date) missionUpdate.date_debut = frToIso(d.debut_date);
+      if (d?.debut_heure) missionUpdate.heure_debut = `${d.debut_heure}:${d.debut_min || "00"}`;
+      if (d?.fin_date) missionUpdate.date_fin = frToIso(d.fin_date);
+      if (d?.fin_heure) missionUpdate.heure_fin = `${d.fin_heure}:${d.fin_min || "00"}`;
+      const r = json.data.regime;
+      if (r) {
+        missionUpdate.regime = {
+          categorie_ouverte: !!r.categorie_ouverte,
+          sous_categorie_a1: !!r.sous_categorie_a1,
+          sous_categorie_a2: !!r.sous_categorie_a2,
+          sous_categorie_a3: !!r.sous_categorie_a3,
+          sts01: !!r.sts01,
+          s3: !!r.s3,
+        };
+      }
+      if (Object.keys(missionUpdate).length > 0) {
+        await supabase.from("missions").update(missionUpdate).eq("id", missionId);
+        router.refresh();
+      }
+
       const slotsLeft = 2 - zones.length;
       const sites = [json.data.site1, json.data.site2].filter(Boolean).slice(0, slotsLeft);
       if (sites.length === 0) {
@@ -182,13 +213,14 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         // message : ça évite un aller-retour pour comprendre pourquoi rien
         // n'est ressorti (PDF sans formulaire, ou champs qui ne correspondent
         // pas à la structure attendue).
-        const d = json.debug;
-        const detail = d ? ` (${d.totalFields} champ(s) détecté(s), ${d.textFieldsWithValue} rempli(s), ${d.matched} reconnu(s))` : "";
+        const dbg = json.debug;
+        const detail = dbg ? ` (${dbg.totalFields} champ(s) détecté(s), ${dbg.textFieldsWithValue} rempli(s), ${dbg.matched} reconnu(s))` : "";
         const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
+        const gotMissionInfo = Object.keys(missionUpdate).length > 0 ? " Les dates et le régime de vol ont été importés." : "";
         setCerfaMsg(
           slotsLeft === 0
             ? "Déjà 2 zones sur cette mission, retire-en une avant d'en importer d'autres."
-            : `Aucune zone trouvée dans ce Cerfa.${detail}${w}`
+            : `Aucune zone trouvée dans ce Cerfa.${detail}${w}${gotMissionInfo}`
         );
         return;
       }
@@ -207,10 +239,11 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           image_paths: [],
         }))
       );
+      const gotMissionInfo2 = Object.keys(missionUpdate).length > 0 ? " Dates et régime de vol importés aussi." : "";
       setCerfaMsg(
         imported > 0
-          ? `${imported} zone(s) importée(s) depuis le Cerfa. Pense à ajouter une carte (via KML ou une capture) si besoin.`
-          : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}`
+          ? `${imported} zone(s) importée(s) depuis le Cerfa.${gotMissionInfo2} Pense à ajouter une carte (via KML ou une capture) si besoin.`
+          : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}${gotMissionInfo2}`
       );
     } catch (e: any) {
       setCerfaMsg(`Erreur : ${e.message}`);
