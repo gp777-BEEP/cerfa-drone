@@ -56,7 +56,7 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
           >
             Télécharger le dossier généré →
           </a>
-          <WarningBanner className="mt-2 py-2 text-xs">
+          <WarningBanner className="mt-2">
             Avant de l'envoyer à la préfecture, n'oublie pas de signer le document.
           </WarningBanner>
         </div>

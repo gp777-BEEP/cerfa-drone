@@ -154,7 +154,7 @@ export default function DateRangePicker({
 
         <div className="grid grid-cols-7 gap-1">
           {DOWS.map((d, i) => (
-            <div key={i} className="py-1 text-center text-[10px] text-slate-500">
+            <div key={i} className="py-1 text-center text-[11px] text-slate-500">
               {d}
             </div>
           ))}
