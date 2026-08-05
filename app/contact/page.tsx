@@ -4,7 +4,7 @@ export default function ContactPage() {
       <h1 className="mb-4 text-2xl font-medium text-ink">Contact</h1>
       <p className="mb-6 text-slate-600">
         Une question, un problème avec un dossier généré, ou besoin d'aide pour démarrer ? Le formulaire de
-        contact direct arrive bientôt. En attendant, passe par la page Suggestions ci-dessous — les
+        contact direct arrive bientôt. En attendant, passe par la page Suggestions ci-dessous, les
         messages y sont lus personnellement.
       </p>
       <a
@@ -14,7 +14,7 @@ export default function ContactPage() {
         Aller à Suggestions
       </a>
       <p className="mt-8 text-sm text-slate-500">
-        Une idée d'amélioration plutôt qu'un problème de fonctionnement ? Même page — les suggestions et
+        Une idée d'amélioration plutôt qu'un problème de fonctionnement ? Même page : les suggestions et
         les problèmes remontent au même endroit pour l'instant.
       </p>
     </main>

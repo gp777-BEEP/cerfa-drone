@@ -45,7 +45,7 @@ export default async function Dashboard() {
 
         {!profile?.full_name && (
           <div className="mb-6 border-l-2 border-amber-400 bg-amber-50 p-4 text-sm text-amber-800">
-            Ton profil (nom, adresse, drones) n'est pas encore rempli — ces infos sont nécessaires pour générer
+            Ton profil (nom, adresse, drones) n'est pas encore rempli. Ces infos sont nécessaires pour générer
             un Cerfa complet.{" "}
             <Link href="/profile" className="font-medium underline">
               Le compléter maintenant
@@ -69,7 +69,7 @@ export default async function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-ink">{m.title}</p>
                 <p className="text-xs text-slate-500">
-                  {m.mission_type} {m.date_debut ? `— ${m.date_debut}` : ""}
+                  {m.mission_type} {m.date_debut ? `· ${m.date_debut}` : ""}
                 </p>
               </div>
               <span className={`text-xs font-medium ${STATUS_COLOR[m.status]?.split(" ")[1] || "text-slate-400"}`}>

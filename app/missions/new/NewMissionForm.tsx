@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import FileDropzone from "../../components/FileDropzone";
 
 type Question = { key: string; label: string; type: "text" | "textarea" | "boolean" | "number" };
 type MissionType = { slug: string; label: string; description: string; question_schema: Question[] };
@@ -50,7 +51,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
 
       // pré-remplit ce qu'on peut
       if (data.site1?.objet_mission) setTitle(data.site1.objet_mission);
-      else if (data.site1?.adresse) setTitle(`Mission — ${data.site1.adresse}`);
+      else if (data.site1?.adresse) setTitle(`Mission · ${data.site1.adresse}`);
 
       if (data.dates?.debut_date) setDateDebut(frToIso(data.dates.debut_date));
       if (data.dates?.debut_heure) setHeureDebut(`${data.dates.debut_heure}:${data.dates.debut_min || "00"}`);
@@ -170,18 +171,18 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="border-2 border-dashed border-brand/40 bg-brand-light p-5">
+      <div className="border border-slate-200 bg-white p-5">
         <h2 className="mb-1 font-medium text-ink">Importer un Cerfa déjà rempli (optionnel)</h2>
         <p className="mb-3 text-xs text-slate-500">
           Tu as déjà un Cerfa généré par DroneKeeper (ou autre) ? Dépose-le ici : le site en extrait
-          automatiquement tes infos, tes drones, les dates et les zones — tu n'as plus qu'à vérifier.
+          automatiquement tes infos, tes drones, les dates et les zones. Il ne reste plus qu'à vérifier.
         </p>
-        <input
-          type="file"
+        <FileDropzone
+          label="Glisser le Cerfa ici, ou cliquer pour parcourir"
+          hint="Fichier PDF rempli (DroneKeeper ou autre)"
           accept="application/pdf"
           disabled={importing}
-          onChange={(e) => e.target.files?.[0] && handleImportCerfa(e.target.files[0])}
-          className="w-full text-sm"
+          onFiles={(files) => handleImportCerfa(files[0])}
         />
         {importing && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
         {importMsg && <p className="mt-2 text-sm text-brand">{importMsg}</p>}
@@ -212,7 +213,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="ex: Inspection toiture — Cabourg"
+            placeholder="ex : Inspection toiture, Cabourg"
             className="w-full rounded-md border border-slate-300 px-3 py-2"
           />
         </label>

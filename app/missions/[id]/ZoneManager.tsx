@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import FileDropzone from "../../components/FileDropzone";
 
 type Zone = {
   id: string;
@@ -89,7 +90,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     <div className="border border-slate-200 bg-white p-5">
       <h2 className="mb-1 font-medium text-ink">Zones de vol</h2>
       <p className="mb-4 text-xs text-slate-400">
-        Jusqu'à 2 zones pour l'instant (le formulaire officiel en prévoit 2 avant annexe — bientôt disponible).
+        Jusqu'à 2 zones pour l'instant (le formulaire officiel en prévoit 2 avant annexe, bientôt disponible).
       </p>
 
       <div className="mb-4 space-y-3">
@@ -173,16 +174,18 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             rows={2}
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">Capture(s) de la zone (carte, Google Maps, DroneKeeper...)</span>
-            <input
-              type="file"
+          <div>
+            <span className="mb-1 block text-sm text-slate-600">
+              Capture(s) de la zone (carte, Google Maps, DroneKeeper...)
+            </span>
+            <FileDropzone
+              label={files.length > 0 ? `${files.length} image(s) sélectionnée(s)` : "Glisser les images ici, ou cliquer pour parcourir"}
+              hint="Carte, capture d'écran ou export de zone de vol"
               accept="image/*"
               multiple
-              onChange={(e) => setFiles(Array.from(e.target.files || []))}
-              className="w-full text-sm"
+              onFiles={(f) => setFiles(f)}
             />
-          </label>
+          </div>
           <button
             type="submit"
             disabled={saving}

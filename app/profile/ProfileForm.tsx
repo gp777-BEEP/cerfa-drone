@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import FileDropzone from "../components/FileDropzone";
+import { parseAeronefsCsv } from "@/lib/alphatango/parseAeronefs";
 
 type Drone = {
   constructeur: string;
@@ -40,8 +42,63 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const [importingReleve, setImportingReleve] = useState(false);
+  const [importingAeronefs, setImportingAeronefs] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
+
   function updateDrone(i: number, patch: Partial<Drone>) {
     setDrones((prev) => prev.map((d, idx) => (idx === i ? { ...d, ...patch } : d)));
+  }
+
+  function mergeDrones(imported: Drone[]) {
+    setDrones((prev) => {
+      const isUntouched = prev.length === 1 && !prev[0].constructeur && !prev[0].modele;
+      if (isUntouched) return imported;
+      const byReg = new Map(prev.map((d) => [d.numero_enregistrement, d]));
+      for (const d of imported) byReg.set(d.numero_enregistrement || `${d.constructeur}-${d.modele}-${Math.random()}`, d);
+      return Array.from(byReg.values());
+    });
+  }
+
+  async function handleImportReleve(file: File) {
+    setImportingReleve(true);
+    setImportMsg("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/parse-alphatango-releve", { method: "POST", body });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Erreur d'import");
+      if (json.data.full_name) setFullName(json.data.full_name);
+      setImportMsg(
+        json.data.full_name
+          ? `Nom importé : ${json.data.full_name}.`
+          : "Le relevé a été lu mais aucun nom n'a été trouvé dedans."
+      );
+    } catch (e: any) {
+      setImportMsg(`Erreur : ${e.message}`);
+    } finally {
+      setImportingReleve(false);
+    }
+  }
+
+  async function handleImportAeronefs(file: File) {
+    setImportingAeronefs(true);
+    setImportMsg("");
+    try {
+      const text = await file.text();
+      const { drones: imported, warnings } = parseAeronefsCsv(text);
+      if (imported.length === 0) {
+        setImportMsg(warnings[0] || "Aucun aéronef trouvé dans ce fichier.");
+        return;
+      }
+      mergeDrones(imported);
+      setImportMsg(`${imported.length} aéronef(s) importé(s) depuis AlphaTango.`);
+    } catch {
+      setImportMsg("Erreur : impossible de lire ce fichier CSV.");
+    } finally {
+      setImportingAeronefs(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -73,6 +130,32 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="border border-slate-200 bg-white p-5">
+        <h2 className="mb-1 font-medium text-ink">Importer depuis AlphaTango</h2>
+        <p className="mb-3 text-xs text-slate-500">
+          Depuis "Mon activité d'exploitant" sur AlphaTango, télécharge ton relevé de situation (pour ton
+          nom) et ta liste des aéronefs (pour tes drones), puis dépose-les ici.
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FileDropzone
+            label="Relevé de situation d'exploitant"
+            hint="PDF · pour ton nom"
+            accept="application/pdf"
+            disabled={importingReleve}
+            onFiles={(files) => handleImportReleve(files[0])}
+          />
+          <FileDropzone
+            label="Liste des aéronefs"
+            hint="CSV · pour tes drones"
+            accept=".csv,text/csv"
+            disabled={importingAeronefs}
+            onFiles={(files) => handleImportAeronefs(files[0])}
+          />
+        </div>
+        {(importingReleve || importingAeronefs) && <p className="mt-2 text-sm text-slate-500">Lecture du fichier...</p>}
+        {importMsg && <p className="mt-2 text-sm text-brand">{importMsg}</p>}
+      </div>
+
       <div className="border border-slate-200 bg-white p-5">
         <h2 className="mb-4 font-medium text-ink">Toi</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
