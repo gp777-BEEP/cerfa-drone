@@ -11,6 +11,22 @@ import { buildMissionData } from "@/lib/cerfa/buildMissionData";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  try {
+    return await handle(req);
+  } catch (e: any) {
+    // Filet de sécurité : sans ça, une exception ici renvoie une réponse
+    // vide côté client ("Unexpected end of JSON input" au lieu du vrai
+    // message d'erreur). On log côté serveur (Vercel > Runtime Logs) et on
+    // renvoie un message exploitable.
+    console.error("generate-dossier error:", e);
+    return NextResponse.json(
+      { error: `Erreur inattendue lors de la génération : ${e?.message || "voir les logs serveur"}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function handle(req: NextRequest) {
   const { missionId } = await req.json();
   if (!missionId) {
     return NextResponse.json({ error: "missionId manquant" }, { status: 400 });

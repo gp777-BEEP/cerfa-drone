@@ -152,7 +152,7 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
       objet_mission: mission.title,
       commanditaire: answers.commanditaire || "",
       localisation_precise: zone.adresse || "",
-      eloignement_max_m: answers.eloignement_max ?? "",
+      eloignement_max_m: zone.distance_max_m ?? answers.eloignement_max ?? "",
       hauteur_max_m: zone.hauteur_max_m ?? answers.hauteur_max ?? "",
       vol_en_vue: "oui",
       aeronefs_choice: "tous",

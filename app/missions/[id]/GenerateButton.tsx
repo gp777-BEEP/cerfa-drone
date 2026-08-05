@@ -17,7 +17,15 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ missionId }),
       });
-      const data = await res.json();
+      const raw = await res.text();
+      let data: any = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(
+          `Le serveur n'a pas répondu correctement (code ${res.status}). Réessaie dans quelques secondes.`
+        );
+      }
       if (!res.ok) throw new Error(data.error || "Erreur inconnue");
       setUrl(data.downloadUrl);
     } catch (e: any) {
