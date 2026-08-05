@@ -12,6 +12,7 @@ create table if not exists profiles (
   email text,
   qualite text default 'Télépilote',
   siren_siret text,
+  drones jsonb default '[]',
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

@@ -36,6 +36,62 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [form, setForm] = useState(EMPTY);
   const [files, setFiles] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
+  const [importingKml, setImportingKml] = useState(false);
+  const [kmlMsg, setKmlMsg] = useState("");
+
+  async function handleImportKml(file: File) {
+    setImportingKml(true);
+    setKmlMsg("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/parse-kml", { method: "POST", body });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Erreur d'import");
+
+      const slotsLeft = 2 - zones.length;
+      const toImport = json.zones.slice(0, slotsLeft);
+      if (toImport.length === 0) {
+        setKmlMsg("Déjà 2 zones sur cette mission, retire-en une avant d'en importer d'autres.");
+        return;
+      }
+
+      let imported = 0;
+      for (const z of toImport) {
+        const { data, error } = await supabase
+          .from("zones")
+          .insert({
+            mission_id: missionId,
+            order_index: zones.length + imported,
+            title: z.title || null,
+            adresse: z.adresse || null,
+            code_postal: z.code_postal || null,
+            localite: z.localite || null,
+            distance_max_m: z.distance_max_m,
+            hauteur_max_m: z.hauteur_max_m,
+            notes: z.notes || null,
+            image_paths: [],
+          })
+          .select()
+          .single();
+        if (!error && data) {
+          setZones((prev) => [...prev, data]);
+          imported++;
+        }
+      }
+
+      const warnings = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
+      setKmlMsg(
+        imported > 0
+          ? `${imported} zone(s) importée(s) depuis le KML. Vérifie l'adresse, la hauteur et l'éloignement avant de générer le dossier.${warnings}`
+          : "Aucune zone importée." + warnings
+      );
+    } catch (e: any) {
+      setKmlMsg(`Erreur : ${e.message}`);
+    } finally {
+      setImportingKml(false);
+    }
+  }
 
   async function addZone(e: React.FormEvent) {
     e.preventDefault();
@@ -110,7 +166,23 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       </div>
 
       {zones.length < 2 && (
+        <div className="mb-5 border-t border-slate-100 pt-4">
+          <span className="mb-2 block text-sm font-medium text-ink">Importer depuis un fichier KML</span>
+          <FileDropzone
+            label="Glisser le fichier KML ici, ou cliquer pour parcourir"
+            hint="Export des zones de vol (DroneKeeper ou autre)"
+            accept=".kml"
+            disabled={importingKml}
+            onFiles={(files) => handleImportKml(files[0])}
+          />
+          {importingKml && <p className="mt-2 text-sm text-slate-500">Lecture et géolocalisation en cours...</p>}
+          {kmlMsg && <p className="mt-2 text-sm text-brand">{kmlMsg}</p>}
+        </div>
+      )}
+
+      {zones.length < 2 && (
         <form onSubmit={addZone} className="space-y-3 border-t border-slate-100 pt-4">
+          <span className="block text-sm font-medium text-ink">Ou saisir une zone manuellement</span>
           <div className="grid grid-cols-2 gap-3">
             <input
               placeholder="Nom de la zone"
