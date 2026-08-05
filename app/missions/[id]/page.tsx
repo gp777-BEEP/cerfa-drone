@@ -29,6 +29,26 @@ export default async function MissionPage({ params }: { params: { id: string } }
     .eq("mission_id", params.id)
     .order("created_at", { ascending: false });
 
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+
+  const missingItems: string[] = [];
+  if (!profile?.full_name) missingItems.push("Ton nom (page Profil)");
+  if (!profile?.address) missingItems.push("Ton adresse (page Profil)");
+  if (!profile?.drones || profile.drones.filter((d: any) => d?.constructeur).length === 0) {
+    missingItems.push("Au moins un drone (page Profil > Mes drones)");
+  }
+  const zonesList = zones || [];
+  if (zonesList.length === 0) {
+    missingItems.push("Au moins une zone de vol (ci-dessus)");
+  } else {
+    zonesList.forEach((z, i) => {
+      const label = z.title || z.adresse || `Zone ${i + 1}`;
+      if (!z.adresse) missingItems.push(`Adresse de la zone "${label}"`);
+      if (z.hauteur_max_m === null || z.hauteur_max_m === undefined) missingItems.push(`Hauteur max de la zone "${label}"`);
+      if (z.distance_max_m === null || z.distance_max_m === undefined) missingItems.push(`Éloignement max de la zone "${label}"`);
+    });
+  }
+
   return (
     <>
       <AppHeader />
@@ -43,6 +63,21 @@ export default async function MissionPage({ params }: { params: { id: string } }
 
         <div className="mt-8 border border-slate-200 bg-white p-5">
           <h2 className="mb-3 font-medium text-ink">Générer le dossier</h2>
+
+          {missingItems.length > 0 && (
+            <div className="mb-4 border-l-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-800">
+              <p className="mb-1 font-medium">Il manque des informations pour un dossier complet :</p>
+              <ul className="ml-4 list-disc">
+                {missingItems.map((item, i) => (
+                  <li key={i}>{item}</li>
+                ))}
+              </ul>
+              <p className="mt-2 text-xs text-amber-700">
+                Tu peux quand même générer maintenant, mais la préfecture risque de te demander de compléter.
+              </p>
+            </div>
+          )}
+
           <GenerateButton missionId={mission.id} />
           <DocumentsList documents={documents || []} />
         </div>
