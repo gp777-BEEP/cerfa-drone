@@ -4,6 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
+import DateRangePicker from "../../components/DateRangePicker";
+import { ErrorBanner } from "../../components/Banner";
+import StatusMessage from "../../components/StatusMessage";
 
 type Question = { key: string; label: string; type: "text" | "textarea" | "boolean" | "number" };
 type MissionType = { slug: string; label: string; description: string; question_schema: Question[] };
@@ -93,8 +96,14 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setErrorMsg("");
+
+    if (!dateDebut || !dateFin) {
+      setErrorMsg("Renseigne une date de début et une date de fin.");
+      return;
+    }
+
+    setSaving(true);
 
     const {
       data: { user },
@@ -232,7 +241,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="border border-slate-200 bg-white p-5">
+      <div className="bg-glass p-5">
         <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
         <p className="mb-3 text-xs text-slate-500">
           Les deux sont indépendants, dépose ce que tu as : le KML apporte la carte des zones (avec
@@ -247,7 +256,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
               accept=".kml"
               onFiles={(files) => handleSelectKml(files[0])}
             />
-            {kmlMsg && <p className="mt-2 text-sm text-brand">{kmlMsg}</p>}
+            <StatusMessage text={kmlMsg} />
           </div>
           <div>
             <span className="mb-2 block text-sm font-medium text-ink">Cerfa déjà rempli</span>
@@ -259,12 +268,12 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
               onFiles={(files) => handleImportCerfa(files[0])}
             />
             {importing && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
-            {importMsg && <p className="mt-2 text-sm text-brand">{importMsg}</p>}
+            <StatusMessage text={importMsg} />
           </div>
         </div>
       </div>
 
-      <div className="border border-slate-200 bg-white p-5">
+      <div className="bg-glass p-5">
         <label className="mb-4 block text-sm">
           <span className="mb-1 block text-slate-600">Type de mission</span>
           <select
@@ -307,50 +316,23 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
           </select>
         </label>
 
-        <div className="grid grid-cols-2 gap-4">
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">Date de début</span>
-            <input
-              required
-              type="date"
-              value={dateDebut}
-              onChange={(e) => setDateDebut(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">Heure</span>
-            <input
-              type="time"
-              value={heureDebut}
-              onChange={(e) => setHeureDebut(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">Date de fin</span>
-            <input
-              required
-              type="date"
-              value={dateFin}
-              onChange={(e) => setDateFin(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block text-slate-600">Heure</span>
-            <input
-              type="time"
-              value={heureFin}
-              onChange={(e) => setHeureFin(e.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2"
-            />
-          </label>
-        </div>
+        <label className="mb-1 block text-sm">
+          <span className="mb-1 block text-slate-600">Dates et horaires de vol</span>
+        </label>
+        <DateRangePicker
+          dateDebut={dateDebut}
+          setDateDebut={setDateDebut}
+          heureDebut={heureDebut}
+          setHeureDebut={setHeureDebut}
+          dateFin={dateFin}
+          setDateFin={setDateFin}
+          heureFin={heureFin}
+          setHeureFin={setHeureFin}
+        />
       </div>
 
       {selectedType && selectedType.question_schema?.length > 0 && (
-        <div className="border border-slate-200 bg-white p-5">
+        <div className="bg-glass p-5">
           <h2 className="mb-4 font-medium text-ink">Quelques questions sur la mission</h2>
           <div className="space-y-4">
             {selectedType.question_schema.map((q) => (
@@ -365,7 +347,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
         </div>
       )}
 
-      {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
+      {errorMsg && <ErrorBanner>{errorMsg}</ErrorBanner>}
 
       <button
         type="submit"

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { ErrorBanner } from "../components/Banner";
 
 export default function SuggestionForm() {
   const router = useRouter();
@@ -41,15 +42,15 @@ export default function SuggestionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border border-slate-200 p-4">
+    <form onSubmit={handleSubmit} className="bg-glass p-4">
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         rows={4}
         placeholder="Ex : pouvoir importer un fichier KML pour générer la carte automatiquement..."
-        className="w-full resize-none border border-slate-300 p-2.5 text-sm text-ink focus:border-brand focus:outline-none"
+        className="w-full resize-none rounded-md border border-slate-300 p-2.5 text-sm text-ink focus:border-brand focus:outline-none"
       />
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <ErrorBanner className="mt-2">{error}</ErrorBanner>}
       <div className="mt-3 flex justify-end">
         <button
           type="submit"

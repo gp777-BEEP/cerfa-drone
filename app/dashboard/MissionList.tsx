@@ -21,7 +21,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_COLOR: Record<string, [string, string]> = {
   draft: ["border-slate-300", "text-slate-400"],
-  ready: ["border-amber-400", "text-amber-700"],
+  ready: ["border-amber-400", "text-amber-300"],
   dossier_genere: ["border-brand", "text-brand"],
 };
 
@@ -53,7 +53,7 @@ export default function MissionList({ initialMissions }: { initialMissions: Miss
         </label>
       )}
 
-      <div className="divide-y divide-slate-200 border border-slate-200">
+      <div className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10">
         {visible.length === 0 && (
           <p className="p-6 text-sm text-slate-500">Aucune mission pour l'instant. Crée la première !</p>
         )}
@@ -62,7 +62,7 @@ export default function MissionList({ initialMissions }: { initialMissions: Miss
           return (
             <div
               key={m.id}
-              className={`flex items-center justify-between border-l-2 bg-white px-5 py-3.5 hover:bg-slate-50 ${
+              className={`flex items-center justify-between border-l-2 px-5 py-3.5 hover:bg-white/[0.04] ${
                 m.archived ? "opacity-60" : ""
               } ${borderColor}`}
             >

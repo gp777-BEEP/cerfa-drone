@@ -6,6 +6,7 @@ import MissionTitle from "./MissionTitle";
 import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
 import AppHeader from "../../components/AppHeader";
+import { WarningBanner } from "../../components/Banner";
 
 export default async function MissionPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -64,25 +65,25 @@ export default async function MissionPage({ params }: { params: { id: string } }
 
         <ZoneManager missionId={mission.id} initialZones={zones || []} />
 
-        <div className="mt-8 border border-slate-200 bg-white p-5">
+        <div className="mt-8 bg-glass p-5">
           <h2 className="mb-3 font-medium text-ink">Générer le dossier</h2>
 
           {missingItems.length > 0 && (
-            <div className="mb-4 border-l-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-800">
+            <WarningBanner className="mb-4">
               <p className="mb-1 font-medium">Il manque des informations pour un dossier complet :</p>
               <ul className="ml-4 list-disc">
                 {missingItems.map((item, i) => (
                   <li key={i}>
-                    <a href={item.href} className="underline hover:text-amber-950">
+                    <a href={item.href} className="underline hover:text-amber-100">
                       {item.label}
                     </a>
                   </li>
                 ))}
               </ul>
-              <p className="mt-2 text-xs text-amber-700">
+              <p className="mt-2 text-xs opacity-80">
                 Tu peux quand même générer maintenant, mais la préfecture risque de te demander de compléter.
               </p>
-            </div>
+            </WarningBanner>
           )}
 
           <GenerateButton missionId={mission.id} />

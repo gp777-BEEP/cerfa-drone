@@ -32,9 +32,9 @@ export default async function SuggestionsPage() {
           {(suggestions || []).length === 0 && (
             <p className="text-sm text-slate-500">Aucune suggestion envoyée pour l'instant.</p>
           )}
-          <div className="divide-y divide-slate-200 border border-slate-200">
+          <div className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10">
             {(suggestions || []).map((s) => (
-              <div key={s.id} className="border-l-2 border-brand bg-white px-4 py-3">
+              <div key={s.id} className="border-l-2 border-brand px-4 py-3">
                 <p className="text-sm text-ink">{s.message}</p>
                 <p className="mt-1 text-xs text-slate-400">
                   {new Date(s.created_at).toLocaleDateString("fr-FR", {

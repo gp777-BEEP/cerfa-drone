@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../components/FileDropzone";
 import { parseAeronefsCsv } from "@/lib/alphatango/parseAeronefs";
+import { ErrorBanner } from "../components/Banner";
+import StatusMessage from "../components/StatusMessage";
 
 type Drone = {
   constructeur: string;
@@ -158,7 +160,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       </div>
 
       <div className={tab === "infos" ? "space-y-6" : "hidden"}>
-        <div className="border border-slate-200 bg-white p-5">
+        <div className="bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Importer depuis AlphaTango</h2>
           <p className="mb-3 text-xs text-slate-500">
             Depuis "Mon activité d'exploitant" sur AlphaTango, télécharge ton relevé de situation
@@ -172,10 +174,10 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             onFiles={(files) => handleImportReleve(files[0])}
           />
           {importingReleve && <p className="mt-2 text-sm text-slate-500">Lecture du fichier...</p>}
-          {importMsgInfos && <p className="mt-2 text-sm text-brand">{importMsgInfos}</p>}
+          <StatusMessage text={importMsgInfos} />
         </div>
 
-        <div className="border border-slate-200 bg-white p-5">
+        <div className="bg-glass p-5">
           <h2 className="mb-4 font-medium text-ink">Toi</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nom complet" value={fullName} onChange={setFullName} />
@@ -199,7 +201,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       </div>
 
       <div className={tab === "drones" ? "space-y-6" : "hidden"}>
-        <div className="border border-slate-200 bg-white p-5">
+        <div className="bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Importer depuis AlphaTango</h2>
           <p className="mb-3 text-xs text-slate-500">
             Depuis "Mon activité d'exploitant" sur AlphaTango, télécharge ta liste des aéronefs (CSV) et
@@ -213,10 +215,10 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             onFiles={(files) => handleImportAeronefs(files[0])}
           />
           {importingAeronefs && <p className="mt-2 text-sm text-slate-500">Lecture du fichier...</p>}
-          {importMsgDrones && <p className="mt-2 text-sm text-brand">{importMsgDrones}</p>}
+          <StatusMessage text={importMsgDrones} />
         </div>
 
-        <div className="border border-slate-200 bg-white p-5">
+        <div className="bg-glass p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-medium text-ink">Mes drones</h2>
             <button
@@ -283,9 +285,9 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         >
           {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
-        {saved && <span className="text-sm text-green-600">Enregistré ✓</span>}
-        {saveError && <span className="text-sm text-red-600">{saveError}</span>}
+        {saved && <span className="text-sm text-brand">Enregistré ✓</span>}
       </div>
+      {saveError && <ErrorBanner className="mt-3">{saveError}</ErrorBanner>}
     </form>
   );
 }

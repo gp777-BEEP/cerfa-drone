@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppHeader from "../components/AppHeader";
 import MissionList from "./MissionList";
+import { WarningBanner } from "../components/Banner";
 
 export default async function Dashboard() {
   const supabase = createClient();
@@ -33,14 +34,14 @@ export default async function Dashboard() {
         </div>
 
         {!profile?.full_name && (
-          <div className="mb-6 border-l-2 border-amber-400 bg-amber-50 p-4 text-sm text-amber-800">
+          <WarningBanner className="mb-6">
             Ton profil (nom, adresse, drones) n'est pas encore rempli. Ces infos sont nécessaires pour générer
             un Cerfa complet.{" "}
             <Link href="/profile" className="font-medium underline">
               Le compléter maintenant
             </Link>
             {" "}(ou importe un Cerfa déjà rempli lors de la création d'une mission, ça le remplira automatiquement).
-          </div>
+          </WarningBanner>
         )}
 
         <MissionList initialMissions={missions || []} />

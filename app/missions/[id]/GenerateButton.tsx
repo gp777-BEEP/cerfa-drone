@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ErrorBanner, WarningBanner } from "../../components/Banner";
 
 export default function GenerateButton({ missionId }: { missionId: string }) {
   const [loading, setLoading] = useState(false);
@@ -44,7 +45,7 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
       >
         {loading ? "Génération en cours..." : "Générer le dossier PDF"}
       </button>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <ErrorBanner className="mt-2">{error}</ErrorBanner>}
       {url && (
         <div className="mt-3">
           <a
@@ -55,9 +56,9 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
           >
             Télécharger le dossier généré →
           </a>
-          <p className="mt-2 border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <WarningBanner className="mt-2 py-2 text-xs">
             Avant de l'envoyer à la préfecture, n'oublie pas de signer le document.
-          </p>
+          </WarningBanner>
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
+import StatusMessage from "../../components/StatusMessage";
 
 function frToIso(dmy?: string): string {
   if (!dmy) return "";
@@ -352,7 +353,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   }
 
   return (
-    <div id="zones-de-vol" className="scroll-mt-4 border border-slate-200 bg-white p-5">
+    <div id="zones-de-vol" className="scroll-mt-4 bg-glass p-5">
       <h2 className="mb-1 font-medium text-ink">Zones de vol</h2>
       <p className="mb-4 text-xs text-slate-400">
         Jusqu'à 2 zones pour l'instant (le formulaire officiel en prévoit 2 avant annexe, bientôt disponible).
@@ -482,7 +483,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 onFiles={(files) => handleImportCerfa(files[0])}
               />
               {importingCerfa && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
-              {cerfaMsg && <p className="mt-2 text-sm text-brand">{cerfaMsg}</p>}
+              <StatusMessage text={cerfaMsg} />
             </div>
             <div>
               <span className="mb-1 block text-xs text-slate-500">Fichier KML</span>
@@ -494,7 +495,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 onFiles={(files) => handleImportKml(files[0])}
               />
               {importingKml && <p className="mt-2 text-sm text-slate-500">Lecture et géolocalisation en cours...</p>}
-              {kmlMsg && <p className="mt-2 text-sm text-brand">{kmlMsg}</p>}
+              <StatusMessage text={kmlMsg} />
             </div>
           </div>
           <p className="mt-2 text-xs text-slate-400">

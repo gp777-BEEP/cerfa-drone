@@ -2,7 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+}
+
 body {
-  background: #f8fafc;
-  color: #0f172a;
+  background: radial-gradient(60% 40% at 10% 0%, rgba(45, 217, 172, 0.12), transparent 60%),
+    radial-gradient(45% 35% at 100% 0%, rgba(90, 140, 255, 0.08), transparent 60%),
+    linear-gradient(180deg, #0a0d12 0%, #0d1117 45%, #0d1117 100%);
+  background-attachment: fixed;
+  color: #eef1f4;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="password"],
+select,
+textarea {
+  background-color: rgba(255, 255, 255, 0.03);
+  color-scheme: dark;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #2dd9ac;
+}
+
+::placeholder {
+  color: #6b7280;
+}
+
+@layer components {
+  /* Carte "verre dépoli" : remplace les anciennes cartes bg-white/border-slate-200
+     du thème clair. Le fond translucide + le flou donnent l'effet liquid glass ;
+     le radius est porté par la classe elle-même pour ne pas avoir à l'ajouter
+     partout où elle est utilisée. */
+  .bg-glass {
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+  }
+
+  .nav-glass {
+    background: rgba(9, 12, 17, 0.62);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+  }
+
+  .banner-error {
+    background: rgba(255, 107, 107, 0.08);
+    border-color: rgba(255, 107, 107, 0.28);
+    color: #ffb4b4;
+    border-radius: 14px;
+  }
+
+  .banner-warning {
+    background: rgba(255, 180, 84, 0.08);
+    border-color: rgba(255, 180, 84, 0.28);
+    color: #ffd08a;
+    border-radius: 14px;
+  }
+
+  .banner-success {
+    background: rgba(45, 217, 172, 0.08);
+    border-color: rgba(45, 217, 172, 0.28);
+    color: #7fe9c8;
+    border-radius: 14px;
+  }
 }

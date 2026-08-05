@@ -27,11 +27,37 @@ export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <h1 className="mb-6 text-center text-2xl font-medium text-ink">Cerfa Drone</h1>
-      <div className="border border-slate-200 bg-white p-6">
+      <div className="bg-glass p-6">
         <Auth
           supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
-          theme="light"
+          appearance={{
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: "#2dd9ac",
+                  brandAccent: "#22b891",
+                  brandButtonText: "#062018",
+                  defaultButtonBackground: "rgba(255,255,255,0.05)",
+                  defaultButtonBackgroundHover: "rgba(255,255,255,0.09)",
+                  defaultButtonBorder: "rgba(255,255,255,0.14)",
+                  defaultButtonText: "#eef1f4",
+                  inputBackground: "rgba(255,255,255,0.03)",
+                  inputBorder: "rgba(255,255,255,0.16)",
+                  inputBorderHover: "rgba(45,217,172,0.5)",
+                  inputBorderFocus: "#2dd9ac",
+                  inputText: "#eef1f4",
+                  inputLabelText: "#969daa",
+                  inputPlaceholder: "#6b7280",
+                  messageText: "#eef1f4",
+                  messageTextDanger: "#ffb4b4",
+                  anchorTextColor: "#2dd9ac",
+                  anchorTextHoverColor: "#22b891",
+                },
+              },
+            },
+          }}
+          theme="dark"
           providers={[]}
           localization={{
             variables: {
