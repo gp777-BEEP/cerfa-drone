@@ -170,8 +170,8 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="rounded-xl border-2 border-dashed border-brand/40 bg-brand/5 p-5">
-        <h2 className="mb-1 font-medium">Importer un Cerfa déjà rempli (optionnel)</h2>
+      <div className="border-2 border-dashed border-brand/40 bg-brand-light p-5">
+        <h2 className="mb-1 font-medium text-ink">Importer un Cerfa déjà rempli (optionnel)</h2>
         <p className="mb-3 text-xs text-slate-500">
           Tu as déjà un Cerfa généré par DroneKeeper (ou autre) ? Dépose-le ici : le site en extrait
           automatiquement tes infos, tes drones, les dates et les zones — tu n'as plus qu'à vérifier.
@@ -187,7 +187,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
         {importMsg && <p className="mt-2 text-sm text-brand">{importMsg}</p>}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="border border-slate-200 bg-white p-5">
         <label className="mb-4 block text-sm">
           <span className="mb-1 block text-slate-600">Type de mission</span>
           <select
@@ -273,8 +273,8 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
       </div>
 
       {selectedType && selectedType.question_schema?.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 font-medium">Quelques questions sur la mission</h2>
+        <div className="border border-slate-200 bg-white p-5">
+          <h2 className="mb-4 font-medium text-ink">Quelques questions sur la mission</h2>
           <div className="space-y-4">
             {selectedType.question_schema.map((q) => (
               <QuestionField
@@ -293,7 +293,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
       <button
         type="submit"
         disabled={saving}
-        className="rounded-lg bg-brand px-6 py-2.5 font-medium text-white shadow hover:bg-brand-dark disabled:opacity-50"
+        className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand hover:bg-brand-light disabled:opacity-50"
       >
         {saving ? "Création..." : "Créer la mission"}
       </button>

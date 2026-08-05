@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Footer from "./components/Footer";
 
 export const metadata: Metadata = {
   title: "Cerfa Drone — Déclarations de vol simplifiées",
@@ -9,7 +10,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body className="min-h-screen">{children}</body>
+      <body className="flex min-h-screen flex-col bg-slate-50">
+        <div className="flex-1">{children}</div>
+        <Footer />
+      </body>
     </html>
   );
 }

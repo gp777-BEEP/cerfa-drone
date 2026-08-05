@@ -86,15 +86,15 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-1 font-medium">Zones de vol</h2>
+    <div className="border border-slate-200 bg-white p-5">
+      <h2 className="mb-1 font-medium text-ink">Zones de vol</h2>
       <p className="mb-4 text-xs text-slate-400">
         Jusqu'à 2 zones pour l'instant (le formulaire officiel en prévoit 2 avant annexe — bientôt disponible).
       </p>
 
       <div className="mb-4 space-y-3">
         {zones.map((z) => (
-          <div key={z.id} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-3 text-sm">
+          <div key={z.id} className="flex items-center justify-between border-l-2 border-brand bg-slate-50 p-3 text-sm">
             <div>
               <p className="font-medium">{z.title || z.adresse}</p>
               <p className="text-slate-500">
@@ -186,7 +186,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white shadow hover:bg-brand-dark disabled:opacity-50"
+            className="rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-50"
           >
             {saving ? "Ajout..." : "+ Ajouter la zone"}
           </button>

@@ -164,3 +164,19 @@ create policy "Lecture de ses propres images de zone"
 create policy "Lecture de ses propres dossiers générés"
   on storage.objects for select
   using (bucket_id = 'dossiers' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- ---------------------------------------------------------------------------
+-- 7. Suggestions (retours utilisateurs sur de futures fonctionnalités)
+-- ---------------------------------------------------------------------------
+create table if not exists suggestions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  message text not null,
+  created_at timestamptz default now()
+);
+
+alter table suggestions enable row level security;
+create policy "Un utilisateur cree et voit ses propres suggestions"
+  on suggestions for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);

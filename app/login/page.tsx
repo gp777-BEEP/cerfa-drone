@@ -26,8 +26,8 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <h1 className="mb-6 text-center text-2xl font-semibold text-brand">Cerfa Drone</h1>
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h1 className="mb-6 text-center text-2xl font-medium text-ink">Cerfa Drone</h1>
+      <div className="border border-slate-200 bg-white p-6">
         <Auth
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
