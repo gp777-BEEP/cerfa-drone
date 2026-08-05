@@ -5,19 +5,15 @@ export default function MentionsLegalesPage() {
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Éditeur du site</h2>
       <p>
-        Cerfa Drone est édité à titre individuel par Paul Gonnet, télépilote de drone.
-        <br />
-        Adresse : 156 Impasse du Nantillet
-        <br />
-        Email : gonnetpaul74@gmail.com
+        Cerfa Drone est édité à titre individuel par un télépilote de drone.
         <br />
         <span className="text-slate-400">
-          [À compléter : numéro SIREN/SIRET si activité déclarée en auto-entrepreneur ou société]
+          [Coordonnées complètes de l'éditeur (nom, adresse, contact) à compléter prochainement]
         </span>
       </p>
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Directeur de la publication</h2>
-      <p>Paul Gonnet.</p>
+      <p className="text-slate-400">[À compléter]</p>
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Hébergement</h2>
       <p>

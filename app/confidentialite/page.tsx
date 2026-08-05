@@ -33,9 +33,9 @@ export default function ConfidentialitePage() {
       <h2 className="mb-2 mt-6 font-medium text-ink">Tes droits</h2>
       <p>
         Conformément au RGPD, tu peux demander l'accès, la rectification, l'export ou la suppression de
-        tes données à tout moment en écrivant à{" "}
-        <a href="mailto:gonnetpaul74@gmail.com" className="text-brand hover:underline">
-          gonnetpaul74@gmail.com
+        tes données à tout moment via la page{" "}
+        <a href="/contact" className="text-brand hover:underline">
+          Contact
         </a>
         .
       </p>
