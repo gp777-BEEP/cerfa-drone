@@ -92,7 +92,11 @@ export async function POST(req: NextRequest) {
         localite: geo?.localite || "",
         hauteur_max_m: zone.altitude_m,
         distance_max_m: estimateDistanceMaxM(zone, pilots),
-        notes: "Zone importée depuis un fichier KML. Hauteur et éloignement estimés à vérifier.",
+        // Pas de texte auto ici : ce champ finit tel quel dans le Cerfa
+        // envoyé à la préfecture, un rappel interne n'a rien à y faire.
+        // L'avertissement "à vérifier" reste seulement dans le message
+        // affiché à l'écran après l'import (kmlMsg côté client).
+        notes: "",
         image_paths,
       });
     }

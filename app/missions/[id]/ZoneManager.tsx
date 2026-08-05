@@ -31,6 +31,36 @@ const EMPTY = {
   notes: "",
 };
 
+// Champ numérique avec l'unité affichée en permanence dans la case (opacité
+// réduite), pas juste dans le placeholder qui disparaît une fois rempli :
+// sinon un "71" tout seul ne veut plus rien dire une fois la valeur saisie.
+function NumberFieldWithUnit({
+  placeholder,
+  unit,
+  value,
+  onChange,
+}: {
+  placeholder: string;
+  unit: string;
+  value: string | number;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <input
+        placeholder={placeholder}
+        type="number"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-md border border-slate-300 px-3 py-2 pr-9 text-sm"
+      />
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+        {unit}
+      </span>
+    </div>
+  );
+}
+
 export default function ZoneManager({ missionId, initialZones }: { missionId: string; initialZones: Zone[] }) {
   const supabase = createClient();
   const router = useRouter();
@@ -305,19 +335,17 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   onChange={(e) => setEditForm((f) => ({ ...f, localite: e.target.value }))}
                   className="rounded-md border border-slate-300 px-3 py-2 text-sm"
                 />
-                <input
-                  placeholder="Distance max (m)"
-                  type="number"
+                <NumberFieldWithUnit
+                  placeholder="Distance max"
+                  unit="m"
                   value={editForm.distance_max_m}
-                  onChange={(e) => setEditForm((f) => ({ ...f, distance_max_m: e.target.value }))}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  onChange={(v) => setEditForm((f) => ({ ...f, distance_max_m: v }))}
                 />
-                <input
-                  placeholder="Hauteur max (m)"
-                  type="number"
+                <NumberFieldWithUnit
+                  placeholder="Hauteur max"
+                  unit="m"
                   value={editForm.hauteur_max_m}
-                  onChange={(e) => setEditForm((f) => ({ ...f, hauteur_max_m: e.target.value }))}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                  onChange={(v) => setEditForm((f) => ({ ...f, hauteur_max_m: v }))}
                 />
               </div>
               <label className="mt-3 flex items-center gap-2 text-sm">
@@ -452,19 +480,17 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               onChange={(e) => setForm((f) => ({ ...f, localite: e.target.value }))}
               className="rounded-md border border-slate-300 px-3 py-2 text-sm"
             />
-            <input
-              placeholder="Distance max (m)"
-              type="number"
+            <NumberFieldWithUnit
+              placeholder="Distance max"
+              unit="m"
               value={form.distance_max_m}
-              onChange={(e) => setForm((f) => ({ ...f, distance_max_m: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              onChange={(v) => setForm((f) => ({ ...f, distance_max_m: v }))}
             />
-            <input
-              placeholder="Hauteur max (m)"
-              type="number"
+            <NumberFieldWithUnit
+              placeholder="Hauteur max"
+              unit="m"
               value={form.hauteur_max_m}
-              onChange={(e) => setForm((f) => ({ ...f, hauteur_max_m: e.target.value }))}
-              className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+              onChange={(v) => setForm((f) => ({ ...f, hauteur_max_m: v }))}
             />
           </div>
           <label className="flex items-center gap-2 text-sm">

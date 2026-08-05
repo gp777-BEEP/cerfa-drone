@@ -77,7 +77,15 @@ export async function fillCerfa(templateBytes: Uint8Array | ArrayBuffer, mission
 
     if (key in TEXT_FIELDS) {
       try {
-        form.getTextField(TEXT_FIELDS[key]).setText(sanitizeForWinAnsi(String(val)));
+        const field = form.getTextField(TEXT_FIELDS[key]);
+        // Certaines cases du PDF officiel sont hautes (prévues pour du texte
+        // multiligne) et ont une taille de police "auto" (0) dans le
+        // template : pdf-lib calcule alors une police énorme pour un texte
+        // court sur une case haute (ex: "Gonnet" en ~40pt dans la case Nom).
+        // On fixe une taille cohérente avec le reste du document au lieu de
+        // laisser l'auto-size déborder.
+        field.setFontSize(9);
+        field.setText(sanitizeForWinAnsi(String(val)));
       } catch (e: any) {
         unmapped.push(`${key} (texte introuvable: ${e.message})`);
       }

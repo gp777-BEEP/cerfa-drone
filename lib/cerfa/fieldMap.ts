@@ -3,6 +3,14 @@
  * Python validé (cerfa_field_map.py) sur deux missions réelles. Voir ce
  * fichier pour l'historique complet des découvertes (défauts du PDF officiel,
  * décalages de lignes, etc.) — ici on ne garde que le résultat final.
+ *
+ * Correction (vérification croisée avec un vrai export DroneKeeper, PDF
+ * annoté par coordonnées des rects de champs) : les champs "Texte36-52" et
+ * "Fixe  Portable Courriel[_2]" de la zone Déclarant/Mandataire/Contact
+ * général/Contact urgence étaient partiellement mélangés entre ces 4 blocs
+ * (ex : l'email de l'exploitant partait dans la case "Téléphone Fixe" du
+ * Mandataire). Remis d'aplomb en croisant position (x,y) de chaque champ
+ * avec le libellé le plus proche sur la page 1 du PDF officiel.
  */
 
 export const TEXT_FIELDS: Record<string, string> = {
@@ -12,7 +20,9 @@ export const TEXT_FIELDS: Record<string, string> = {
   "exploitant.adresse": "Adresse postale",
   "exploitant.telephone_fixe": "Texte36",
   "exploitant.telephone_portable": "Texte37",
-  "exploitant.courriel": "Texte38",
+  "exploitant.courriel": "Fixe  Portable Courriel",
+  "exploitant.fonction": "Fonction Profession",
+  "exploitant.siren_siret_soustraitant": "Si soustraitant identifiant SIRENSIRET RCS RNE",
 
   "exploitant.raison_sociale": "Raison sociale ou dénomination",
   "exploitant.siege_social": "Adresse du siège social",
@@ -22,26 +32,23 @@ export const TEXT_FIELDS: Record<string, string> = {
   "mandataire.prenom": "Prénom_2",
   "mandataire.naissance": "Date et lieu de naissance ville et pays_2",
   "mandataire.adresse": "Adresse postale_2",
-  "mandataire.fonction": "Fonction Profession",
-  "mandataire.siren_siret_soustraitant": "Si soustraitant identifiant SIRENSIRET RCS RNE",
   "mandataire.qualite": "Qualité",
-  "mandataire.telephone_fixe": "Texte40",
-  "mandataire.telephone_portable": "Texte41",
-  "mandataire.courriel": "Fixe  Portable Courriel",
-  "mandataire.courriel_2": "Fixe  Portable Courriel_2",
+  "mandataire.telephone_fixe": "Texte38",
+  "mandataire.telephone_portable": "Texte39",
+  "mandataire.courriel": "Fixe  Portable Courriel_2",
 
-  "contact_general.nom": "Texte43",
-  "contact_general.prenom": "Texte44",
-  "contact_general.naissance": "Texte45",
+  "contact_general.nom": "Texte40",
+  "contact_general.prenom": "Texte41",
+  "contact_general.naissance": "Texte47",
   "contact_general.fonction": "Texte46",
-  "contact_general.telephone_fixe": "Texte47",
-  "contact_general.telephone_portable": "Texte48",
-  "contact_general.courriel": "Texte49",
+  "contact_general.telephone_fixe": "Texte43",
+  "contact_general.telephone_portable": "Texte44",
+  "contact_general.courriel": "Texte45",
 
-  "contact_urgence.nom": "Texte51",
-  "contact_urgence.prenom": "Texte52",
+  "contact_urgence.nom": "Texte52",
+  "contact_urgence.prenom": "Texte51",
   "contact_urgence.fonction": "Texte50",
-  "contact_urgence.telephone_portable": "Texte39",
+  "contact_urgence.telephone_portable": "Texte48",
   "contact_urgence.courriel": "Texte49",
 
   "telepilote1.nom": "Télépilote 1Nom",
@@ -226,8 +233,8 @@ export const CHECKBOX_FIELDS: Record<string, string> = {
 type RadioChoice = "oui" | "non" | "madame" | "monsieur" | "1" | "2" | "3" | "4";
 
 export const RADIO_FIELDS: Record<string, [string, Partial<Record<RadioChoice, string>>]> = {
-  "contact_general.civilite": ["ContactCiviliteGroup", { madame: "/Choix3", monsieur: "/Choix1" }],
-  "contact_urgence.civilite": ["Groupe42", { madame: "/Choix1", monsieur: "/Choix2" }],
+  "contact_general.civilite": ["Groupe42", { madame: "/Choix1", monsieur: "/Choix2" }],
+  "contact_urgence.civilite": ["ContactCiviliteGroup", { madame: "/Choix3", monsieur: "/Choix1" }],
 
   "aeronef1.classe_c5": ["Groupe43", { oui: "/Choix2", non: "/Choix4" }],
   "aeronef1.captif": ["Aeronef1CaptifGroup", { oui: "/Choix5", non: "/Choix1" }],

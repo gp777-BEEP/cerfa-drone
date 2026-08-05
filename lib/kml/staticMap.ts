@@ -10,9 +10,29 @@
  * bulk/systématique).
  */
 import sharp from "sharp";
+import { readFileSync } from "fs";
+import path from "path";
 
 const TILE_SIZE = 256;
 const OSM_USER_AGENT = "CerfaDrone/1.0 (+https://cerfa-drone.vercel.app; contact via app)";
+
+// Les fonctions serverless de Vercel n'ont AUCUNE police système installée
+// (contrairement à un poste de dev) : le texte des <text> SVG passés à
+// sharp/librsvg ressortait en carrés vides ("tofu"). On embarque donc une
+// police directement dans le SVG en base64 via @font-face -> plus de
+// dépendance à fontconfig ni au système, ça marche partout pareil.
+let cachedFontFaceCss: string | null = null;
+function getFontFaceCss(): string {
+  if (cachedFontFaceCss) return cachedFontFaceCss;
+  const dir = path.join(process.cwd(), "public", "fonts");
+  const regular = readFileSync(path.join(dir, "DejaVuSans.ttf")).toString("base64");
+  const bold = readFileSync(path.join(dir, "DejaVuSans-Bold.ttf")).toString("base64");
+  cachedFontFaceCss = `
+    @font-face { font-family: 'MapFont'; font-weight: normal; src: url(data:font/ttf;base64,${regular}) format('truetype'); }
+    @font-face { font-family: 'MapFont'; font-weight: bold; src: url(data:font/ttf;base64,${bold}) format('truetype'); }
+  `;
+  return cachedFontFaceCss;
+}
 
 function lonToWorldX(lon: number, zoom: number): number {
   return ((lon + 180) / 360) * TILE_SIZE * Math.pow(2, zoom);
@@ -159,15 +179,16 @@ export async function renderZoneMap(
       <line x1="${barX}" y1="${barY}" x2="${barX + widthPx}" y2="${barY}" stroke="#1a1d21" stroke-width="2" />
       <line x1="${barX}" y1="${barY - 5}" x2="${barX}" y2="${barY + 5}" stroke="#1a1d21" stroke-width="2" />
       <line x1="${barX + widthPx}" y1="${barY - 5}" x2="${barX + widthPx}" y2="${barY + 5}" stroke="#1a1d21" stroke-width="2" />
-      <text x="${barX + widthPx / 2}" y="${barY - 8}" font-family="sans-serif" font-size="11" font-weight="bold" fill="#1a1d21" text-anchor="middle">${formatDistance(distanceM)}</text>
+      <text x="${barX + widthPx / 2}" y="${barY - 8}" font-family="MapFont" font-size="11" font-weight="bold" fill="#1a1d21" text-anchor="middle">${formatDistance(distanceM)}</text>
     </g>`;
 
   const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    <defs><style>${getFontFaceCss()}</style></defs>
     <polygon points="${polyPts}" fill="#e05a4e" fill-opacity="0.3" stroke="#e05a4e" stroke-width="3" />
     ${pilotCircles}
     ${scaleBar}
     <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#94a3b8" stroke-width="1" />
-    <text x="${width - 8}" y="${height - 8}" font-family="sans-serif" font-size="10" fill="#64748b" text-anchor="end">© OpenStreetMap contributors</text>
+    <text x="${width - 8}" y="${height - 8}" font-family="MapFont" font-size="10" fill="#64748b" text-anchor="end">© OpenStreetMap contributors</text>
   </svg>`;
 
   return sharp({
