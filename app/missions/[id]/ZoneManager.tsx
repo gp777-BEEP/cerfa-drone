@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 
@@ -32,6 +33,7 @@ const EMPTY = {
 
 export default function ZoneManager({ missionId, initialZones }: { missionId: string; initialZones: Zone[] }) {
   const supabase = createClient();
+  const router = useRouter();
   const [zones, setZones] = useState<Zone[]>(initialZones);
   const [form, setForm] = useState(EMPTY);
   const [files, setFiles] = useState<File[]>([]);
@@ -40,6 +42,59 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [kmlMsg, setKmlMsg] = useState("");
   const [importingCerfa, setImportingCerfa] = useState(false);
   const [cerfaMsg, setCerfaMsg] = useState("");
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState(EMPTY);
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Arrivée via un lien "#zone-xxx" (ex: depuis le récap "il manque des
+  // informations") -> ouvre directement l'édition de cette zone.
+  useEffect(() => {
+    const hash = window.location.hash;
+    const match = hash.match(/^#zone-(.+)$/);
+    if (match) {
+      const zone = zones.find((z) => z.id === match[1]);
+      if (zone) startEdit(zone);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function startEdit(z: Zone) {
+    setEditingId(z.id);
+    setEditForm({
+      title: z.title || "",
+      adresse: z.adresse || "",
+      code_postal: z.code_postal || "",
+      localite: z.localite || "",
+      en_agglomeration: !!z.en_agglomeration,
+      rassemblement: !!z.rassemblement,
+      distance_max_m: z.distance_max_m?.toString() || "",
+      hauteur_max_m: z.hauteur_max_m?.toString() || "",
+      notes: z.notes || "",
+    });
+  }
+
+  async function saveEdit(id: string) {
+    setSavingEdit(true);
+    const patch = {
+      title: editForm.title || null,
+      adresse: editForm.adresse || null,
+      code_postal: editForm.code_postal || null,
+      localite: editForm.localite || null,
+      en_agglomeration: editForm.en_agglomeration,
+      rassemblement: editForm.rassemblement,
+      distance_max_m: editForm.distance_max_m ? Number(editForm.distance_max_m) : null,
+      hauteur_max_m: editForm.hauteur_max_m ? Number(editForm.hauteur_max_m) : null,
+      notes: editForm.notes || null,
+    };
+    const { data, error } = await supabase.from("zones").update(patch).eq("id", id).select().single();
+    setSavingEdit(false);
+    if (!error && data) {
+      setZones((prev) => prev.map((z) => (z.id === id ? data : z)));
+      setEditingId(null);
+      router.refresh();
+    }
+  }
 
   async function insertZones(
     toInsert: Array<{
@@ -67,6 +122,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         imported++;
       }
     }
+    if (imported > 0) router.refresh();
     return imported;
   }
 
@@ -202,35 +258,134 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       setZones((prev) => [...prev, data]);
       setForm(EMPTY);
       setFiles([]);
+      router.refresh();
     }
   }
 
   async function removeZone(id: string) {
     await supabase.from("zones").delete().eq("id", id);
     setZones((prev) => prev.filter((z) => z.id !== id));
+    if (editingId === id) setEditingId(null);
+    router.refresh();
   }
 
   return (
-    <div className="border border-slate-200 bg-white p-5">
+    <div id="zones-de-vol" className="scroll-mt-4 border border-slate-200 bg-white p-5">
       <h2 className="mb-1 font-medium text-ink">Zones de vol</h2>
       <p className="mb-4 text-xs text-slate-400">
         Jusqu'à 2 zones pour l'instant (le formulaire officiel en prévoit 2 avant annexe, bientôt disponible).
       </p>
 
       <div className="mb-4 space-y-3">
-        {zones.map((z) => (
-          <div key={z.id} className="flex items-center justify-between border-l-2 border-brand bg-slate-50 p-3 text-sm">
-            <div>
-              <p className="font-medium">{z.title || z.adresse}</p>
-              <p className="text-slate-500">
-                {z.adresse} {z.code_postal} {z.localite}
-              </p>
+        {zones.map((z) =>
+          editingId === z.id ? (
+            <div key={z.id} id={`zone-${z.id}`} className="scroll-mt-4 border-l-2 border-brand bg-slate-50 p-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  placeholder="Nom de la zone"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="Adresse"
+                  value={editForm.adresse}
+                  onChange={(e) => setEditForm((f) => ({ ...f, adresse: e.target.value }))}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="Code postal"
+                  value={editForm.code_postal}
+                  onChange={(e) => setEditForm((f) => ({ ...f, code_postal: e.target.value }))}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="Localité"
+                  value={editForm.localite}
+                  onChange={(e) => setEditForm((f) => ({ ...f, localite: e.target.value }))}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="Distance max (m)"
+                  type="number"
+                  value={editForm.distance_max_m}
+                  onChange={(e) => setEditForm((f) => ({ ...f, distance_max_m: e.target.value }))}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+                <input
+                  placeholder="Hauteur max (m)"
+                  type="number"
+                  value={editForm.hauteur_max_m}
+                  onChange={(e) => setEditForm((f) => ({ ...f, hauteur_max_m: e.target.value }))}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <label className="mt-3 flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={editForm.en_agglomeration}
+                  onChange={(e) => setEditForm((f) => ({ ...f, en_agglomeration: e.target.checked }))}
+                />
+                En agglomération
+              </label>
+              <label className="mt-1 flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={editForm.rassemblement}
+                  onChange={(e) => setEditForm((f) => ({ ...f, rassemblement: e.target.checked }))}
+                />
+                À proximité d'un rassemblement de personnes
+              </label>
+              <textarea
+                placeholder="Consignes de sécurité / notes"
+                value={editForm.notes}
+                onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
+                rows={2}
+                className="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+              <div className="mt-3 flex gap-3">
+                <button
+                  onClick={() => saveEdit(z.id)}
+                  disabled={savingEdit}
+                  className="rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-50"
+                >
+                  {savingEdit ? "Enregistrement..." : "Enregistrer"}
+                </button>
+                <button
+                  onClick={() => setEditingId(null)}
+                  className="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-500 hover:bg-slate-100"
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
-            <button onClick={() => removeZone(z.id)} className="text-red-500 hover:underline">
-              Retirer
-            </button>
-          </div>
-        ))}
+          ) : (
+            <div
+              key={z.id}
+              id={`zone-${z.id}`}
+              className="scroll-mt-4 flex items-center justify-between border-l-2 border-brand bg-slate-50 p-3 text-sm"
+            >
+              <div>
+                <p className="font-medium">{z.title || z.adresse}</p>
+                <p className="text-slate-500">
+                  {z.adresse} {z.code_postal} {z.localite}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {z.hauteur_max_m != null ? `Hauteur max ${z.hauteur_max_m} m` : "Hauteur max non renseignée"} ·{" "}
+                  {z.distance_max_m != null ? `Éloignement max ${z.distance_max_m} m` : "Éloignement max non renseigné"}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-3">
+                <button onClick={() => startEdit(z)} className="text-brand hover:underline">
+                  Modifier
+                </button>
+                <button onClick={() => removeZone(z.id)} className="text-red-500 hover:underline">
+                  Retirer
+                </button>
+              </div>
+            </div>
+          )
+        )}
       </div>
 
       {zones.length < 2 && (

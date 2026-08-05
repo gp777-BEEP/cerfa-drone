@@ -31,21 +31,24 @@ export default async function MissionPage({ params }: { params: { id: string } }
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
-  const missingItems: string[] = [];
-  if (!profile?.full_name) missingItems.push("Ton nom (page Profil)");
-  if (!profile?.address) missingItems.push("Ton adresse (page Profil)");
+  const missingItems: { label: string; href: string }[] = [];
+  if (!profile?.full_name) missingItems.push({ label: "Ton nom", href: "/profile" });
+  if (!profile?.address) missingItems.push({ label: "Ton adresse", href: "/profile" });
   if (!profile?.drones || profile.drones.filter((d: any) => d?.constructeur).length === 0) {
-    missingItems.push("Au moins un drone (page Profil > Mes drones)");
+    missingItems.push({ label: "Au moins un drone", href: "/profile" });
   }
   const zonesList = zones || [];
   if (zonesList.length === 0) {
-    missingItems.push("Au moins une zone de vol (ci-dessus)");
+    missingItems.push({ label: "Au moins une zone de vol", href: "#zones-de-vol" });
   } else {
     zonesList.forEach((z, i) => {
       const label = z.title || z.adresse || `Zone ${i + 1}`;
-      if (!z.adresse) missingItems.push(`Adresse de la zone "${label}"`);
-      if (z.hauteur_max_m === null || z.hauteur_max_m === undefined) missingItems.push(`Hauteur max de la zone "${label}"`);
-      if (z.distance_max_m === null || z.distance_max_m === undefined) missingItems.push(`Éloignement max de la zone "${label}"`);
+      const href = `#zone-${z.id}`;
+      if (!z.adresse) missingItems.push({ label: `Adresse de la zone "${label}"`, href });
+      if (z.hauteur_max_m === null || z.hauteur_max_m === undefined)
+        missingItems.push({ label: `Hauteur max de la zone "${label}"`, href });
+      if (z.distance_max_m === null || z.distance_max_m === undefined)
+        missingItems.push({ label: `Éloignement max de la zone "${label}"`, href });
     });
   }
 
@@ -69,7 +72,11 @@ export default async function MissionPage({ params }: { params: { id: string } }
               <p className="mb-1 font-medium">Il manque des informations pour un dossier complet :</p>
               <ul className="ml-4 list-disc">
                 {missingItems.map((item, i) => (
-                  <li key={i}>{item}</li>
+                  <li key={i}>
+                    <a href={item.href} className="underline hover:text-amber-950">
+                      {item.label}
+                    </a>
+                  </li>
                 ))}
               </ul>
               <p className="mt-2 text-xs text-amber-700">
