@@ -215,7 +215,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         // pas à la structure attendue).
         const dbg = json.debug;
         const detail = dbg
-          ? ` (${dbg.totalFields} champ(s) détecté(s), ${dbg.textFieldsWithValue} rempli(s), ${dbg.matched} reconnu(s), ${dbg.bytesReceived} octets reçus, sonde="${dbg.rawProbe}", début=${dbg.head}, fin=${dbg.tail})`
+          ? ` (${dbg.totalFields} champ(s) détecté(s), ${dbg.textFieldsWithValue} rempli(s), ${dbg.matched} reconnu(s), secours utilisé ${dbg.usedRawFallback} fois, ${dbg.bytesReceived} octets reçus)`
           : "";
         const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
         const gotMissionInfo = Object.keys(missionUpdate).length > 0 ? " Les dates et le régime de vol ont été importés." : "";

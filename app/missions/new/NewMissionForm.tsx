@@ -75,7 +75,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
       if (nbZones === 0) {
         const d = json.debug;
         const detail = d
-          ? ` (${d.totalFields} champ(s) détecté(s), ${d.textFieldsWithValue} rempli(s), ${d.matched} reconnu(s), ${d.bytesReceived} octets reçus, sonde="${d.rawProbe}", début=${d.head}, fin=${d.tail})`
+          ? ` (${d.totalFields} champ(s) détecté(s), ${d.textFieldsWithValue} rempli(s), ${d.matched} reconnu(s), secours utilisé ${d.usedRawFallback} fois, ${d.bytesReceived} octets reçus)`
           : "";
         const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
         setImportMsg(`Importé : 0 zone et ${nbDrones} drone(s) détectés.${detail}${w}`);

@@ -1,4 +1,4 @@
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFName, PDFString, PDFHexString } from "pdf-lib";
 import { TEXT_FIELDS, CHECKBOX_FIELDS, RADIO_FIELDS } from "./fieldMap";
 
 const REV_TEXT = Object.fromEntries(Object.entries(TEXT_FIELDS).map(([k, v]) => [v, k]));
@@ -23,6 +23,34 @@ function setNested(obj: any, dottedKey: string, value: any) {
 }
 
 /**
+ * Lit la valeur brute /V d'un champ directement dans son dictionnaire PDF,
+ * en contournant PDFField.getText()/isChecked()/getSelected() de pdf-lib.
+ *
+ * Pourquoi : sur un même fichier, ces méthodes haut niveau renvoient parfois
+ * "vide" en production (Vercel) alors que le dictionnaire contient bien la
+ * valeur (vérifié en confrontant une lecture directe de /V à getText() dans
+ * la même requête -> la lecture directe trouve la valeur, pas getText()).
+ * La cause exacte est dans la résolution d'héritage /Parent de pdf-lib
+ * (PDFAcroField.getInheritableAttribute/ascend), pas dans les données du
+ * PDF. On relit donc /V nous-mêmes : plus robuste, quitte à ne pas gérer
+ * l'héritage de valeur depuis un champ parent (cas rare, pas rencontré sur
+ * les exports DroneKeeper).
+ */
+function rawFieldValue(field: any): string | undefined {
+  try {
+    const dict = field?.acroField?.dict;
+    if (!dict) return undefined;
+    const v = dict.get(PDFName.of("V"));
+    if (v === undefined) return undefined;
+    if (v instanceof PDFString || v instanceof PDFHexString) return v.decodeText();
+    if (v instanceof PDFName) return v.value();
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Lit un Cerfa 15476*04 déjà rempli (ex: exporté par DroneKeeper) et en
  * extrait les données dans la même structure que buildMissionData(), pour
  * pré-remplir automatiquement le profil et une nouvelle mission plutôt que de
@@ -37,6 +65,7 @@ export async function parseCerfa(bytes: Uint8Array | ArrayBuffer) {
   const allFields = form.getFields();
   let matched = 0;
   let textFieldsWithValue = 0;
+  let usedRawFallback = 0;
 
   for (const field of allFields) {
     const name = field.getName();
@@ -44,19 +73,57 @@ export async function parseCerfa(bytes: Uint8Array | ArrayBuffer) {
 
     try {
       if (ctor === "PDFTextField" && REV_TEXT[name]) {
-        const value = (field as any).getText();
+        // getText() d'abord (chemin normal), lecture brute de /V en secours
+        // si ça revient vide (cf. rawFieldValue ci-dessus).
+        let value: string | undefined;
+        try {
+          value = (field as any).getText();
+        } catch {
+          value = undefined;
+        }
+        if (!value) {
+          const raw = rawFieldValue(field);
+          if (raw) {
+            value = raw;
+            usedRawFallback++;
+          }
+        }
         if (value) {
           setNested(data, REV_TEXT[name], value);
           matched++;
         }
       } else if (ctor === "PDFCheckBox" && REV_CHECK[name]) {
-        const checked = (field as any).isChecked();
+        let checked = false;
+        try {
+          checked = (field as any).isChecked();
+        } catch {
+          checked = false;
+        }
+        if (!checked) {
+          const raw = rawFieldValue(field);
+          if (raw && raw !== "Off") {
+            checked = true;
+            usedRawFallback++;
+          }
+        }
         if (checked) {
           setNested(data, REV_CHECK[name], true);
           matched++;
         }
       } else if (ctor === "PDFRadioGroup" && REV_RADIO[name]) {
-        const selected = (field as any).getSelected();
+        let selected: string | undefined;
+        try {
+          selected = (field as any).getSelected();
+        } catch {
+          selected = undefined;
+        }
+        if (!selected) {
+          const raw = rawFieldValue(field);
+          if (raw && raw !== "Off") {
+            selected = raw;
+            usedRawFallback++;
+          }
+        }
         if (selected) {
           const { key, choices } = REV_RADIO[name];
           const answer = choices[selected];
@@ -66,7 +133,17 @@ export async function parseCerfa(bytes: Uint8Array | ArrayBuffer) {
           }
         }
       }
-      if (ctor === "PDFTextField" && (field as any).getText()) textFieldsWithValue++;
+
+      if (ctor === "PDFTextField") {
+        let hasValue = false;
+        try {
+          hasValue = !!(field as any).getText();
+        } catch {
+          hasValue = false;
+        }
+        if (!hasValue) hasValue = !!rawFieldValue(field);
+        if (hasValue) textFieldsWithValue++;
+      }
     } catch (e: any) {
       warnings.push(`${name}: ${e.message}`);
     }
@@ -77,26 +154,7 @@ export async function parseCerfa(bytes: Uint8Array | ArrayBuffer) {
   // "des champs remplis mais aucun ne correspond à notre cartographie"
   // (export d'un autre outil que DroneKeeper, avec des noms de champs
   // différents) plutôt que de laisser un "aucune zone trouvée" muet.
-  // Diagnostic bas niveau : compare getText() (API haut niveau) à une
-  // lecture directe du dictionnaire /V du champ, pour un champ connu. Si les
-  // deux divergent, le bug est dans getText() lui-même (ou son cache) plutôt
-  // que dans les données du PDF.
-  let rawProbe: string | null = null;
-  try {
-    const { PDFName } = await import("pdf-lib");
-    const probeField = allFields.find((f) => f.getName() === "Code postalRow1");
-    if (probeField) {
-      const acroField: any = (probeField as any).acroField;
-      const vRaw = acroField?.dict?.get(PDFName.of("V"));
-      rawProbe = vRaw ? String(vRaw) : "(pas de /V sur ce champ)";
-    } else {
-      rawProbe = "(champ Code postalRow1 introuvable)";
-    }
-  } catch (e: any) {
-    rawProbe = `(sonde en erreur: ${e.message})`;
-  }
-
-  const debug = { totalFields: allFields.length, textFieldsWithValue, matched, rawProbe };
+  const debug = { totalFields: allFields.length, textFieldsWithValue, matched, usedRawFallback };
   if (allFields.length === 0) {
     warnings.push(
       "Ce PDF n'a aucun champ de formulaire interactif (probablement aplati/exporté en image) : impossible d'en extraire les données automatiquement."
