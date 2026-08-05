@@ -103,17 +103,24 @@ async function handle(req: NextRequest) {
   if (hasImages || zoneCardInputs.length > 0) {
     const zoneBytes = await generateZoneCards(mission.title, zoneCardInputs);
 
-    // 3. Fusionne Cerfa + fiches de zones
-    const merged = await PDFDocument.create();
+    // 3. Fusionne Cerfa + fiches de zones. Le document "hôte" DOIT être le
+    // Cerfa rempli lui-même (pas un PDFDocument.create() tout neuf) : créer
+    // un nouveau document et y copier les pages perd le dictionnaire
+    // /AcroForm de la source (copyPages copie le contenu visuel des pages,
+    // pas la structure de formulaire au niveau du document). Résultat : le
+    // dossier final s'affichait très bien, mais redevenait un PDF "plat"
+    // sans aucun champ interactif -> impossible de le réimporter ensuite
+    // (import Cerfa déjà rempli, "aucune zone trouvée" alors que le PDF a
+    // bien les bonnes infos). En gardant le Cerfa comme hôte et en lui
+    // ajoutant seulement les pages des fiches de zone, l'AcroForm reste
+    // intact et le PDF final reste réimportable.
     const cerfaDoc = await PDFDocument.load(cerfaBytes);
     const zonesDoc = await PDFDocument.load(zoneBytes);
 
-    const cerfaPages = await merged.copyPages(cerfaDoc, cerfaDoc.getPageIndices());
-    cerfaPages.forEach((p) => merged.addPage(p));
-    const zonePages = await merged.copyPages(zonesDoc, zonesDoc.getPageIndices());
-    zonePages.forEach((p) => merged.addPage(p));
+    const zonePages = await cerfaDoc.copyPages(zonesDoc, zonesDoc.getPageIndices());
+    zonePages.forEach((p) => cerfaDoc.addPage(p));
 
-    finalBytes = await merged.save();
+    finalBytes = await cerfaDoc.save();
   }
 
   // 4. Upload du dossier final dans le stockage privé de l'utilisateur

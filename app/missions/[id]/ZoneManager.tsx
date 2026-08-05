@@ -143,6 +143,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     }>
   ) {
     let imported = 0;
+    let lastError = "";
     for (const z of toInsert) {
       const { data, error } = await supabase
         .from("zones")
@@ -152,10 +153,16 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       if (!error && data) {
         setZones((prev) => [...prev, data]);
         imported++;
+      } else if (error) {
+        // Erreur enregistrée mais pas d'arrêt : on tente quand même les
+        // zones suivantes, et on remonte le vrai message au lieu de laisser
+        // croire silencieusement qu'aucune zone n'a été trouvée dans le
+        // fichier importé.
+        lastError = error.message;
       }
     }
     if (imported > 0) router.refresh();
-    return imported;
+    return { imported, lastError };
   }
 
   async function handleImportCerfa(file: File) {
@@ -179,7 +186,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         return;
       }
 
-      const imported = await insertZones(
+      const { imported, lastError } = await insertZones(
         sites.map((s: any) => ({
           title: s.adresse || null,
           adresse: s.adresse || null,
@@ -196,7 +203,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       setCerfaMsg(
         imported > 0
           ? `${imported} zone(s) importée(s) depuis le Cerfa. Pense à ajouter une carte (via KML ou une capture) si besoin.`
-          : "Aucune zone importée."
+          : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}`
       );
     } catch (e: any) {
       setCerfaMsg(`Erreur : ${e.message}`);
@@ -223,7 +230,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         return;
       }
 
-      const imported = await insertZones(
+      const { imported, lastError } = await insertZones(
         toImport.map((z: any) => ({
           title: z.title || null,
           adresse: z.adresse || null,
@@ -241,7 +248,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       setKmlMsg(
         imported > 0
           ? `${imported} zone(s) importée(s) depuis le KML. Vérifie l'adresse, la hauteur et l'éloignement avant de générer le dossier.${warnings}`
-          : "Aucune zone importée." + warnings
+          : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}${warnings}`
       );
     } catch (e: any) {
       setKmlMsg(`Erreur : ${e.message}`);

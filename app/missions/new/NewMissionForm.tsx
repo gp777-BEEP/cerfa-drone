@@ -147,8 +147,12 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
           map_meta: z.map_meta || null,
         }));
         if (toInsert.length > 0) {
-          await supabase.from("zones").insert(toInsert);
-          slotsUsed = toInsert.length;
+          const { error: insertErr } = await supabase.from("zones").insert(toInsert);
+          if (insertErr) {
+            setKmlMsg(`Erreur en enregistrant les zones importées : ${insertErr.message} (la mission a quand même été créée)`);
+          } else {
+            slotsUsed = toInsert.length;
+          }
         }
       } catch (e: any) {
         setKmlMsg(`Erreur d'import KML : ${e.message} (la mission a quand même été créée)`);
@@ -177,7 +181,10 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
           image_paths: [],
         }));
       if (zonesToInsert.length > 0) {
-        await supabase.from("zones").insert(zonesToInsert);
+        const { error: insertErr } = await supabase.from("zones").insert(zonesToInsert);
+        if (insertErr) {
+          setImportMsg(`Erreur en enregistrant les zones du Cerfa : ${insertErr.message} (la mission a quand même été créée)`);
+        }
       }
 
       // Complète le profil si vide (nom/adresse/drones), sans écraser ce qui existe déjà
