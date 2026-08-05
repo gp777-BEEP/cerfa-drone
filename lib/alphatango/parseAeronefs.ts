@@ -75,7 +75,9 @@ export function parseAeronefsCsv(text: string): { drones: AlphaTangoDrone[]; war
       modele: iModele !== -1 ? cells[iModele] || "" : "",
       type: iType !== -1 ? cells[iType] || "" : "Drone",
       numero_serie: iSerie !== -1 ? cells[iSerie] || "" : "",
-      masse_kg: iMasse !== -1 ? cells[iMasse] || "" : "",
+      // AlphaTango donne une plage ("800 g ≤ M ≤ 2 kg") avec des symboles
+      // mathématiques que la police du Cerfa ne sait pas afficher.
+      masse_kg: iMasse !== -1 ? (cells[iMasse] || "").replace(/≤/g, "<=").replace(/≥/g, ">=") : "",
       classe_c5: "non",
       captif: "non",
       numero_enregistrement: cells[iEnregistrement] || "",
