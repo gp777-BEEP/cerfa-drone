@@ -72,9 +72,16 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
 
       const nbZones = [data.site1, data.site2].filter(Boolean).length;
       const nbDrones = [1, 2, 3, 4, 5].filter((i) => data[`aeronef${i}`]?.constructeur).length;
-      setImportMsg(
-        `Importé : ${nbZones} zone(s) et ${nbDrones} drone(s) détectés. Ils seront ajoutés automatiquement à la mission (et à ton profil si vide).`
-      );
+      if (nbZones === 0) {
+        const d = json.debug;
+        const detail = d ? ` (${d.totalFields} champ(s) détecté(s), ${d.textFieldsWithValue} rempli(s), ${d.matched} reconnu(s))` : "";
+        const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
+        setImportMsg(`Importé : 0 zone et ${nbDrones} drone(s) détectés.${detail}${w}`);
+      } else {
+        setImportMsg(
+          `Importé : ${nbZones} zone(s) et ${nbDrones} drone(s) détectés. Ils seront ajoutés automatiquement à la mission (et à ton profil si vide).`
+        );
+      }
     } catch (e: any) {
       setImportMsg(`Erreur : ${e.message}`);
     } finally {

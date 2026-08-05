@@ -34,29 +34,59 @@ export async function parseCerfa(bytes: Uint8Array | ArrayBuffer) {
   const data: Record<string, any> = {};
   const warnings: string[] = [];
 
-  for (const field of form.getFields()) {
+  const allFields = form.getFields();
+  let matched = 0;
+  let textFieldsWithValue = 0;
+
+  for (const field of allFields) {
     const name = field.getName();
     const ctor = field.constructor.name;
 
     try {
       if (ctor === "PDFTextField" && REV_TEXT[name]) {
         const value = (field as any).getText();
-        if (value) setNested(data, REV_TEXT[name], value);
+        if (value) {
+          setNested(data, REV_TEXT[name], value);
+          matched++;
+        }
       } else if (ctor === "PDFCheckBox" && REV_CHECK[name]) {
         const checked = (field as any).isChecked();
-        if (checked) setNested(data, REV_CHECK[name], true);
+        if (checked) {
+          setNested(data, REV_CHECK[name], true);
+          matched++;
+        }
       } else if (ctor === "PDFRadioGroup" && REV_RADIO[name]) {
         const selected = (field as any).getSelected();
         if (selected) {
           const { key, choices } = REV_RADIO[name];
           const answer = choices[selected];
-          if (answer) setNested(data, key, answer);
+          if (answer) {
+            setNested(data, key, answer);
+            matched++;
+          }
         }
       }
+      if (ctor === "PDFTextField" && (field as any).getText()) textFieldsWithValue++;
     } catch (e: any) {
       warnings.push(`${name}: ${e.message}`);
     }
   }
 
-  return { data, warnings };
+  // Diagnostic : si le PDF a bien un formulaire mais qu'on ne récupère rien,
+  // ça aide à distinguer "pas de champs du tout" (PDF aplati/scanné) de
+  // "des champs remplis mais aucun ne correspond à notre cartographie"
+  // (export d'un autre outil que DroneKeeper, avec des noms de champs
+  // différents) plutôt que de laisser un "aucune zone trouvée" muet.
+  const debug = { totalFields: allFields.length, textFieldsWithValue, matched };
+  if (allFields.length === 0) {
+    warnings.push(
+      "Ce PDF n'a aucun champ de formulaire interactif (probablement aplati/exporté en image) : impossible d'en extraire les données automatiquement."
+    );
+  } else if (matched === 0 && textFieldsWithValue > 0) {
+    warnings.push(
+      `Ce PDF a ${allFields.length} champs dont ${textFieldsWithValue} remplis, mais aucun ne correspond à la structure attendue (export DroneKeeper). Peut-être un autre outil ou une autre version du Cerfa.`
+    );
+  }
+
+  return { data, warnings, debug };
 }

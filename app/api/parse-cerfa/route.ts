@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const { data, warnings } = await parseCerfa(bytes);
-    return NextResponse.json({ ok: true, data, warnings });
+    const { data, warnings, debug } = await parseCerfa(bytes);
+    return NextResponse.json({ ok: true, data, warnings, debug });
   } catch (e: any) {
     return NextResponse.json(
       { error: "Impossible de lire ce PDF. Vérifie que c'est bien un Cerfa 15476*04 (formulaire PDF interactif)." },

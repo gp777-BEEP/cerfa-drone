@@ -178,10 +178,17 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       const slotsLeft = 2 - zones.length;
       const sites = [json.data.site1, json.data.site2].filter(Boolean).slice(0, slotsLeft);
       if (sites.length === 0) {
+        // On inclut le détail technique (champs détectés/remplis) dans le
+        // message : ça évite un aller-retour pour comprendre pourquoi rien
+        // n'est ressorti (PDF sans formulaire, ou champs qui ne correspondent
+        // pas à la structure attendue).
+        const d = json.debug;
+        const detail = d ? ` (${d.totalFields} champ(s) détecté(s), ${d.textFieldsWithValue} rempli(s), ${d.matched} reconnu(s))` : "";
+        const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
         setCerfaMsg(
           slotsLeft === 0
             ? "Déjà 2 zones sur cette mission, retire-en une avant d'en importer d'autres."
-            : "Aucune zone trouvée dans ce Cerfa."
+            : `Aucune zone trouvée dans ce Cerfa.${detail}${w}`
         );
         return;
       }
