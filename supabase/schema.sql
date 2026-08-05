@@ -12,6 +12,7 @@ create table if not exists profiles (
   email text,
   qualite text default 'Télépilote',
   siren_siret text,
+  numero_exploitant text, -- numéro d'enregistrement AlphaTango (FRAxxxxxxxxxxxx), parfois demandé par la préfecture
   drones jsonb default '[]',
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -122,6 +123,7 @@ create table if not exists zones (
   hauteur_max_m numeric,
   notes text,
   image_paths text[] default '{}', -- chemins dans le bucket "zone-images"
+  map_meta jsonb, -- position/texte de l'échelle + attribution OSM (dessinés en PDF par-dessus l'image)
   created_at timestamptz default now()
 );
 

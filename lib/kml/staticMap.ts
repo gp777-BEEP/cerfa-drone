@@ -10,29 +10,20 @@
  * bulk/systématique).
  */
 import sharp from "sharp";
-import { readFileSync } from "fs";
-import path from "path";
 
 const TILE_SIZE = 256;
 const OSM_USER_AGENT = "CerfaDrone/1.0 (+https://cerfa-drone.vercel.app; contact via app)";
 
-// Les fonctions serverless de Vercel n'ont AUCUNE police système installée
-// (contrairement à un poste de dev) : le texte des <text> SVG passés à
-// sharp/librsvg ressortait en carrés vides ("tofu"). On embarque donc une
-// police directement dans le SVG en base64 via @font-face -> plus de
-// dépendance à fontconfig ni au système, ça marche partout pareil.
-let cachedFontFaceCss: string | null = null;
-function getFontFaceCss(): string {
-  if (cachedFontFaceCss) return cachedFontFaceCss;
-  const dir = path.join(process.cwd(), "public", "fonts");
-  const regular = readFileSync(path.join(dir, "DejaVuSans.ttf")).toString("base64");
-  const bold = readFileSync(path.join(dir, "DejaVuSans-Bold.ttf")).toString("base64");
-  cachedFontFaceCss = `
-    @font-face { font-family: 'MapFont'; font-weight: normal; src: url(data:font/ttf;base64,${regular}) format('truetype'); }
-    @font-face { font-family: 'MapFont'; font-weight: bold; src: url(data:font/ttf;base64,${bold}) format('truetype'); }
-  `;
-  return cachedFontFaceCss;
-}
+// Les fonctions serverless de Vercel n'ont AUCUNE police système installée,
+// et même une police embarquée en base64 dans le SVG (@font-face) ressort en
+// carrés vides ("tofu") une fois en prod : le rendu SVG->PNG (sharp/librsvg)
+// ne peut donc pas être utilisé pour du texte fiable. On ne dessine plus
+// AUCUN texte dans le SVG (juste les formes vectorielles : polygone, points,
+// barre d'échelle) ; le texte (valeur de l'échelle, légendes, attribution
+// OSM) est ajouté par-dessus l'image dans le PDF final via pdf-lib, qui lui
+// embarque toujours sa police (Helvetica) correctement quel que soit
+// l'environnement -> c'est ce qui affiche déjà "Distance max ... m" sans
+// problème sur les fiches de zone.
 
 function lonToWorldX(lon: number, zoom: number): number {
   return ((lon + 180) / 360) * TILE_SIZE * Math.pow(2, zoom);
@@ -86,15 +77,28 @@ export type StaticMapOptions = {
   padding?: number; // marge en fraction de la bbox (0.25 = 25% de marge)
 };
 
+export type StaticMapResult = {
+  png: Buffer;
+  width: number;
+  height: number;
+  hasPilot: boolean;
+  // Position/texte de la barre d'échelle en pixels image (origine en haut à
+  // gauche, comme le SVG), à traduire en coordonnées PDF par l'appelant une
+  // fois l'image placée sur la page (cf. zoneCards.ts).
+  scaleBar: { xPx: number; yPx: number; widthPx: number; label: string };
+  attribution: { xPx: number; yPx: number; text: string };
+};
+
 /**
  * Rend un PNG WxH centré sur `polygon`, avec le polygone tracé en rouge et
  * les `pilots` en points bleus. `polygon` et `pilots` sont en {lat, lon}.
+ * Le texte (échelle, attribution) n'est PAS dans ce PNG : voir StaticMapResult.
  */
 export async function renderZoneMap(
   polygon: MapPoint[],
   pilots: MapPoint[],
   opts: StaticMapOptions = {}
-): Promise<Buffer> {
+): Promise<StaticMapResult> {
   const width = opts.width ?? 700;
   const height = opts.height ?? 460;
   const padding = opts.padding ?? 0.3;
@@ -173,28 +177,36 @@ export async function renderZoneMap(
   const { distanceM, widthPx } = pickScaleBar(metersPerPixel);
   const barX = 12;
   const barY = height - 28;
-  const scaleBar = `
+  // Juste les formes (pas de texte) : le fond blanc derrière la valeur de
+  // l'échelle reste utile même si le texte est ajouté par-dessus ensuite.
+  const scaleBarShapes = `
     <g>
       <rect x="${barX - 6}" y="${barY - 16}" width="${widthPx + 12}" height="30" fill="white" fill-opacity="0.75" />
       <line x1="${barX}" y1="${barY}" x2="${barX + widthPx}" y2="${barY}" stroke="#1a1d21" stroke-width="2" />
       <line x1="${barX}" y1="${barY - 5}" x2="${barX}" y2="${barY + 5}" stroke="#1a1d21" stroke-width="2" />
       <line x1="${barX + widthPx}" y1="${barY - 5}" x2="${barX + widthPx}" y2="${barY + 5}" stroke="#1a1d21" stroke-width="2" />
-      <text x="${barX + widthPx / 2}" y="${barY - 8}" font-family="MapFont" font-size="11" font-weight="bold" fill="#1a1d21" text-anchor="middle">${formatDistance(distanceM)}</text>
     </g>`;
 
   const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-    <defs><style>${getFontFaceCss()}</style></defs>
     <polygon points="${polyPts}" fill="#e05a4e" fill-opacity="0.3" stroke="#e05a4e" stroke-width="3" />
     ${pilotCircles}
-    ${scaleBar}
+    ${scaleBarShapes}
     <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="#94a3b8" stroke-width="1" />
-    <text x="${width - 8}" y="${height - 8}" font-family="MapFont" font-size="10" fill="#64748b" text-anchor="end">© OpenStreetMap contributors</text>
   </svg>`;
 
-  return sharp({
+  const png = await sharp({
     create: { width, height, channels: 3, background: { r: 245, g: 245, b: 245 } },
   })
     .composite([...composites, { input: Buffer.from(svg) }])
     .png()
     .toBuffer();
+
+  return {
+    png,
+    width,
+    height,
+    hasPilot: pilots.length > 0,
+    scaleBar: { xPx: barX + widthPx / 2, yPx: barY - 8, widthPx, label: formatDistance(distanceM) },
+    attribution: { xPx: width - 8, yPx: height - 8, text: "© OpenStreetMap contributors" },
+  };
 }

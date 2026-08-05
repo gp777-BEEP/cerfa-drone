@@ -40,6 +40,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [phone, setPhone] = useState(initialProfile?.phone || "");
   const [email, setEmail] = useState(initialProfile?.email || "");
   const [qualite, setQualite] = useState(initialProfile?.qualite || "Télépilote");
+  const [numeroExploitant, setNumeroExploitant] = useState(initialProfile?.numero_exploitant || "");
   const [drones, setDrones] = useState<Drone[]>(initialProfile?.drones?.length ? initialProfile.drones : [EMPTY_DRONE]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -74,6 +75,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur d'import");
       if (json.data.full_name) setFullName(json.data.full_name);
+      if (json.data.numero_exploitant) setNumeroExploitant(json.data.numero_exploitant);
       setImportMsgInfos(
         json.data.full_name
           ? `Nom importé : ${json.data.full_name}.`
@@ -127,6 +129,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         phone,
         email,
         qualite,
+        numero_exploitant: numeroExploitant,
         drones: drones.filter((d) => d.constructeur || d.modele),
         updated_at: new Date().toISOString(),
       })
@@ -180,7 +183,18 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             <Field label="Adresse" value={address} onChange={setAddress} className="sm:col-span-2" />
             <Field label="Téléphone" value={phone} onChange={setPhone} />
             <Field label="Email" value={email} onChange={setEmail} type="email" />
+            <Field
+              label="Numéro d'exploitant"
+              value={numeroExploitant}
+              onChange={setNumeroExploitant}
+            />
           </div>
+          <p className="mt-3 text-xs text-slate-500">
+            Numéro d'enregistrement AlphaTango (format FRA...), pas de case dédiée sur le Cerfa mais
+            la préfecture le demande parfois en complément : garde-le sous la main. C'est un identifiant
+            professionnel, du même ordre que ton SIREN/SIRET (pas un mot de passe), stocké comme le
+            reste de ton profil.
+          </p>
         </div>
       </div>
 

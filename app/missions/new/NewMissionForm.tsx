@@ -144,6 +144,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
           hauteur_max_m: z.hauteur_max_m,
           notes: z.notes || null,
           image_paths: z.image_paths || [],
+          map_meta: z.map_meta || null,
         }));
         if (toInsert.length > 0) {
           await supabase.from("zones").insert(toInsert);

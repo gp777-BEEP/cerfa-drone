@@ -46,14 +46,19 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
       </button>
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       {url && (
-        <a
-          href={url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 block text-sm font-medium text-brand hover:underline"
-        >
-          Télécharger le dossier généré →
-        </a>
+        <div className="mt-3">
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="block text-sm font-medium text-brand hover:underline"
+          >
+            Télécharger le dossier généré →
+          </a>
+          <p className="mt-2 border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            Avant de l'envoyer à la préfecture, n'oublie pas de signer le document.
+          </p>
+        </div>
       )}
     </div>
   );

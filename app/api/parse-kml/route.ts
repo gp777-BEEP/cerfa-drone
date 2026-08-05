@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { parseKml, estimateDistanceMaxM } from "@/lib/kml/parseKml";
+import { parseKml, estimateDistanceMaxM, haversineMeters } from "@/lib/kml/parseKml";
 import { renderZoneMap } from "@/lib/kml/staticMap";
 
 export const runtime = "nodejs";
@@ -14,7 +14,32 @@ type ParsedZone = {
   distance_max_m: number | null;
   notes: string;
   image_paths: string[];
+  map_meta: Record<string, any> | null;
 };
+
+/**
+ * Un KML peut avoir plusieurs points "PILOT" (une position par zone en
+ * général chez DroneKeeper). Pour l'affichage sur la carte d'UNE zone, on ne
+ * garde que le plus proche de son centre : sinon toutes les positions
+ * télépilote de tout le fichier s'affichaient sur chaque zone, ce qui n'a
+ * pas de sens (jamais plus d'un point par carte).
+ */
+function nearestPilot(
+  centroid: { lat: number; lon: number },
+  pilots: { lat: number; lon: number }[]
+): { lat: number; lon: number }[] {
+  if (pilots.length === 0) return [];
+  let best = pilots[0];
+  let bestDist = haversineMeters(centroid, best);
+  for (const p of pilots.slice(1)) {
+    const d = haversineMeters(centroid, p);
+    if (d < bestDist) {
+      best = p;
+      bestDist = d;
+    }
+  }
+  return [best];
+}
 
 async function reverseGeocode(lat: number, lon: number): Promise<{ adresse: string; code_postal: string; localite: string } | null> {
   try {
@@ -72,15 +97,25 @@ export async function POST(req: NextRequest) {
       }
 
       const image_paths: string[] = [];
+      let map_meta: Record<string, any> | null = null;
+      const zonePilots = nearestPilot(zone.centroid, pilots);
       try {
-        const png = await renderZoneMap(zone.vertices, pilots);
+        const map = await renderZoneMap(zone.vertices, zonePilots);
         const imgPath = `${user.id}/${missionId}/kml-map-${Date.now()}-${i}.png`;
-        const { error: upErr } = await admin.storage.from("zone-images").upload(imgPath, png, {
+        const { error: upErr } = await admin.storage.from("zone-images").upload(imgPath, map.png, {
           contentType: "image/png",
           upsert: true,
         });
-        if (!upErr) image_paths.push(imgPath);
-        else warnings.push(`Carte non générée pour "${zone.name}" : ${upErr.message}`);
+        if (!upErr) {
+          image_paths.push(imgPath);
+          map_meta = {
+            width: map.width,
+            height: map.height,
+            hasPilot: map.hasPilot,
+            scaleBar: map.scaleBar,
+            attribution: map.attribution,
+          };
+        } else warnings.push(`Carte non générée pour "${zone.name}" : ${upErr.message}`);
       } catch (e: any) {
         warnings.push(`Carte non générée pour "${zone.name}" (${e.message}).`);
       }
@@ -98,6 +133,7 @@ export async function POST(req: NextRequest) {
         // affiché à l'écran après l'import (kmlMsg côté client).
         notes: "",
         image_paths,
+        map_meta,
       });
     }
 

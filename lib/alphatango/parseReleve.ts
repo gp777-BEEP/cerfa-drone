@@ -5,16 +5,19 @@
  * mis en page en tableau. On extrait donc par expressions régulières sur le
  * texte brut, validé contre un relevé réel (voir conversation).
  *
- * Ne remonte que ce qui a un équivalent direct côté Cerfa : nom complet et
- * numéro SIREN/SIRET. Le numéro d'enregistrement exploitant AlphaTango
- * (format FRAxxxxxxxxxxxx) n'a pas de champ correspondant sur le Cerfa et
- * n'est donc pas utilisé ici.
+ * Remonte le nom complet et le numéro SIREN/SIRET (équivalents directs côté
+ * Cerfa), ainsi que le numéro d'enregistrement exploitant AlphaTango (format
+ * FRAxxxxxxxxxxxx) : pas de champ correspondant sur le Cerfa, mais la
+ * préfecture le demande parfois en complément -> gardé sur le profil pour
+ * que l'utilisateur l'ait sous la main (identifiant professionnel, du même
+ * ordre de sensibilité qu'un SIREN/SIRET, pas une donnée secrète).
  */
 
 export type ReleveExploitant = {
   full_name?: string;
   siren_siret?: string;
   birth_date?: string; // JJ/MM/AAAA, indicatif seulement (le lieu de naissance n'est pas sur ce document)
+  numero_exploitant?: string; // format FRAxxxxxxxxxxxx
 };
 
 function titleCaseIfAllCaps(word: string): string {
@@ -46,6 +49,11 @@ export function parseReleveExploitant(text: string): { data: ReleveExploitant; w
   const birthMatch = text.match(/Date de naissance\s*:\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})/i);
   if (birthMatch) {
     data.birth_date = birthMatch[1];
+  }
+
+  const numExploitantMatch = text.match(/Num[ée]ro d['’]enregistrement\s*:\s*([A-Za-z0-9]+)/i);
+  if (numExploitantMatch) {
+    data.numero_exploitant = numExploitantMatch[1];
   }
 
   if (!nameMatch && !sirenMatch) {

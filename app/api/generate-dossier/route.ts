@@ -67,6 +67,10 @@ async function handle(req: NextRequest) {
     notes?: string;
     distanceMaxM?: number;
     heightMaxM?: number;
+    // Métadonnées de la 1ère image, si c'est une carte qu'on a générée
+    // (échelle + attribution à dessiner par-dessus, cf. zoneCards.ts) :
+    // absent pour une photo importée manuellement.
+    mapMeta?: any;
   }>;
 
   for (const zone of zones || []) {
@@ -82,6 +86,7 @@ async function handle(req: NextRequest) {
       notes: zone.notes || undefined,
       distanceMaxM: zone.distance_max_m || undefined,
       heightMaxM: zone.hauteur_max_m || undefined,
+      mapMeta: ((zone as any).map_meta || null) as any,
     });
   }
 

@@ -17,6 +17,7 @@ type Zone = {
   hauteur_max_m: number | null;
   notes: string | null;
   image_paths: string[] | null;
+  map_meta: Record<string, any> | null;
 };
 
 const EMPTY = {
@@ -138,6 +139,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       hauteur_max_m: number | null;
       notes: string | null;
       image_paths: string[];
+      map_meta?: Record<string, any> | null;
     }>
   ) {
     let imported = 0;
@@ -231,6 +233,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           hauteur_max_m: z.hauteur_max_m,
           notes: z.notes || null,
           image_paths: z.image_paths || [],
+          map_meta: z.map_meta || null,
         }))
       );
 
