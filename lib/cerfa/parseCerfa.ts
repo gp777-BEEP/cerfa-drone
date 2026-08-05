@@ -1,4 +1,4 @@
-import { PDFDocument, PDFName, PDFString, PDFHexString } from "pdf-lib";
+import { PDFDocument } from "pdf-lib";
 import { TEXT_FIELDS, CHECKBOX_FIELDS, RADIO_FIELDS } from "./fieldMap";
 
 const REV_TEXT = Object.fromEntries(Object.entries(TEXT_FIELDS).map(([k, v]) => [v, k]));
@@ -28,22 +28,30 @@ function setNested(obj: any, dottedKey: string, value: any) {
  *
  * Pourquoi : sur un même fichier, ces méthodes haut niveau renvoient parfois
  * "vide" en production (Vercel) alors que le dictionnaire contient bien la
- * valeur (vérifié en confrontant une lecture directe de /V à getText() dans
- * la même requête -> la lecture directe trouve la valeur, pas getText()).
- * La cause exacte est dans la résolution d'héritage /Parent de pdf-lib
- * (PDFAcroField.getInheritableAttribute/ascend), pas dans les données du
- * PDF. On relit donc /V nous-mêmes : plus robuste, quitte à ne pas gérer
- * l'héritage de valeur depuis un champ parent (cas rare, pas rencontré sur
- * les exports DroneKeeper).
+ * valeur. Première tentative avec `dict.get(PDFName.of("V"))` : toujours
+ * vide aussi en prod -> ce n'est pas juste getText() qui est en cause, c'est
+ * très probablement `PDFName.of("V")` qui ne renvoie PAS la même instance
+ * que la clé réellement utilisée dans le dictionnaire (PDFName utilise un
+ * pool/cache interne par instance de module ; si Next.js bundle deux copies
+ * du module pdf-lib -- une pour son import ESM ici, une pour l'usage
+ * interne CJS de pdf-lib -- `dict.get()` compare par référence sur une Map
+ * native et ne matche jamais). Contournement définitif : on ne construit
+ * plus de PDFName nous-mêmes, on parcourt les entrées du dictionnaire et on
+ * compare la clé par sa représentation texte ("/V"), ce qui ne dépend
+ * d'aucune instance de classe précise.
  */
 function rawFieldValue(field: any): string | undefined {
   try {
     const dict = field?.acroField?.dict;
-    if (!dict) return undefined;
-    const v = dict.get(PDFName.of("V"));
-    if (v === undefined) return undefined;
-    if (v instanceof PDFString || v instanceof PDFHexString) return v.decodeText();
-    if (v instanceof PDFName) return v.value();
+    if (!dict || typeof dict.entries !== "function") return undefined;
+    for (const [key, v] of dict.entries()) {
+      if (String(key) !== "/V") continue;
+      if (v == null) return undefined;
+      if (typeof v.decodeText === "function") return v.decodeText();
+      if (typeof v.value === "function") return v.value();
+      if (typeof v.asString === "function") return v.asString();
+      return undefined;
+    }
     return undefined;
   } catch {
     return undefined;
