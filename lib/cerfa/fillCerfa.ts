@@ -82,9 +82,19 @@ export async function fillCerfa(templateBytes: Uint8Array | ArrayBuffer, mission
         // multiligne) et ont une taille de police "auto" (0) dans le
         // template : pdf-lib calcule alors une police énorme pour un texte
         // court sur une case haute (ex: "Gonnet" en ~40pt dans la case Nom).
-        // On fixe une taille cohérente avec le reste du document au lieu de
-        // laisser l'auto-size déborder.
-        field.setFontSize(9);
+        // field.setFontSize() plante sur CE template précis ("No Tf operator
+        // found for DA of field") car sa chaîne de "default appearance" a un
+        // "/" échappé (\057) que le parseur de pdf-lib ne reconnaît pas comme
+        // un opérateur de police valide -> ça faisait planter (silencieusement,
+        // via le catch ci-dessous) le remplissage de TOUS les champs texte, un
+        // dossier généré totalement vide. On réécrit directement la DA avec
+        // une police/taille propres plutôt que de passer par setFontSize().
+        try {
+          field.acroField.setDefaultAppearance("/Helvetica 9 Tf 0 g");
+        } catch {
+          // si même ça échoue, on continue quand même : mieux vaut un champ
+          // rempli en grande police qu'un champ vide.
+        }
         field.setText(sanitizeForWinAnsi(String(val)));
       } catch (e: any) {
         unmapped.push(`${key} (texte introuvable: ${e.message})`);
