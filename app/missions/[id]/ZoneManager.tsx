@@ -214,7 +214,9 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         // n'est ressorti (PDF sans formulaire, ou champs qui ne correspondent
         // pas à la structure attendue).
         const dbg = json.debug;
-        const detail = dbg ? ` (${dbg.totalFields} champ(s) détecté(s), ${dbg.textFieldsWithValue} rempli(s), ${dbg.matched} reconnu(s))` : "";
+        const detail = dbg
+          ? ` (${dbg.totalFields} champ(s) détecté(s), ${dbg.textFieldsWithValue} rempli(s), ${dbg.matched} reconnu(s), ${dbg.bytesReceived} octets reçus, sonde="${dbg.rawProbe}", début=${dbg.head}, fin=${dbg.tail})`
+          : "";
         const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
         const gotMissionInfo = Object.keys(missionUpdate).length > 0 ? " Les dates et le régime de vol ont été importés." : "";
         setCerfaMsg(
