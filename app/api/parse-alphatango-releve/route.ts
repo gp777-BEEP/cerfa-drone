@@ -20,14 +20,21 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // pdf-parse@1 : import CommonJS classique, chargé dynamiquement pour
-    // rester hors du bundle client.
-    const pdfParse = (await import("pdf-parse")).default as (buf: Buffer) => Promise<{ text: string }>;
+    // On importe directement lib/pdf-parse.js et non le point d'entrée du
+    // package : ce dernier contient un bloc de code de debug
+    // (`isDebugMode = !module.parent`) qui se déclenche à tort une fois
+    // bundlé par Next.js en fonction serverless (module.parent y est
+    // toujours undefined) et tente de lire un fichier de test inexistant,
+    // faisant planter l'import avant même l'appel de la fonction.
+    // @ts-ignore -- pas de types publiés pour ce sous-chemin du package
+    const pdfParseModule = await import("pdf-parse/lib/pdf-parse.js");
+    const pdfParse = pdfParseModule.default as unknown as (buf: Buffer) => Promise<{ text: string }>;
     const buffer = Buffer.from(await file.arrayBuffer());
     const { text } = await pdfParse(buffer);
     const { data, warnings } = parseReleveExploitant(text);
     return NextResponse.json({ ok: true, data, warnings });
   } catch (e: any) {
+    console.error("parse-alphatango-releve error:", e);
     return NextResponse.json(
       { error: "Impossible de lire ce PDF. Vérifie que c'est bien le relevé de situation d'exploitant AlphaTango." },
       { status: 400 }
