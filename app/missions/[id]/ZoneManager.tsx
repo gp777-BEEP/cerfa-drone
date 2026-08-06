@@ -108,6 +108,12 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY);
   const [savingEdit, setSavingEdit] = useState(false);
+  // Le formulaire d'AJOUT permettait déjà d'attacher des captures d'écran,
+  // mais pas celui d'ÉDITION : impossible d'ajouter une capture après coup
+  // sur une zone déjà créée (ex: zone créée sans image, ou utilisateur qui
+  // n'a qu'un screenshot à ajouter plus tard). Réplique le même mécanisme ici.
+  const [editExistingImages, setEditExistingImages] = useState<string[]>([]);
+  const [editNewFiles, setEditNewFiles] = useState<File[]>([]);
 
   // Arrivée via un lien "#zone-xxx" (ex: depuis le récap "il manque des
   // informations") -> ouvre directement l'édition de cette zone.
@@ -135,10 +141,27 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       notes: z.notes || "",
       description_site: z.description_site || "",
     });
+    setEditExistingImages(z.image_paths || []);
+    setEditNewFiles([]);
   }
 
   async function saveEdit(id: string) {
     setSavingEdit(true);
+
+    const newPaths: string[] = [];
+    if (editNewFiles.length > 0) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        for (const file of editNewFiles) {
+          const path = `${user.id}/${missionId}/${Date.now()}_${file.name}`;
+          const { error: uploadErr } = await supabase.storage.from("zone-images").upload(path, file);
+          if (!uploadErr) newPaths.push(path);
+        }
+      }
+    }
+
     const patch = {
       title: editForm.title || null,
       adresse: editForm.adresse || null,
@@ -150,6 +173,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       hauteur_max_m: editForm.hauteur_max_m ? Number(editForm.hauteur_max_m) : null,
       notes: editForm.notes || null,
       description_site: editForm.description_site || null,
+      image_paths: [...editExistingImages, ...newPaths],
     };
     const { data, error } = await supabase.from("zones").update(patch).eq("id", id).select().single();
     setSavingEdit(false);
@@ -559,6 +583,40 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 rows={2}
                 className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               />
+
+              <div className="mt-3">
+                <span className="mb-1 block text-xs text-slate-500">
+                  Capture(s) de la zone
+                  <FieldHint text="Carte, capture d'écran ou export de zone de vol : utile si tu n'as pas de KML, ou pour compléter une zone qui n'en a pas encore." />
+                </span>
+                {editExistingImages.length > 0 && (
+                  <div className="mb-2 flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                    <span>
+                      {editExistingImages.length} image{editExistingImages.length > 1 ? "s" : ""} déjà attachée
+                      {editExistingImages.length > 1 ? "s" : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setEditExistingImages([])}
+                      className="text-red-500 hover:underline"
+                    >
+                      Tout retirer
+                    </button>
+                  </div>
+                )}
+                <FileDropzone
+                  label={
+                    editNewFiles.length > 0
+                      ? `${editNewFiles.length} nouvelle(s) image(s) sélectionnée(s)`
+                      : "Glisser une image ici, ou cliquer pour parcourir"
+                  }
+                  hint="Ajoutée en plus des images déjà attachées"
+                  accept="image/*"
+                  multiple
+                  onFiles={(f) => setEditNewFiles(f)}
+                />
+              </div>
+
               <div className="mt-3 flex gap-3">
                 <button
                   onClick={() => saveEdit(z.id)}
