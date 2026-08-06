@@ -129,6 +129,7 @@ create table if not exists zones (
   distance_max_m numeric,
   hauteur_max_m numeric,
   notes text,
+  description_site text, -- correspond à la case "Description du site" du Cerfa (le PDF officiel n'a qu'une case à cocher "descriptif joint séparément", pas de champ texte : ce descriptif est donc joint sous forme de page dédiée dans le dossier généré)
   image_paths text[] default '{}', -- chemins dans le bucket "zone-images"
   map_meta jsonb, -- position/texte de l'échelle + attribution OSM (dessinés en PDF par-dessus l'image)
   created_at timestamptz default now()

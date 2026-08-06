@@ -66,6 +66,7 @@ async function handle(req: NextRequest) {
     address?: string;
     images: Uint8Array[];
     notes?: string;
+    descriptionSite?: string;
     distanceMaxM?: number;
     heightMaxM?: number;
     // Métadonnées de la 1ère image, si c'est une carte qu'on a générée
@@ -85,6 +86,7 @@ async function handle(req: NextRequest) {
       address: [zone.adresse, zone.code_postal, zone.localite].filter(Boolean).join(", "),
       images,
       notes: zone.notes || undefined,
+      descriptionSite: zone.description_site || undefined,
       distanceMaxM: zone.distance_max_m || undefined,
       heightMaxM: zone.hauteur_max_m || undefined,
       mapMeta: ((zone as any).map_meta || null) as any,

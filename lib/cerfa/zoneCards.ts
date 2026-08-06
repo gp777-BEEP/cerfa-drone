@@ -5,6 +5,10 @@ export interface ZoneCardInput {
   address?: string | null;
   images: Uint8Array[]; // JPEG ou PNG déjà décodées
   notes?: string | null;
+  // "Description du site" du Cerfa : pas de champ texte remplissable dans le
+  // PDF officiel (seule la case "descriptif joint séparément" existe), donc
+  // ce texte est imprimé ici, sur la fiche de zone jointe au dossier.
+  descriptionSite?: string | null;
   distanceMaxM?: number | null;
   heightMaxM?: number | null;
   // Métadonnées de la carte générée (1ère image) : échelle + attribution à
@@ -33,6 +37,27 @@ async function embedAny(pdfDoc: PDFDocument, bytes: Uint8Array): Promise<PDFImag
   } catch {
     return await pdfDoc.embedPng(bytes);
   }
+}
+
+// Découpe un texte libre en lignes qui tiennent dans maxWidth, pour un rendu
+// PDF manuel (pas de wrapping natif avec drawText/pdf-lib).
+function wrapText(text: string, font: Awaited<ReturnType<PDFDocument["embedFont"]>>, size: number, maxWidth: number): string[] {
+  const lines: string[] = [];
+  for (const paragraph of text.split(/\n+/)) {
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    let current = "";
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word;
+      if (current && font.widthOfTextAtSize(test, size) > maxWidth) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    }
+    lines.push(current);
+  }
+  return lines;
 }
 
 /**
@@ -89,7 +114,9 @@ export async function generateZoneCards(missionTitle: string | undefined, zones:
       y -= 6;
     }
 
-    const reserveBottom = MARGIN + 70; // notes + légende
+    const descLines = zone.descriptionSite ? wrapText(zone.descriptionSite, font, 10, PAGE_W - 2 * MARGIN) : [];
+    const descBlockH = descLines.length > 0 ? 20 + descLines.length * 13 + 10 : 0;
+    const reserveBottom = MARGIN + 70 + descBlockH; // description + notes + légende
     const availableH = y - reserveBottom;
     const perImageH = availableH / Math.max(zone.images.length, 1);
     let hasPilotOnMap = false;
@@ -138,6 +165,16 @@ export async function generateZoneCards(missionTitle: string | undefined, zones:
         // image illisible : on l'ignore plutôt que de faire échouer tout le dossier
         y -= 10;
       }
+    }
+
+    if (descLines.length > 0) {
+      page.drawText("Description du site", { x: MARGIN, y, size: 11, font: fontBold, color: DARK });
+      y -= 16;
+      for (const line of descLines) {
+        page.drawText(line, { x: MARGIN, y, size: 10, font, color: DARK });
+        y -= 13;
+      }
+      y -= 10;
     }
 
     if (zone.notes) {

@@ -25,6 +25,7 @@ type Zone = {
   distance_max_m: number | null;
   hauteur_max_m: number | null;
   notes: string | null;
+  description_site: string | null;
   image_paths: string[] | null;
   map_meta: Record<string, any> | null;
 };
@@ -39,6 +40,7 @@ const EMPTY = {
   distance_max_m: "",
   hauteur_max_m: "",
   notes: "",
+  description_site: "",
 };
 
 // Champ numérique avec l'unité affichée en permanence dans la case (opacité
@@ -131,6 +133,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       distance_max_m: z.distance_max_m?.toString() || "",
       hauteur_max_m: z.hauteur_max_m?.toString() || "",
       notes: z.notes || "",
+      description_site: z.description_site || "",
     });
   }
 
@@ -146,6 +149,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       distance_max_m: editForm.distance_max_m ? Number(editForm.distance_max_m) : null,
       hauteur_max_m: editForm.hauteur_max_m ? Number(editForm.hauteur_max_m) : null,
       notes: editForm.notes || null,
+      description_site: editForm.description_site || null,
     };
     const { data, error } = await supabase.from("zones").update(patch).eq("id", id).select().single();
     setSavingEdit(false);
@@ -371,6 +375,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         distance_max_m: form.distance_max_m ? Number(form.distance_max_m) : null,
         hauteur_max_m: form.hauteur_max_m ? Number(form.hauteur_max_m) : null,
         notes: form.notes || null,
+        description_site: form.description_site || null,
         image_paths: imagePaths,
       })
       .select()
@@ -428,6 +433,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       distance_max_m: maxOrNull(zKeep.distance_max_m, zDrop.distance_max_m),
       hauteur_max_m: maxOrNull(zKeep.hauteur_max_m, zDrop.hauteur_max_m),
       notes: [zKeep.notes, zDrop.notes].filter(Boolean).join(" / ") || null,
+      description_site: [zKeep.description_site, zDrop.description_site].filter(Boolean).join(" / ") || null,
       image_paths: zKeep.image_paths?.length ? zKeep.image_paths : zDrop.image_paths || [],
       map_meta: zKeep.map_meta || zDrop.map_meta || null,
     };
@@ -531,6 +537,17 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 À proximité d'un rassemblement de personnes
                 <FieldHint text="Coche s'il y a un rassemblement de personnes (événement, marché, foule...) à proximité de la zone de vol." />
               </label>
+              <span className="mt-3 block text-xs text-slate-500">
+                Description du site
+                <FieldHint text="Décrit le lieu de vol (nature du site, environnement, obstacles, accès...). Le Cerfa n'a qu'une case à cocher « descriptif joint séparément », sans champ de texte : ce descriptif est donc ajouté comme page dédiée dans le dossier PDF généré." />
+              </span>
+              <textarea
+                placeholder="Description du site"
+                value={editForm.description_site}
+                onChange={(e) => setEditForm((f) => ({ ...f, description_site: e.target.value }))}
+                rows={3}
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
               <span className="mt-3 block text-xs text-slate-500">
                 Autres informations utiles
                 <FieldHint text="Horaires particuliers, zone aéronautique à statut particulier, ou toute autre précision sur les opérations à proximité. Reprend le champ « Autres informations utiles » du Cerfa." />
@@ -746,6 +763,17 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             À proximité d'un rassemblement de personnes
             <FieldHint text="Coche s'il y a un rassemblement de personnes (événement, marché, foule...) à proximité de la zone de vol." />
           </label>
+          <span className="block text-xs text-slate-500">
+            Description du site
+            <FieldHint text="Décrit le lieu de vol (nature du site, environnement, obstacles, accès...). Le Cerfa n'a qu'une case à cocher « descriptif joint séparément », sans champ de texte : ce descriptif est donc ajouté comme page dédiée dans le dossier PDF généré." />
+          </span>
+          <textarea
+            placeholder="Description du site"
+            value={form.description_site}
+            onChange={(e) => setForm((f) => ({ ...f, description_site: e.target.value }))}
+            rows={3}
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          />
           <span className="block text-xs text-slate-500">
             Autres informations utiles
             <FieldHint text="Horaires particuliers, zone aéronautique à statut particulier, ou toute autre précision sur les opérations à proximité. Reprend le champ « Autres informations utiles » du Cerfa." />
