@@ -82,6 +82,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [importingCerfa, setImportingCerfa] = useState(false);
   const [cerfaMsg, setCerfaMsg] = useState("");
   const [merging, setMerging] = useState(false);
+  const [mergeA, setMergeA] = useState("");
+  const [mergeB, setMergeB] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY);
@@ -228,8 +230,11 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         router.refresh();
       }
 
-      const slotsLeft = 2 - zones.length;
-      const sites = [json.data.site1, json.data.site2].filter(Boolean).slice(0, slotsLeft);
+      // Le Cerfa source ne décrit que 2 sites max sur sa page 1 (limite du
+      // formulaire importé, pas de notre app) ; ils s'ajoutent à la liste
+      // existante, quelle que soit sa taille (les zones au-delà de 2 partent
+      // sur l'annexe à la génération du dossier).
+      const sites = [json.data.site1, json.data.site2].filter(Boolean);
       if (sites.length === 0) {
         // On inclut le détail technique (champs détectés/remplis) dans le
         // message : ça évite un aller-retour pour comprendre pourquoi rien
@@ -242,11 +247,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
         const droneNote = importedDrones.length > 0 ? ` ${importedDrones.length} drone(s) importé(s) (voir "Drones utilisés" plus bas).` : "";
         const gotMissionInfo = Object.keys(missionUpdate).length > 0 ? ` Les dates et le régime de vol ont été importés.${droneNote}` : droneNote;
-        setCerfaMsg(
-          slotsLeft === 0
-            ? "Déjà 2 zones sur cette mission, retire-en une avant d'en importer d'autres."
-            : `Aucune zone trouvée dans ce Cerfa.${detail}${w}${gotMissionInfo}`
-        );
+        setCerfaMsg(`Aucune zone trouvée dans ce Cerfa.${detail}${w}${gotMissionInfo}`);
         return;
       }
 
@@ -289,10 +290,9 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur d'import");
 
-      const slotsLeft = 2 - zones.length;
-      const toImport = json.zones.slice(0, slotsLeft);
+      const toImport = json.zones || [];
       if (toImport.length === 0) {
-        setKmlMsg("Déjà 2 zones sur cette mission, retire-en une avant d'en importer d'autres.");
+        setKmlMsg("Aucune zone trouvée dans ce fichier KML.");
         return;
       }
 
@@ -325,7 +325,6 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
 
   async function addZone(e: React.FormEvent) {
     e.preventDefault();
-    if (zones.length >= 2) return;
     setSaving(true);
 
     const {
@@ -416,6 +415,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       await supabase.from("zones").delete().eq("id", idDrop);
       setZones((prev) => prev.filter((z) => z.id !== idDrop).map((z) => (z.id === idKeep ? data : z)));
       setEditingId(null);
+      setMergeA("");
+      setMergeB("");
       router.refresh();
     }
     setMerging(false);
@@ -425,7 +426,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     <div id="zones-de-vol" className="scroll-mt-4 bg-glass p-5">
       <h2 className="mb-1 font-medium text-ink">Zones de vol</h2>
       <p className="mb-4 text-xs text-slate-400">
-        Jusqu'à 2 zones pour l'instant (le formulaire officiel en prévoit 2 avant annexe, bientôt disponible).
+        Nombre de zones illimité : les 2 premières vont sur la page principale du Cerfa, les suivantes sur
+        l'annexe officielle jointe automatiquement au dossier.
       </p>
 
       <div className="mb-4 space-y-3">
@@ -538,21 +540,46 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         )}
       </div>
 
-      {zones.length === 2 && (
-        <p className="mb-4 text-xs text-slate-500">
-          En fait le même lieu de vol (ex: importé à la fois via KML et Cerfa) ?{" "}
+      {zones.length >= 2 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <span>Deux zones décrivent en fait le même lieu (ex: importé via KML et Cerfa) ?</span>
+          <select
+            value={mergeA}
+            onChange={(e) => setMergeA(e.target.value)}
+            className="rounded-md border border-slate-300 px-2 py-1"
+          >
+            <option value="">Zone à garder...</option>
+            {zones.map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.title || z.adresse || z.id.slice(0, 8)}
+              </option>
+            ))}
+          </select>
+          <select
+            value={mergeB}
+            onChange={(e) => setMergeB(e.target.value)}
+            className="rounded-md border border-slate-300 px-2 py-1"
+          >
+            <option value="">Zone à fusionner dedans...</option>
+            {zones.map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.title || z.adresse || z.id.slice(0, 8)}
+              </option>
+            ))}
+          </select>
           <button
-            onClick={() => mergeZones(zones[0].id, zones[1].id)}
-            disabled={merging}
+            onClick={() => {
+              if (mergeA && mergeB && mergeA !== mergeB) mergeZones(mergeA, mergeB);
+            }}
+            disabled={merging || !mergeA || !mergeB || mergeA === mergeB}
             className="text-brand hover:underline disabled:opacity-50"
           >
-            {merging ? "Fusion..." : "Fusionner ces 2 zones en une seule"}
+            {merging ? "Fusion..." : "Fusionner (la 2nde est supprimée)"}
           </button>
-        </p>
+        </div>
       )}
 
-      {zones.length < 2 && (
-        <div className="mb-5 border-t border-slate-100 pt-4">
+      <div className="mb-5 border-t border-slate-100 pt-4">
           <span className="mb-2 block text-sm font-medium text-ink">Importer</span>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -585,10 +612,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             l'éloignement et génère une carte avec échelle.
           </p>
         </div>
-      )}
 
-      {zones.length < 2 && (
-        <form onSubmit={addZone} className="space-y-3 border-t border-slate-100 pt-4">
+      <form onSubmit={addZone} className="space-y-3 border-t border-slate-100 pt-4">
           <span className="block text-sm font-medium text-ink">Ou saisir une zone manuellement</span>
           <div className="grid grid-cols-2 gap-3">
             <input
@@ -671,7 +696,6 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             {saving ? "Ajout..." : "+ Ajouter la zone"}
           </button>
         </form>
-      )}
     </div>
   );
 }

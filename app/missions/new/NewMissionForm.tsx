@@ -200,9 +200,11 @@ export default function NewMissionForm({
       return;
     }
 
-    // Jusqu'à 2 zones au total sur une mission. Le KML (plus précis : carte,
-    // adresse géolocalisée, hauteur/éloignement calculés) passe en premier,
-    // le Cerfa comble les emplacements restants s'il y en a.
+    // Nombre de zones illimité (les 2 premières vont sur la page 1 du Cerfa,
+    // les suivantes sur l'annexe officielle - cf. fillAnnexe.ts). Le KML
+    // (plus précis : carte, adresse géolocalisée, hauteur/éloignement
+    // calculés) passe en premier, le Cerfa comble les emplacements restants
+    // s'il y en a.
     let slotsUsed = 0;
 
     if (kmlFile) {
@@ -214,7 +216,7 @@ export default function NewMissionForm({
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Erreur d'import KML");
 
-        const toInsert = (json.zones || []).slice(0, 2).map((z: any, i: number) => ({
+        const toInsert = (json.zones || []).map((z: any, i: number) => ({
           mission_id: mission.id,
           order_index: i,
           title: z.title || null,
@@ -243,9 +245,10 @@ export default function NewMissionForm({
     // Zones importées depuis le Cerfa -> complètent les emplacements
     // restants (sans image, à compléter ensuite avec une capture de carte)
     if (importedData) {
+      // Le Cerfa source ne décrit que 2 sites max sur sa page 1 (site1/site2) ;
+      // c'est une limite du formulaire importé, pas de notre app.
       const zonesToInsert = [importedData.site1, importedData.site2]
         .filter(Boolean)
-        .slice(0, Math.max(0, 2 - slotsUsed))
         .map((s: any, i: number) => ({
           mission_id: mission.id,
           order_index: slotsUsed + i,

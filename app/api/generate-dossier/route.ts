@@ -5,6 +5,7 @@ import path from "path";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { fillCerfa } from "@/lib/cerfa/fillCerfa";
+import { fillAnnexe } from "@/lib/cerfa/fillAnnexe";
 import { generateZoneCards } from "@/lib/cerfa/zoneCards";
 import { buildMissionData } from "@/lib/cerfa/buildMissionData";
 
@@ -98,27 +99,55 @@ async function handle(req: NextRequest) {
 
   // 2. Génère les fiches de zone (si des images ont été fournies)
   const hasImages = zoneCardInputs.some((z) => z.images.length > 0);
+  const extraZones = (zones || []).slice(2);
   let finalBytes: Uint8Array = cerfaBytes;
 
-  if (hasImages || zoneCardInputs.length > 0) {
-    const zoneBytes = await generateZoneCards(mission.title, zoneCardInputs);
-
-    // 3. Fusionne Cerfa + fiches de zones. Le document "hôte" DOIT être le
-    // Cerfa rempli lui-même (pas un PDFDocument.create() tout neuf) : créer
-    // un nouveau document et y copier les pages perd le dictionnaire
-    // /AcroForm de la source (copyPages copie le contenu visuel des pages,
-    // pas la structure de formulaire au niveau du document). Résultat : le
-    // dossier final s'affichait très bien, mais redevenait un PDF "plat"
-    // sans aucun champ interactif -> impossible de le réimporter ensuite
-    // (import Cerfa déjà rempli, "aucune zone trouvée" alors que le PDF a
-    // bien les bonnes infos). En gardant le Cerfa comme hôte et en lui
-    // ajoutant seulement les pages des fiches de zone, l'AcroForm reste
-    // intact et le PDF final reste réimportable.
+  if (hasImages || zoneCardInputs.length > 0 || extraZones.length > 0) {
+    // 3. Fusionne Cerfa + fiches de zones + annexe (zones au-delà de 2). Le
+    // document "hôte" DOIT être le Cerfa rempli lui-même (pas un
+    // PDFDocument.create() tout neuf) : créer un nouveau document et y
+    // copier les pages perd le dictionnaire /AcroForm de la source
+    // (copyPages copie le contenu visuel des pages, pas la structure de
+    // formulaire au niveau du document). Résultat : le dossier final
+    // s'affichait très bien, mais redevenait un PDF "plat" sans aucun champ
+    // interactif -> impossible de le réimporter ensuite (import Cerfa déjà
+    // rempli, "aucune zone trouvée" alors que le PDF a bien les bonnes
+    // infos). En gardant le Cerfa comme hôte et en lui ajoutant seulement
+    // les pages des fiches de zone / de l'annexe, l'AcroForm reste intact et
+    // le PDF final reste réimportable.
     const cerfaDoc = await PDFDocument.load(cerfaBytes);
-    const zonesDoc = await PDFDocument.load(zoneBytes);
 
-    const zonePages = await cerfaDoc.copyPages(zonesDoc, zonesDoc.getPageIndices());
-    zonePages.forEach((p) => cerfaDoc.addPage(p));
+    if (hasImages || zoneCardInputs.length > 0) {
+      const zoneBytes = await generateZoneCards(mission.title, zoneCardInputs);
+      const zonesDoc = await PDFDocument.load(zoneBytes);
+      const zonePages = await cerfaDoc.copyPages(zonesDoc, zonesDoc.getPageIndices());
+      zonePages.forEach((p) => cerfaDoc.addPage(p));
+    }
+
+    if (extraZones.length > 0) {
+      const annexePath = path.join(process.cwd(), "public", "cerfa_annexe.pdf");
+      const annexeTemplateBytes = await readFile(annexePath);
+      const answers = (mission as any).answers || {};
+      const annexeInput = extraZones.map((zone: any, i: number) => ({
+        numero: i + 3,
+        code_postal: zone.code_postal || "",
+        localite: zone.localite || "",
+        adresse: zone.adresse || "",
+        en_agglomeration: !!zone.en_agglomeration,
+        rassemblement: !!zone.rassemblement,
+        rassemblement_description: zone.rassemblement_description || "",
+        objet_mission: mission.title,
+        commanditaire: answers.commanditaire || "",
+        eloignement_max_m: zone.distance_max_m ?? "",
+        hauteur_max_m: zone.hauteur_max_m ?? "",
+        descriptif_joint: true,
+        autres_infos: zone.notes || "",
+      }));
+      const annexeBytes = await fillAnnexe(annexeTemplateBytes, annexeInput);
+      const annexeDoc = await PDFDocument.load(annexeBytes);
+      const annexePages = await cerfaDoc.copyPages(annexeDoc, annexeDoc.getPageIndices());
+      annexePages.forEach((p) => cerfaDoc.addPage(p));
+    }
 
     finalBytes = await cerfaDoc.save();
   }
