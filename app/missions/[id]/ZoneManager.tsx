@@ -82,8 +82,16 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [importingCerfa, setImportingCerfa] = useState(false);
   const [cerfaMsg, setCerfaMsg] = useState("");
   const [merging, setMerging] = useState(false);
-  const [mergeA, setMergeA] = useState("");
-  const [mergeB, setMergeB] = useState("");
+  // Fusion repensée en action par carte plutôt qu'un double menu déroulant
+  // séparé (confus, cf. retour utilisateur) : "Fusionner avec..." sur une
+  // zone ouvre un petit sélecteur juste en dessous d'elle.
+  const [mergeOpenFor, setMergeOpenFor] = useState<string | null>(null);
+  const [mergeTarget, setMergeTarget] = useState("");
+  // La zone d'ajout (import + saisie manuelle) prend beaucoup de place :
+  // repliée dès qu'il y a déjà au moins une zone, pour ne pas laisser deux
+  // grosses zones de dépôt bien visibles alors qu'elles ne servent qu'à
+  // ajouter une zone SUPPLÉMENTAIRE.
+  const [showAddZone, setShowAddZone] = useState(initialZones.length === 0);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY);
@@ -369,7 +377,11 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
 
   async function removeZone(id: string) {
     await supabase.from("zones").delete().eq("id", id);
-    setZones((prev) => prev.filter((z) => z.id !== id));
+    setZones((prev) => {
+      const next = prev.filter((z) => z.id !== id);
+      if (next.length === 0) setShowAddZone(true);
+      return next;
+    });
     if (editingId === id) setEditingId(null);
     router.refresh();
   }
@@ -415,8 +427,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       await supabase.from("zones").delete().eq("id", idDrop);
       setZones((prev) => prev.filter((z) => z.id !== idDrop).map((z) => (z.id === idKeep ? data : z)));
       setEditingId(null);
-      setMergeA("");
-      setMergeB("");
+      setMergeOpenFor(null);
+      setMergeTarget("");
       router.refresh();
     }
     setMerging(false);
@@ -512,108 +524,116 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               </div>
             </div>
           ) : (
-            <div
-              key={z.id}
-              id={`zone-${z.id}`}
-              className="scroll-mt-4 flex items-center justify-between border-l-2 border-brand bg-slate-50 p-3 text-sm"
-            >
-              <div>
-                <p className="font-medium">{z.title || z.adresse}</p>
-                <p className="text-slate-500">
-                  {z.adresse} {z.code_postal} {z.localite}
-                </p>
-                <p className="text-xs text-slate-400">
-                  {z.hauteur_max_m != null ? `Hauteur max ${z.hauteur_max_m} m` : "Hauteur max non renseignée"} ·{" "}
-                  {z.distance_max_m != null ? `Éloignement max ${z.distance_max_m} m` : "Éloignement max non renseigné"}
-                </p>
+            <div key={z.id} id={`zone-${z.id}`} className="scroll-mt-4">
+              <div className="flex items-center justify-between border-l-2 border-brand bg-slate-50 p-3 text-sm">
+                <div>
+                  <p className="font-medium">{z.title || z.adresse}</p>
+                  <p className="text-slate-500">
+                    {z.adresse} {z.code_postal} {z.localite}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {z.hauteur_max_m != null ? `Hauteur max ${z.hauteur_max_m} m` : "Hauteur max non renseignée"} ·{" "}
+                    {z.distance_max_m != null ? `Éloignement max ${z.distance_max_m} m` : "Éloignement max non renseigné"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  {zones.length >= 2 && (
+                    <button
+                      onClick={() => {
+                        setMergeOpenFor(mergeOpenFor === z.id ? null : z.id);
+                        setMergeTarget("");
+                      }}
+                      className="text-xs text-slate-400 hover:text-brand hover:underline"
+                    >
+                      Fusionner avec...
+                    </button>
+                  )}
+                  <button onClick={() => startEdit(z)} className="text-brand hover:underline">
+                    Modifier
+                  </button>
+                  <button onClick={() => removeZone(z.id)} className="text-red-500 hover:underline">
+                    Retirer
+                  </button>
+                </div>
               </div>
-              <div className="flex shrink-0 gap-3">
-                <button onClick={() => startEdit(z)} className="text-brand hover:underline">
-                  Modifier
-                </button>
-                <button onClick={() => removeZone(z.id)} className="text-red-500 hover:underline">
-                  Retirer
-                </button>
-              </div>
+              {mergeOpenFor === z.id && (
+                <div className="flex flex-wrap items-center gap-2 border-l-2 border-brand bg-slate-50 px-3 pb-3 text-xs text-slate-500">
+                  <span>Fusionner avec :</span>
+                  <select
+                    value={mergeTarget}
+                    onChange={(e) => setMergeTarget(e.target.value)}
+                    className="rounded-md border border-slate-300 px-2 py-1"
+                  >
+                    <option value="">Choisir une zone...</option>
+                    {zones
+                      .filter((other) => other.id !== z.id)
+                      .map((other) => (
+                        <option key={other.id} value={other.id}>
+                          {other.title || other.adresse || other.id.slice(0, 8)}
+                        </option>
+                      ))}
+                  </select>
+                  <button
+                    onClick={() => mergeTarget && mergeZones(z.id, mergeTarget)}
+                    disabled={merging || !mergeTarget}
+                    className="text-brand hover:underline disabled:opacity-50"
+                  >
+                    {merging ? "Fusion..." : "Confirmer (l'autre zone est supprimée)"}
+                  </button>
+                  <button onClick={() => setMergeOpenFor(null)} className="text-slate-400 hover:underline">
+                    Annuler
+                  </button>
+                </div>
+              )}
             </div>
           )
         )}
       </div>
 
-      {zones.length >= 2 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-          <span>Deux zones décrivent en fait le même lieu (ex: importé via KML et Cerfa) ?</span>
-          <select
-            value={mergeA}
-            onChange={(e) => setMergeA(e.target.value)}
-            className="rounded-md border border-slate-300 px-2 py-1"
-          >
-            <option value="">Zone à garder...</option>
-            {zones.map((z) => (
-              <option key={z.id} value={z.id}>
-                {z.title || z.adresse || z.id.slice(0, 8)}
-              </option>
-            ))}
-          </select>
-          <select
-            value={mergeB}
-            onChange={(e) => setMergeB(e.target.value)}
-            className="rounded-md border border-slate-300 px-2 py-1"
-          >
-            <option value="">Zone à fusionner dedans...</option>
-            {zones.map((z) => (
-              <option key={z.id} value={z.id}>
-                {z.title || z.adresse || z.id.slice(0, 8)}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => {
-              if (mergeA && mergeB && mergeA !== mergeB) mergeZones(mergeA, mergeB);
-            }}
-            disabled={merging || !mergeA || !mergeB || mergeA === mergeB}
-            className="text-brand hover:underline disabled:opacity-50"
-          >
-            {merging ? "Fusion..." : "Fusionner (la 2nde est supprimée)"}
-          </button>
-        </div>
-      )}
-
-      <div className="mb-5 border-t border-slate-100 pt-4">
-          <span className="mb-2 block text-sm font-medium text-ink">Importer</span>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <span className="mb-1 block text-xs text-slate-500">Cerfa déjà rempli</span>
-              <FileDropzone
-                label="Glisser le Cerfa ici, ou cliquer pour parcourir"
-                hint="PDF rempli (DroneKeeper ou autre)"
-                accept="application/pdf"
-                disabled={importingCerfa}
-                onFiles={(files) => handleImportCerfa(files[0])}
-              />
-              {importingCerfa && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
-              <StatusMessage text={cerfaMsg} />
+      {showAddZone ? (
+        <>
+          <div className="mb-5 border-t border-slate-100 pt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="block text-sm font-medium text-ink">Importer</span>
+              {zones.length > 0 && (
+                <button onClick={() => setShowAddZone(false)} className="text-xs text-slate-400 hover:underline">
+                  Fermer
+                </button>
+              )}
             </div>
-            <div>
-              <span className="mb-1 block text-xs text-slate-500">Fichier KML</span>
-              <FileDropzone
-                label="Glisser le fichier KML ici, ou cliquer pour parcourir"
-                hint="Export des zones de vol (DroneKeeper ou autre), avec carte et échelle générées"
-                accept=".kml"
-                disabled={importingKml}
-                onFiles={(files) => handleImportKml(files[0])}
-              />
-              {importingKml && <p className="mt-2 text-sm text-slate-500">Lecture et géolocalisation en cours...</p>}
-              <StatusMessage text={kmlMsg} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <span className="mb-1 block text-xs text-slate-500">Cerfa déjà rempli</span>
+                <FileDropzone
+                  label="Glisser le Cerfa ici, ou cliquer pour parcourir"
+                  hint="PDF rempli (DroneKeeper ou autre)"
+                  accept="application/pdf"
+                  disabled={importingCerfa}
+                  onFiles={(files) => handleImportCerfa(files[0])}
+                />
+                {importingCerfa && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
+                <StatusMessage text={cerfaMsg} />
+              </div>
+              <div>
+                <span className="mb-1 block text-xs text-slate-500">Fichier KML</span>
+                <FileDropzone
+                  label="Glisser le fichier KML ici, ou cliquer pour parcourir"
+                  hint="Export des zones de vol (DroneKeeper ou autre), avec carte et échelle générées"
+                  accept=".kml"
+                  disabled={importingKml}
+                  onFiles={(files) => handleImportKml(files[0])}
+                />
+                {importingKml && <p className="mt-2 text-sm text-slate-500">Lecture et géolocalisation en cours...</p>}
+                <StatusMessage text={kmlMsg} />
+              </div>
             </div>
+            <p className="mt-2 text-xs text-slate-400">
+              Les deux remplissent l'adresse et la localité. Seul le KML calcule automatiquement la hauteur,
+              l'éloignement et génère une carte avec échelle.
+            </p>
           </div>
-          <p className="mt-2 text-xs text-slate-400">
-            Les deux remplissent l'adresse et la localité. Seul le KML calcule automatiquement la hauteur,
-            l'éloignement et génère une carte avec échelle.
-          </p>
-        </div>
 
-      <form onSubmit={addZone} className="space-y-3 border-t border-slate-100 pt-4">
+          <form onSubmit={addZone} className="space-y-3 border-t border-slate-100 pt-4">
           <span className="block text-sm font-medium text-ink">Ou saisir une zone manuellement</span>
           <div className="grid grid-cols-2 gap-3">
             <input
@@ -695,7 +715,16 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           >
             {saving ? "Ajout..." : "+ Ajouter la zone"}
           </button>
-        </form>
+          </form>
+        </>
+      ) : (
+        <button
+          onClick={() => setShowAddZone(true)}
+          className="w-full rounded-md border border-dashed border-slate-300 py-2.5 text-sm text-slate-400 hover:border-brand hover:text-brand"
+        >
+          + Ajouter une zone de vol
+        </button>
+      )}
     </div>
   );
 }

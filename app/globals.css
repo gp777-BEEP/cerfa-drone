@@ -7,15 +7,15 @@
 }
 
 body {
-  /* Fond "presque uni" mais pas plat : plusieurs halos bleus doux qui se
-     chevauchent, plutôt qu'une seule teinte plate ou un dégradé linéaire
-     franc. Volontairement plus marqué que la précédente version (glow
-     bleu au lieu de vert/teal, pour matcher l'accent de marque). */
-  background: radial-gradient(55% 45% at 12% -8%, rgba(79, 140, 255, 0.26), transparent 60%),
-    radial-gradient(50% 40% at 92% 4%, rgba(120, 160, 255, 0.16), transparent 55%),
-    radial-gradient(65% 50% at 50% 115%, rgba(60, 100, 220, 0.14), transparent 60%),
-    radial-gradient(35% 30% at 60% 35%, rgba(79, 140, 255, 0.05), transparent 60%),
-    linear-gradient(180deg, #05070d 0%, #090d15 45%, #0a0e17 100%);
+  /* Fond "presque uni" mais pas plat : plusieurs halos verts doux qui se
+     chevauchent (accent de marque), plus un très léger halo bleu-violet en
+     contrepoint pour la profondeur, plutôt qu'une seule teinte plate ou un
+     dégradé linéaire franc. */
+  background: radial-gradient(55% 45% at 12% -8%, rgba(45, 217, 172, 0.24), transparent 60%),
+    radial-gradient(50% 40% at 92% 4%, rgba(80, 200, 190, 0.14), transparent 55%),
+    radial-gradient(65% 50% at 50% 115%, rgba(45, 180, 217, 0.12), transparent 60%),
+    radial-gradient(35% 30% at 60% 35%, rgba(45, 217, 172, 0.05), transparent 60%),
+    linear-gradient(180deg, #04090b 0%, #080f11 45%, #090f12 100%);
   background-attachment: fixed;
   color: #eef1f4;
 }
@@ -35,7 +35,7 @@ textarea {
 
 input[type="checkbox"],
 input[type="radio"] {
-  accent-color: #4f8cff;
+  accent-color: #2dd9ac;
 }
 
 ::placeholder {
@@ -48,13 +48,15 @@ input[type="radio"] {
      le radius est porté par la classe elle-même pour ne pas avoir à l'ajouter
      partout où elle est utilisée. */
   .bg-glass {
-    background: rgba(255, 255, 255, 0.045);
+    background: linear-gradient(165deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px;
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    /* Léger glow bleu au lieu d'une carte plate à bords nets. */
-    box-shadow: 0 0 40px rgba(79, 140, 255, 0.06), 0 12px 28px rgba(0, 0, 0, 0.28);
+    border-radius: 18px;
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    /* Glow vert doux + fin liseré clair en haut, comme un bord de verre qui
+       accroche la lumière : plus "liquid glass" qu'un simple contour uni. */
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), inset 0 0 40px rgba(255, 255, 255, 0.015),
+      0 0 44px rgba(45, 217, 172, 0.07), 0 12px 32px rgba(0, 0, 0, 0.32);
   }
 
   .nav-glass {
@@ -85,17 +87,17 @@ input[type="radio"] {
   }
 }
 
-/* Glow bleu sur les boutons principaux (border-brand), appliqué globalement
+/* Glow vert sur les boutons principaux (border-brand), appliqué globalement
    plutôt qu'ajouté fichier par fichier : tous les CTA suivent déjà le même
    pattern de classes (rounded-md border border-brand ...). */
 button.border-brand:not(:disabled),
 a.border-brand {
-  box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.12), 0 4px 24px rgba(79, 140, 255, 0.16);
+  box-shadow: 0 0 0 1px rgba(45, 217, 172, 0.14), 0 4px 24px rgba(45, 217, 172, 0.16);
   transition: box-shadow 0.2s ease, transform 0.15s ease;
 }
 button.border-brand:not(:disabled):hover,
 a.border-brand:hover {
-  box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.22), 0 6px 32px rgba(79, 140, 255, 0.3);
+  box-shadow: 0 0 0 1px rgba(45, 217, 172, 0.25), 0 6px 32px rgba(45, 217, 172, 0.32);
 }
 button.border-brand:disabled {
   box-shadow: none;

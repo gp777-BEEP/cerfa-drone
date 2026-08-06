@@ -11,9 +11,9 @@ export default function AppHeader() {
             height="20"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#4f8cff"
+            stroke="#2dd9ac"
             strokeWidth="1.8"
-            style={{ filter: "drop-shadow(0 0 6px rgba(79,140,255,0.65))" }}
+            style={{ filter: "drop-shadow(0 0 6px rgba(45,217,172,0.65))" }}
           >
             <path d="M12 3v18M4.5 8.5l15 7M19.5 8.5l-15 7" strokeLinecap="round" />
           </svg>

@@ -6,9 +6,9 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#4f8cff",
-          dark: "#3d74e0",
-          light: "rgba(79, 140, 255, 0.14)",
+          DEFAULT: "#2dd9ac",
+          dark: "#22b891",
+          light: "rgba(45, 217, 172, 0.14)",
         },
         ink: "#f2f4f7",
         // Palette "slate" redéfinie pour le thème sombre verre dépoli : tout
