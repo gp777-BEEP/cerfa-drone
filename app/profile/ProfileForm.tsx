@@ -7,6 +7,7 @@ import FileDropzone from "../components/FileDropzone";
 import { parseAeronefsCsv } from "@/lib/alphatango/parseAeronefs";
 import { ErrorBanner } from "../components/Banner";
 import StatusMessage from "../components/StatusMessage";
+import FieldHint from "../components/FieldHint";
 
 type Drone = {
   constructeur: string;
@@ -193,7 +194,12 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
           <h2 className="mb-4 font-medium text-ink">Toi</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nom complet" value={fullName} onChange={setFullName} />
-            <Field label="Qualité" value={qualite} onChange={setQualite} />
+            <Field
+              label="Qualité"
+              value={qualite}
+              onChange={setQualite}
+              hint="Ta fonction ou profession : « Télépilote », mais aussi « Gérant », « Salarié », « Étudiant »... selon le contexte de tes vols."
+            />
             <Field label="Adresse" value={address} onChange={setAddress} className="sm:col-span-2" />
             <Field label="Téléphone" value={phone} onChange={setPhone} />
             <Field label="Email" value={email} onChange={setEmail} type="email" />
@@ -201,6 +207,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               label="Numéro d'exploitant"
               value={numeroExploitant}
               onChange={setNumeroExploitant}
+              hint="Numéro d'enregistrement AlphaTango (format FRA...). Pas de case dédiée sur le Cerfa, mais la préfecture le demande parfois en complément."
             />
           </div>
           <p className="mt-3 text-xs text-slate-500">
@@ -226,6 +233,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 onChange={() => setExploitantType("physique")}
               />
               Personne physique (toi)
+              <FieldHint text="Choisis cette option si tu voles en ton nom propre, sans société. C'est le cas le plus courant pour un usage loisir ou en freelance non constitué en société." />
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -235,6 +243,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 onChange={() => setExploitantType("morale")}
               />
               Personne morale (société)
+              <FieldHint text="Choisis cette option si c'est une société (SARL, SAS, auto-entreprise inscrite au RCS...) qui est déclarée comme exploitant, avec toi comme représentant légal ou mandataire." />
             </label>
           </div>
 
@@ -245,18 +254,26 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 value={raisonSociale}
                 onChange={setRaisonSociale}
                 className="sm:col-span-2"
+                hint="Le nom légal de la société, tel qu'inscrit au RCS (registre du commerce et des sociétés) ou équivalent."
               />
               <Field
                 label="Adresse du siège social"
                 value={siegeSocial}
                 onChange={setSiegeSocial}
                 className="sm:col-span-2"
+                hint="L'adresse officielle du siège social de la société, pas forcément celle où tu voles."
               />
-              <Field label="Identifiant SIREN/SIRET/RCS/RNE" value={sirenSiret} onChange={setSirenSiret} />
+              <Field
+                label="Identifiant SIREN/SIRET/RCS/RNE"
+                value={sirenSiret}
+                onChange={setSirenSiret}
+                hint="SIREN (9 chiffres) ou SIRET (14 chiffres) de la société, ou identifiant RCS/RNE pour certaines structures."
+              />
               <Field
                 label="Qualité du mandataire (ex : Gérant, Président)"
                 value={mandataireQualite}
                 onChange={setMandataireQualite}
+                hint="Ta fonction dans la société : Gérant, Président, Directeur général... C'est ce qui apparaît sur le Cerfa à côté de ton nom, dans le bloc « Mandataire social ou principal dirigeant »."
               />
               <p className="text-xs text-slate-500 sm:col-span-2">
                 Le mandataire (représentant légal) déclaré sur le Cerfa sera toi, avec les infos "Toi"
@@ -316,26 +333,35 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                   <Field label="Constructeur" value={d.constructeur} onChange={(v) => updateDrone(i, { constructeur: v })} />
                   <Field label="Modèle" value={d.modele} onChange={(v) => updateDrone(i, { modele: v })} />
                   <Field label="N° de série" value={d.numero_serie} onChange={(v) => updateDrone(i, { numero_serie: v })} />
-                  <Field label="Masse (kg)" value={d.masse_kg} onChange={(v) => updateDrone(i, { masse_kg: v })} />
+                  <Field
+                    label="Masse (kg)"
+                    value={d.masse_kg}
+                    onChange={(v) => updateDrone(i, { masse_kg: v })}
+                    hint="Masse maximale au décollage (MTOM), batterie comprise. Indiquée sur l'étiquette de classe ou la notice du drone."
+                  />
                   <Field
                     label="N° enregistrement UAS"
                     value={d.numero_enregistrement}
                     onChange={(v) => updateDrone(i, { numero_enregistrement: v })}
+                    hint="Numéro d'enregistrement exploitant UAS (format FRA... ou UAS-FR...), obtenu sur AlphaTango. C'est le numéro à coller sur le drone."
                   />
                   <Field
                     label="N° signalement électronique"
                     value={d.numero_signalement}
                     onChange={(v) => updateDrone(i, { numero_signalement: v })}
+                    hint="Identifiant de l'émetteur de signalement électronique embarqué sur le drone, si ton modèle en est équipé (obligatoire pour la plupart des drones de plus de 800g)."
                   />
                   <Select
                     label="Classe C5"
                     value={d.classe_c5}
                     onChange={(v) => updateDrone(i, { classe_c5: v as "oui" | "non" })}
+                    hint="Ton drone porte-t-il le marquage de classe C5 (ou C6) ? Cette classe autorise certains vols en agglomération avec des règles allégées. Vérifie l'étiquette ou la notice du drone."
                   />
                   <Select
                     label="Aéronef captif"
                     value={d.captif}
                     onChange={(v) => updateDrone(i, { captif: v as "oui" | "non" })}
+                    hint="Un drone « captif » est relié au sol par un câble ou une longe qui limite sa distance de vol. La plupart des drones grand public ne le sont pas : laisse « Non » si tu ne sais pas."
                   />
                 </div>
               </div>
@@ -379,16 +405,21 @@ function Field({
   onChange,
   type = "text",
   className = "",
+  hint,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   className?: string;
+  hint?: string;
 }) {
   return (
     <label className={`block text-sm ${className}`}>
-      <span className="mb-1 block text-slate-600">{label}</span>
+      <span className="mb-1 block text-slate-600">
+        {label}
+        {hint && <FieldHint text={hint} />}
+      </span>
       <input
         type={type}
         value={value}
@@ -403,14 +434,19 @@ function Select({
   label,
   value,
   onChange,
+  hint,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
+  hint?: string;
 }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-slate-600">{label}</span>
+      <span className="mb-1 block text-slate-600">
+        {label}
+        {hint && <FieldHint text={hint} />}
+      </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import FieldHint from "../../components/FieldHint";
 
 // Édition de "objet précis de la mission" / "commanditaire", séparés du
 // titre interne de la mission (cf. NewMissionForm.tsx pour la création) :
@@ -50,7 +51,10 @@ export default function MissionDetailsFields({
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">
-          <span className="mb-1 block text-slate-600">Objet précis de la mission</span>
+          <span className="mb-1 block text-slate-600">
+            Objet précis de la mission
+            <FieldHint text="Décrit ce que fait le vol (ex : inspection de toiture, prise de vue publicitaire...). Apparaît tel quel sur le Cerfa." />
+          </span>
           <input
             value={objetMission}
             onChange={(e) => setObjetMission(e.target.value)}
@@ -59,7 +63,10 @@ export default function MissionDetailsFields({
           />
         </label>
         <label className="block text-sm">
-          <span className="mb-1 block text-slate-600">Commanditaire de la mission</span>
+          <span className="mb-1 block text-slate-600">
+            Commanditaire de la mission
+            <FieldHint text="Qui a demandé cette mission : un client, une entreprise, une administration, ou toi-même si tu voles pour ton compte." />
+          </span>
           <input
             value={commanditaire}
             onChange={(e) => setCommanditaire(e.target.value)}

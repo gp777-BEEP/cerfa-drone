@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 import DateRangePicker from "../../components/DateRangePicker";
 import DroneChecklist from "../../components/DroneChecklist";
+import FieldHint from "../../components/FieldHint";
 import { ErrorBanner } from "../../components/Banner";
 import StatusMessage from "../../components/StatusMessage";
 import { Drone, droneKey, mergeDroneLists } from "@/lib/drones";
@@ -392,7 +393,10 @@ export default function NewMissionForm({
         </label>
 
         <label className="mb-4 block text-sm">
-          <span className="mb-1 block text-slate-600">Objet précis de la mission (Cerfa)</span>
+          <span className="mb-1 block text-slate-600">
+            Objet précis de la mission (Cerfa)
+            <FieldHint text="Décrit ce que fait le vol (ex : inspection de toiture, prise de vue publicitaire, relevé topographique...). Apparaît tel quel sur le Cerfa, pour chaque zone de vol." />
+          </span>
           <input
             value={objetMission}
             onChange={(e) => setObjetMission(e.target.value)}
@@ -402,7 +406,10 @@ export default function NewMissionForm({
         </label>
 
         <label className="mb-4 block text-sm">
-          <span className="mb-1 block text-slate-600">Commanditaire de la mission</span>
+          <span className="mb-1 block text-slate-600">
+            Commanditaire de la mission
+            <FieldHint text="Qui a demandé cette mission : un client, une entreprise, une administration, ou toi-même si tu voles pour ton compte." />
+          </span>
           <input
             value={commanditaire}
             onChange={(e) => setCommanditaire(e.target.value)}
@@ -412,7 +419,10 @@ export default function NewMissionForm({
         </label>
 
         <label className="mb-4 block text-sm">
-          <span className="mb-1 block text-slate-600">Sous-catégorie (catégorie ouverte)</span>
+          <span className="mb-1 block text-slate-600">
+            Sous-catégorie (catégorie ouverte)
+            <FieldHint text="A1 : peut survoler des personnes isolées. A2 : peut voler à distance réduite des personnes, sans les survoler. A3 : doit rester loin de toute zone habitée ou de personnes. Dépend du poids et de la classe (C0-C4) de ton drone : vérifie sa notice si besoin." />
+          </span>
           <select
             value={sousCategorie}
             onChange={(e) => setSousCategorie(e.target.value as any)}

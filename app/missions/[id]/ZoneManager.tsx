@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 import StatusMessage from "../../components/StatusMessage";
+import FieldHint from "../../components/FieldHint";
 
 function frToIso(dmy?: string): string {
   if (!dmy) return "";
@@ -48,24 +49,34 @@ function NumberFieldWithUnit({
   unit,
   value,
   onChange,
+  hint,
 }: {
   placeholder: string;
   unit: string;
   value: string | number;
   onChange: (v: string) => void;
+  hint?: string;
 }) {
   return (
-    <div className="relative">
-      <input
-        placeholder={placeholder}
-        type="number"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-slate-300 px-3 py-2 pr-9 text-sm"
-      />
-      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-        {unit}
-      </span>
+    <div>
+      {hint && (
+        <span className="mb-1 block text-xs text-slate-500">
+          {placeholder}
+          <FieldHint text={hint} />
+        </span>
+      )}
+      <div className="relative">
+        <input
+          placeholder={placeholder}
+          type="number"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-md border border-slate-300 px-3 py-2 pr-9 text-sm"
+        />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+          {unit}
+        </span>
+      </div>
     </div>
   );
 }
@@ -492,12 +503,14 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   unit="m"
                   value={editForm.distance_max_m}
                   onChange={(v) => setEditForm((f) => ({ ...f, distance_max_m: v }))}
+                  hint="Distance maximale, en mètres, entre le télépilote et le drone pendant le vol."
                 />
                 <NumberFieldWithUnit
                   placeholder="Hauteur max"
                   unit="m"
                   value={editForm.hauteur_max_m}
                   onChange={(v) => setEditForm((f) => ({ ...f, hauteur_max_m: v }))}
+                  hint="Hauteur maximale de vol au-dessus du sol, en mètres."
                 />
               </div>
               <label className="mt-3 flex items-center gap-2 text-sm">
@@ -507,6 +520,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   onChange={(e) => setEditForm((f) => ({ ...f, en_agglomeration: e.target.checked }))}
                 />
                 En agglomération
+                <FieldHint text="Coche si la zone de vol se situe en agglomération (zone urbanisée)." />
               </label>
               <label className="mt-1 flex items-center gap-2 text-sm">
                 <input
@@ -515,13 +529,18 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   onChange={(e) => setEditForm((f) => ({ ...f, rassemblement: e.target.checked }))}
                 />
                 À proximité d'un rassemblement de personnes
+                <FieldHint text="Coche s'il y a un rassemblement de personnes (événement, marché, foule...) à proximité de la zone de vol." />
               </label>
+              <span className="mt-3 block text-xs text-slate-500">
+                Autres informations utiles
+                <FieldHint text="Horaires particuliers, zone aéronautique à statut particulier, ou toute autre précision sur les opérations à proximité. Reprend le champ « Autres informations utiles » du Cerfa." />
+              </span>
               <textarea
-                placeholder="Consignes de sécurité / notes"
+                placeholder="Autres informations utiles"
                 value={editForm.notes}
                 onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
                 rows={2}
-                className="mt-3 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               />
               <div className="mt-3 flex gap-3">
                 <button
@@ -678,12 +697,14 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               unit="m"
               value={form.distance_max_m}
               onChange={(v) => setForm((f) => ({ ...f, distance_max_m: v }))}
+              hint="Distance maximale, en mètres, entre le télépilote et le drone pendant le vol."
             />
             <NumberFieldWithUnit
               placeholder="Hauteur max"
               unit="m"
               value={form.hauteur_max_m}
               onChange={(v) => setForm((f) => ({ ...f, hauteur_max_m: v }))}
+              hint="Hauteur maximale de vol au-dessus du sol, en mètres."
             />
           </div>
           <label className="flex items-center gap-2 text-sm">
@@ -693,6 +714,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               onChange={(e) => setForm((f) => ({ ...f, en_agglomeration: e.target.checked }))}
             />
             En agglomération
+            <FieldHint text="Coche si la zone de vol se situe en agglomération (zone urbanisée)." />
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -701,9 +723,14 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               onChange={(e) => setForm((f) => ({ ...f, rassemblement: e.target.checked }))}
             />
             À proximité d'un rassemblement de personnes
+            <FieldHint text="Coche s'il y a un rassemblement de personnes (événement, marché, foule...) à proximité de la zone de vol." />
           </label>
+          <span className="block text-xs text-slate-500">
+            Autres informations utiles
+            <FieldHint text="Horaires particuliers, zone aéronautique à statut particulier, ou toute autre précision sur les opérations à proximité. Reprend le champ « Autres informations utiles » du Cerfa." />
+          </span>
           <textarea
-            placeholder="Consignes de sécurité / notes"
+            placeholder="Autres informations utiles"
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             rows={2}
