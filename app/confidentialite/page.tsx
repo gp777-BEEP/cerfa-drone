@@ -1,6 +1,10 @@
+import AppHeader from "../components/AppHeader";
+
 export default function ConfidentialitePage() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12 text-sm leading-relaxed text-slate-700">
+    <>
+      <AppHeader />
+      <main className="mx-auto max-w-2xl px-6 py-12 text-sm leading-relaxed text-slate-700">
       <h1 className="mb-6 text-2xl font-medium text-ink">Politique de confidentialité</h1>
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Données collectées</h2>
@@ -45,6 +49,7 @@ export default function ConfidentialitePage() {
         Le site utilise uniquement des cookies techniques nécessaires à la connexion (session de compte).
         Aucun cookie publicitaire ou de suivi tiers.
       </p>
-    </main>
+      </main>
+    </>
   );
 }

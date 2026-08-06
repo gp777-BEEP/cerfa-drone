@@ -1,6 +1,10 @@
+import AppHeader from "../components/AppHeader";
+
 export default function MentionsLegalesPage() {
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12 text-sm leading-relaxed text-slate-700">
+    <>
+      <AppHeader />
+      <main className="mx-auto max-w-2xl px-6 py-12 text-sm leading-relaxed text-slate-700">
       <h1 className="mb-6 text-2xl font-medium text-ink">Mentions légales</h1>
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Éditeur du site</h2>
@@ -43,6 +47,7 @@ export default function MentionsLegalesPage() {
         </a>
         .
       </p>
-    </main>
+      </main>
+    </>
   );
 }
