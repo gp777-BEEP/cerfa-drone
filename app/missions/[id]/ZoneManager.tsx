@@ -82,11 +82,10 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [importingCerfa, setImportingCerfa] = useState(false);
   const [cerfaMsg, setCerfaMsg] = useState("");
   const [merging, setMerging] = useState(false);
-  // Fusion repensée en action par carte plutôt qu'un double menu déroulant
-  // séparé (confus, cf. retour utilisateur) : "Fusionner avec..." sur une
-  // zone ouvre un petit sélecteur juste en dessous d'elle.
-  const [mergeOpenFor, setMergeOpenFor] = useState<string | null>(null);
-  const [mergeTarget, setMergeTarget] = useState("");
+  // Fusion en mode sélection : on coche les zones à combiner, une barre
+  // récapitule le choix et confirme (validé avec l'utilisateur en option D
+  // d'une proposition à 4 designs).
+  const [selectedForMerge, setSelectedForMerge] = useState<Set<string>>(new Set());
   // La zone d'ajout (import + saisie manuelle) prend beaucoup de place :
   // repliée dès qu'il y a déjà au moins une zone, pour ne pas laisser deux
   // grosses zones de dépôt bien visibles alors qu'elles ne servent qu'à
@@ -383,6 +382,12 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       return next;
     });
     if (editingId === id) setEditingId(null);
+    setSelectedForMerge((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     router.refresh();
   }
 
@@ -397,12 +402,6 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     const zKeep = zones.find((z) => z.id === idKeep);
     const zDrop = zones.find((z) => z.id === idDrop);
     if (!zKeep || !zDrop) return;
-    if (
-      !confirm(
-        "Fusionner ces 2 zones en une seule ? La 2nde sera supprimée après avoir complété la 1ère avec ses informations."
-      )
-    )
-      return;
 
     const maxOrNull = (a: number | null, b: number | null) =>
       a == null && b == null ? null : Math.max(a ?? -Infinity, b ?? -Infinity);
@@ -427,11 +426,28 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       await supabase.from("zones").delete().eq("id", idDrop);
       setZones((prev) => prev.filter((z) => z.id !== idDrop).map((z) => (z.id === idKeep ? data : z)));
       setEditingId(null);
-      setMergeOpenFor(null);
-      setMergeTarget("");
+      setSelectedForMerge(new Set());
       router.refresh();
     }
     setMerging(false);
+  }
+
+  function toggleMergeSelect(id: string) {
+    setSelectedForMerge((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function confirmMerge() {
+    const [a, b] = Array.from(selectedForMerge);
+    if (!a || !b) return;
+    // On garde la zone apparue en premier dans la liste (généralement la
+    // plus ancienne / la plus complète) et on fusionne l'autre dedans.
+    const [idKeep, idDrop] = zones.findIndex((z) => z.id === a) <= zones.findIndex((z) => z.id === b) ? [a, b] : [b, a];
+    mergeZones(idKeep, idDrop);
   }
 
   return (
@@ -524,8 +540,21 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               </div>
             </div>
           ) : (
-            <div key={z.id} id={`zone-${z.id}`} className="scroll-mt-4">
-              <div className="flex items-center justify-between border-l-2 border-brand bg-slate-50 p-3 text-sm">
+            <div
+              key={z.id}
+              id={`zone-${z.id}`}
+              className="scroll-mt-4 flex items-center justify-between border-l-2 border-brand bg-slate-50 p-3 text-sm"
+            >
+              <div className="flex items-center gap-3">
+                {zones.length >= 2 && (
+                  <input
+                    type="checkbox"
+                    checked={selectedForMerge.has(z.id)}
+                    onChange={() => toggleMergeSelect(z.id)}
+                    title="Sélectionner pour fusionner"
+                    className="shrink-0"
+                  />
+                )}
                 <div>
                   <p className="font-medium">{z.title || z.adresse}</p>
                   <p className="text-slate-500">
@@ -536,59 +565,43 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                     {z.distance_max_m != null ? `Éloignement max ${z.distance_max_m} m` : "Éloignement max non renseigné"}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  {zones.length >= 2 && (
-                    <button
-                      onClick={() => {
-                        setMergeOpenFor(mergeOpenFor === z.id ? null : z.id);
-                        setMergeTarget("");
-                      }}
-                      className="text-xs text-slate-400 hover:text-brand hover:underline"
-                    >
-                      Fusionner avec...
-                    </button>
-                  )}
-                  <button onClick={() => startEdit(z)} className="text-brand hover:underline">
-                    Modifier
-                  </button>
-                  <button onClick={() => removeZone(z.id)} className="text-red-500 hover:underline">
-                    Retirer
-                  </button>
-                </div>
               </div>
-              {mergeOpenFor === z.id && (
-                <div className="flex flex-wrap items-center gap-2 border-l-2 border-brand bg-slate-50 px-3 pb-3 text-xs text-slate-500">
-                  <span>Fusionner avec :</span>
-                  <select
-                    value={mergeTarget}
-                    onChange={(e) => setMergeTarget(e.target.value)}
-                    className="rounded-md border border-slate-300 px-2 py-1"
-                  >
-                    <option value="">Choisir une zone...</option>
-                    {zones
-                      .filter((other) => other.id !== z.id)
-                      .map((other) => (
-                        <option key={other.id} value={other.id}>
-                          {other.title || other.adresse || other.id.slice(0, 8)}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    onClick={() => mergeTarget && mergeZones(z.id, mergeTarget)}
-                    disabled={merging || !mergeTarget}
-                    className="text-brand hover:underline disabled:opacity-50"
-                  >
-                    {merging ? "Fusion..." : "Confirmer (l'autre zone est supprimée)"}
-                  </button>
-                  <button onClick={() => setMergeOpenFor(null)} className="text-slate-400 hover:underline">
-                    Annuler
-                  </button>
-                </div>
-              )}
+              <div className="flex shrink-0 items-center gap-3">
+                <button onClick={() => startEdit(z)} className="text-brand hover:underline">
+                  Modifier
+                </button>
+                <button onClick={() => removeZone(z.id)} className="text-red-500 hover:underline">
+                  Retirer
+                </button>
+              </div>
             </div>
           )
         )}
       </div>
+
+      {selectedForMerge.size > 0 && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-brand/30 bg-brand-light px-3 py-2 text-sm">
+          <span className="text-ink">
+            {selectedForMerge.size} zone{selectedForMerge.size > 1 ? "s" : ""} sélectionnée
+            {selectedForMerge.size > 1 ? "s" : ""}
+            {selectedForMerge.size !== 2 && (
+              <span className="ml-2 text-xs text-slate-400">— sélectionne exactement 2 zones pour fusionner</span>
+            )}
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={confirmMerge}
+              disabled={merging || selectedForMerge.size !== 2}
+              className="rounded-md border border-brand px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-40"
+            >
+              {merging ? "Fusion..." : "Fusionner"}
+            </button>
+            <button onClick={() => setSelectedForMerge(new Set())} className="text-xs text-slate-400 hover:underline">
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
 
       {showAddZone ? (
         <>
