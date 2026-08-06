@@ -585,6 +585,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 // seule petite case à cocher.
                 if (zones.length >= 2) toggleMergeSelect(z.id);
               }}
+              onDoubleClick={() => startEdit(z)}
+              title="Double-clic pour modifier"
               className={`scroll-mt-4 flex items-center justify-between border-l-2 border-brand p-3 text-sm transition-colors ${
                 zones.length >= 2 ? "cursor-pointer" : ""
               } ${selectedForMerge.has(z.id) ? "bg-brand-light" : "bg-slate-50 hover:bg-slate-100"}`}
@@ -596,6 +598,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                     checked={selectedForMerge.has(z.id)}
                     onChange={() => toggleMergeSelect(z.id)}
                     onClick={(e) => e.stopPropagation()}
+                    onDoubleClick={(e) => e.stopPropagation()}
                     title="Sélectionner pour fusionner"
                     className="shrink-0"
                   />
@@ -625,6 +628,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                     e.stopPropagation();
                     startEdit(z);
                   }}
+                  onDoubleClick={(e) => e.stopPropagation()}
                   className="text-brand hover:underline"
                 >
                   Modifier
@@ -634,6 +638,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                     e.stopPropagation();
                     removeZone(z.id);
                   }}
+                  onDoubleClick={(e) => e.stopPropagation()}
                   className="text-red-500 hover:underline"
                 >
                   Retirer
