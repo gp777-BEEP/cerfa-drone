@@ -75,16 +75,26 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
 
       const nbZones = [data.site1, data.site2].filter(Boolean).length;
       const nbDrones = [1, 2, 3, 4, 5].filter((i) => data[`aeronef${i}`]?.constructeur).length;
+      // Pas besoin de réimporter un Cerfa à chaque mission juste pour le(s)
+      // drone(s) : ils sont enregistrés une fois dans le profil et réutilisés
+      // automatiquement pour toutes les missions (buildMissionData.ts). Si
+      // aucun n'est trouvé ici (pas de Cerfa à importer, ou import qui ne
+      // détecte rien), on le rappelle plutôt que de laisser croire qu'il n'y
+      // a pas d'autre moyen de les renseigner.
+      const droneHint =
+        nbDrones === 0
+          ? " Pas de Cerfa DroneKeeper sous la main ? Renseigne tes drones une fois dans ton profil, ils seront réutilisés pour toutes tes missions."
+          : "";
       if (nbZones === 0) {
         const d = json.debug;
         const detail = d
           ? ` (${d.totalFields} champ(s) détecté(s), ${d.textFieldsWithValue} rempli(s), ${d.matched} reconnu(s), secours utilisé ${d.usedRawFallback} fois, ${d.bytesReceived} octets reçus)`
           : "";
         const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
-        setImportMsg(`Importé : 0 zone et ${nbDrones} drone(s) détectés.${detail}${w}`);
+        setImportMsg(`Importé : 0 zone et ${nbDrones} drone(s) détectés.${detail}${w}${droneHint}`);
       } else {
         setImportMsg(
-          `Importé : ${nbZones} zone(s) et ${nbDrones} drone(s) détectés. Ils seront ajoutés automatiquement à la mission (et à ton profil si vide).`
+          `Importé : ${nbZones} zone(s) et ${nbDrones} drone(s) détectés. Ils seront ajoutés automatiquement à la mission (et à ton profil si vide).${droneHint}`
         );
       }
     } catch (e: any) {

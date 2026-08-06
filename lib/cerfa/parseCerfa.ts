@@ -1,17 +1,5 @@
-import { PDFDocument } from "pdf-lib";
 import { inflateSync } from "zlib";
 import { TEXT_FIELDS, CHECKBOX_FIELDS, RADIO_FIELDS } from "./fieldMap";
-
-const REV_TEXT = Object.fromEntries(Object.entries(TEXT_FIELDS).map(([k, v]) => [v, k]));
-const REV_CHECK = Object.fromEntries(Object.entries(CHECKBOX_FIELDS).map(([k, v]) => [v, k]));
-const REV_RADIO: Record<string, { key: string; choices: Record<string, string> }> = {};
-for (const [semKey, [pdfField, choices]] of Object.entries(RADIO_FIELDS)) {
-  const reversed: Record<string, string> = {};
-  for (const [choiceKey, exportVal] of Object.entries(choices)) {
-    reversed[(exportVal as string).replace(/^\//, "")] = choiceKey;
-  }
-  REV_RADIO[pdfField] = { key: semKey, choices: reversed };
-}
 
 function setNested(obj: any, dottedKey: string, value: any) {
   const parts = dottedKey.split(".");
@@ -24,35 +12,34 @@ function setNested(obj: any, dottedKey: string, value: any) {
 }
 
 /**
- * --- Pourquoi ce fichier ne passe plus par PDFField.getText()/isChecked()/getSelected() ---
+ * --- Pourquoi ce fichier ne dépend plus DU TOUT de pdf-lib ---
  *
- * Constat en production (Vercel) : sur un vrai Cerfa pré-rempli (export
- * DroneKeeper), pdf-lib détecte bien les 195 champs du formulaire (le
- * comptage est juste), mais TOUTE lecture de valeur passant par son API
- * haut niveau (getText/isChecked/getSelected) revient vide, y compris en
- * lisant le dictionnaire bas niveau directement (`dict.get(PDFName.of("V"))`
- * puis, tentative suivante, une comparaison de clé par chaîne de caractères
- * via `dict.entries()`) : deux correctifs différents déployés, deux échecs
- * identiques en prod, alors que les DEUX marchaient en local sur le même
- * fichier. La cause exacte à l'intérieur de pdf-lib reste non identifiée,
- * mais son objet `PDFDict`/`PDFRef` ne restitue pas les valeurs en prod de
- * façon reproductible.
+ * Round 1 (constat) : sur un vrai Cerfa pré-rempli, pdf-lib détecte bien les
+ * 195 champs (le comptage est juste), mais toute lecture de valeur par son
+ * API haut niveau (getText/isChecked/getSelected) revient vide en
+ * production (Vercel), alors qu'elle marche en local sur le même fichier.
  *
- * Solution retenue : ne plus dépendre DU TOUT du modèle objet de pdf-lib
- * pour lire les valeurs. On relit les octets bruts du PDF nous-mêmes et on
- * extrait, par expression régulière, les couples (/T, /V) de chaque objet
- * `N G obj ... endobj`. C'est le format textuel du PDF lui-même (avant
- * toute interprétation par une bibliothèque) : littéraux `(...)`, chaînes
- * hexadécimales `<...>` (UTF-16BE avec BOM pour les caractères accentués),
- * et noms `/Xxx` pour les cases à cocher / boutons radio. Validé sur le
- * fichier réel qui posait problème : 188 couples /T+/V retrouvés (contre 0
- * en prod avec l'ancienne méthode), y compris "LocalitéRow1" = "Cabourg",
- * "Code postalRow1" = "14390", les dates, le régime de vol, etc.
+ * Round 2 (premier correctif, insuffisant) : remplacé la lecture de valeur
+ * par un scan des octets bruts du PDF (regex sur chaque objet `N G obj ...
+ * endobj`, cf. buildFieldValueMap ci-dessous) pour extraire (/T, /V) sans
+ * passer par `PDFDict.get()`. Vérifié sur un nouveau fichier de test que ce
+ * scan fonctionne bien en prod : il retrouve les 186 valeurs attendues,
+ * avec les bons noms de champs ("Texte39" = "0782741584", etc.). Mais le
+ * code faisait encore `for (const field of form.getFields())` puis
+ * `valueMap[field.getName()]` pour associer chaque valeur brute à son
+ * champ -- et EN PRODUCTION cette association ne matchait plus jamais,
+ * y compris pour des noms 100% ASCII sans accent ("Texte39"), alors que
+ * `valueMap` contenait bien cette clé. Donc `field.getName()` de pdf-lib
+ * ne renvoie pas la même chaîne qu'en local, spécifiquement en prod --
+ * cause exacte non identifiée, mais le symptôme est net et reproductible.
  *
- * pdf-lib sert uniquement à ouvrir le document et énumérer les CHAMPS
- * (nom + type) pour le diagnostic ("195 champs détectés") : cette partie
- * fonctionne correctement en prod, seule la lecture des valeurs posait
- * problème.
+ * Solution round 3 (celle-ci) : ne plus utiliser pdf-lib du tout, y compris
+ * pour l'énumération des champs. On connaît déjà, dans fieldMap.ts, le nom
+ * PDF exact de chaque champ qu'on veut lire (ex. "Texte39" pour
+ * mandataire.telephone_portable) : on va directement chercher ce nom dans
+ * `valueMap` (issu du scan regex), sans intermédiaire. Zéro dépendance à un
+ * comportement de bibliothèque qui s'est avéré peu fiable en prod à deux
+ * reprises pour deux raisons différentes.
  */
 
 type RawValue = { type: "string" | "name"; value: string };
@@ -208,76 +195,56 @@ function buildFieldValueMap(bytes: Uint8Array): Record<string, RawValue> {
  */
 export async function parseCerfa(bytes: Uint8Array | ArrayBuffer) {
   const byteArray = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  const pdfDoc = await PDFDocument.load(byteArray, { ignoreEncryption: true });
-  const form = pdfDoc.getForm();
   const data: Record<string, any> = {};
   const warnings: string[] = [];
 
   const valueMap = buildFieldValueMap(byteArray);
+  const totalFieldsInFile = Object.keys(valueMap).length;
 
-  const allFields = form.getFields();
   let matched = 0;
   let textFieldsWithValue = 0;
-  let usedRawFallback = 0; // conservé pour compat du message client, plus vraiment un "fallback" : c'est la voie principale désormais
 
-  for (const field of allFields) {
-    const name = field.getName();
-    const ctor = field.constructor.name;
-    const raw = valueMap[name];
-
-    try {
-      if (ctor === "PDFTextField" && REV_TEXT[name]) {
-        const value = raw && raw.type === "string" ? raw.value : undefined;
-        if (value) {
-          setNested(data, REV_TEXT[name], value);
-          matched++;
-          usedRawFallback++;
-        }
-      } else if (ctor === "PDFCheckBox" && REV_CHECK[name]) {
-        const checked = !!raw && raw.type === "name" && raw.value !== "Off";
-        if (checked) {
-          setNested(data, REV_CHECK[name], true);
-          matched++;
-          usedRawFallback++;
-        }
-      } else if (ctor === "PDFRadioGroup" && REV_RADIO[name]) {
-        const selected = raw && raw.type === "name" && raw.value !== "Off" ? raw.value : undefined;
-        if (selected) {
-          const { key, choices } = REV_RADIO[name];
-          const answer = choices[selected];
-          if (answer) {
-            setNested(data, key, answer);
-            matched++;
-            usedRawFallback++;
-          }
-        }
-      }
-
-      if (ctor === "PDFTextField" && raw && raw.type === "string" && raw.value) {
-        textFieldsWithValue++;
-      }
-    } catch (e: any) {
-      warnings.push(`${name}: ${e.message}`);
+  for (const [semKey, pdfName] of Object.entries(TEXT_FIELDS)) {
+    const raw = valueMap[pdfName];
+    if (raw && raw.type === "string" && raw.value) {
+      textFieldsWithValue++;
+      setNested(data, semKey, raw.value);
+      matched++;
     }
   }
 
-  // Diagnostic : si le PDF a bien un formulaire mais qu'on ne récupère rien,
-  // ça aide à distinguer "pas de champs du tout" (PDF aplati/scanné) de
-  // "des champs remplis mais aucun ne correspond à notre cartographie"
-  // (export d'un autre outil que DroneKeeper, avec des noms de champs
-  // différents) plutôt que de laisser un "aucune zone trouvée" muet.
-  const debug = { totalFields: allFields.length, textFieldsWithValue, matched, usedRawFallback };
-  if (allFields.length === 0) {
+  for (const [semKey, pdfName] of Object.entries(CHECKBOX_FIELDS)) {
+    const raw = valueMap[pdfName];
+    if (raw && raw.type === "name" && raw.value !== "Off") {
+      setNested(data, semKey, true);
+      matched++;
+    }
+  }
+
+  for (const [semKey, [pdfName, choices]] of Object.entries(RADIO_FIELDS)) {
+    const raw = valueMap[pdfName];
+    if (!raw || raw.type !== "name" || raw.value === "Off") continue;
+    const answer = Object.entries(choices).find(
+      ([, exportVal]) => (exportVal as string).replace(/^\//, "") === raw.value
+    )?.[0];
+    if (answer) {
+      setNested(data, semKey, answer);
+      matched++;
+    }
+  }
+
+  // Diagnostic : si le PDF a des valeurs brutes mais qu'on n'en reconnaît
+  // aucune, ça aide à distinguer "export d'un autre outil, autre structure
+  // de champs" de "fichier vide/corrompu" plutôt que de laisser un "aucune
+  // zone trouvée" muet.
+  const debug = { totalFields: totalFieldsInFile, textFieldsWithValue, matched, usedRawFallback: matched };
+  if (totalFieldsInFile === 0) {
     warnings.push(
-      "Ce PDF n'a aucun champ de formulaire interactif (probablement aplati/exporté en image) : impossible d'en extraire les données automatiquement."
+      "Ce PDF n'a aucune valeur de champ de formulaire interactif (probablement aplati/exporté en image) : impossible d'en extraire les données automatiquement."
     );
-  } else if (matched === 0 && textFieldsWithValue > 0) {
+  } else if (matched === 0) {
     warnings.push(
-      `Ce PDF a ${allFields.length} champs dont ${textFieldsWithValue} remplis, mais aucun ne correspond à la structure attendue (export DroneKeeper). Peut-être un autre outil ou une autre version du Cerfa.`
-    );
-  } else if (matched === 0 && textFieldsWithValue === 0) {
-    warnings.push(
-      `Ce PDF a ${allFields.length} champs mais aucune valeur n'a pu être lue (${Object.keys(valueMap).length} valeurs brutes trouvées dans le fichier). Le fichier est peut-être corrompu ou vide.`
+      `Ce PDF contient ${totalFieldsInFile} valeur(s) de champ, mais aucune ne correspond à la structure attendue (export DroneKeeper). Peut-être un autre outil ou une autre version du Cerfa.`
     );
   }
 
