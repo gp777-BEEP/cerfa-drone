@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
+import Link from "next/link";
 import ZoneManager from "./ZoneManager";
 import GenerateButton from "./GenerateButton";
 import MissionTitle from "./MissionTitle";
 import MissionDetailsFields from "./MissionDetailsFields";
+import MissionDatesFields from "./MissionDatesFields";
 import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
 import MissionDrones from "./MissionDrones";
@@ -61,11 +63,18 @@ export default async function MissionPage({ params }: { params: { id: string } }
     <>
       <AppHeader />
       <main className="mx-auto max-w-3xl px-6 py-10">
+        <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-brand">
+          ← Retour aux missions
+        </Link>
         <MissionTitle missionId={mission.id} initialTitle={mission.title} />
         <MissionActions missionId={mission.id} title={mission.title} initialArchived={!!mission.archived} />
-        <p className="mb-6 text-sm text-slate-500">
-          {mission.date_debut} {mission.heure_debut} → {mission.date_fin} {mission.heure_fin}
-        </p>
+        <MissionDatesFields
+          missionId={mission.id}
+          initialDateDebut={mission.date_debut}
+          initialHeureDebut={mission.heure_debut}
+          initialDateFin={mission.date_fin}
+          initialHeureFin={mission.heure_fin}
+        />
 
         <ZoneManager missionId={mission.id} initialZones={zones || []} />
 
