@@ -562,7 +562,15 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             <div
               key={z.id}
               id={`zone-${z.id}`}
-              className="scroll-mt-4 flex items-center justify-between border-l-2 border-brand bg-slate-50 p-3 text-sm"
+              onClick={() => {
+                // Toute la bande sélectionne (sauf Modifier/Retirer, qui
+                // stoppent la propagation) : plus facile à cibler que la
+                // seule petite case à cocher.
+                if (zones.length >= 2) toggleMergeSelect(z.id);
+              }}
+              className={`scroll-mt-4 flex items-center justify-between border-l-2 border-brand p-3 text-sm transition-colors ${
+                zones.length >= 2 ? "cursor-pointer" : ""
+              } ${selectedForMerge.has(z.id) ? "bg-brand-light" : "bg-slate-50 hover:bg-slate-100"}`}
             >
               <div className="flex items-center gap-3">
                 {zones.length >= 2 && (
@@ -570,6 +578,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                     type="checkbox"
                     checked={selectedForMerge.has(z.id)}
                     onChange={() => toggleMergeSelect(z.id)}
+                    onClick={(e) => e.stopPropagation()}
                     title="Sélectionner pour fusionner"
                     className="shrink-0"
                   />
@@ -586,10 +595,22 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-3">
-                <button onClick={() => startEdit(z)} className="text-brand hover:underline">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEdit(z);
+                  }}
+                  className="text-brand hover:underline"
+                >
                   Modifier
                 </button>
-                <button onClick={() => removeZone(z.id)} className="text-red-500 hover:underline">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeZone(z.id);
+                  }}
+                  className="text-red-500 hover:underline"
+                >
                   Retirer
                 </button>
               </div>
