@@ -8,7 +8,7 @@ export default function ContactPage() {
         <h1 className="mb-4 text-2xl font-medium text-ink">Contact</h1>
         <p className="mb-6 text-slate-600">
           Une question, un problème avec un dossier généré, ou besoin d'aide pour démarrer ? Le formulaire de
-          contact direct arrive bientôt. En attendant, passe par la page Suggestions ci-dessous, les
+          contact direct arrive bientôt. En attendant, passez par la page Suggestions ci-dessous, les
           messages y sont lus personnellement.
         </p>
         <a
