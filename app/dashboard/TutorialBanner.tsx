@@ -35,7 +35,7 @@ export default function TutorialBanner() {
   return (
     <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-brand/30 bg-brand-light px-4 py-3 text-sm">
       <span className="text-ink">
-        Nouveau ici ? <Link href="/tutoriel" className="font-medium text-brand hover:underline">Découvre comment ça marche</Link> (import Cerfa/KML, zones, génération du dossier...).
+        Nouveau ici ? <Link href="/tutoriel" className="font-medium text-brand hover:underline">Découvrez comment ça marche</Link> (import Cerfa/KML, zones, génération du dossier...).
       </span>
       <button
         onClick={() => setShow(false)}

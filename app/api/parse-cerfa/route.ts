@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     return NextResponse.json(
       {
-        error: `Impossible de lire ce PDF (${e?.message || "erreur inconnue"}). Vérifie que c'est bien un Cerfa 15476*04 (formulaire PDF interactif).`,
+        error: `Impossible de lire ce PDF (${e?.message || "erreur inconnue"}). Vérifiez que c'est bien un Cerfa 15476*04 (formulaire PDF interactif).`,
       },
       { status: 400 }
     );

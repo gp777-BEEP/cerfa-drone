@@ -22,8 +22,8 @@ export default async function SuggestionsPage() {
       <main className="mx-auto max-w-2xl px-6 py-10">
         <h1 className="mb-2 text-2xl font-medium text-ink">Suggestions</h1>
         <p className="mb-6 text-sm text-slate-600">
-          Une fonctionnalité qui te manque, une source de carte à ajouter (Clearance, Google Maps...), un
-          format d'import KML ? Dis-le ici, ça m'aide à prioriser.
+          Une fonctionnalité qui vous manque, une source de carte à ajouter (Clearance, Google Maps...), un
+          format d'import KML ? Dites-le ici, ça m'aide à prioriser.
         </p>
 
         <Link
@@ -37,7 +37,7 @@ export default async function SuggestionsPage() {
         <SuggestionForm />
 
         <div className="mt-10">
-          <h2 className="mb-3 text-sm font-medium text-ink">Tes suggestions précédentes</h2>
+          <h2 className="mb-3 text-sm font-medium text-ink">Vos suggestions précédentes</h2>
           {(suggestions || []).length === 0 && (
             <p className="text-sm text-slate-500">Aucune suggestion envoyée pour l'instant.</p>
           )}

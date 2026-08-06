@@ -17,16 +17,16 @@ export default function TutorielPage() {
         <h1 className="mb-2 text-2xl font-medium text-ink">Tutoriel</h1>
         <p className="mb-6 text-sm text-slate-500">
           Tout ce qu'il faut savoir pour constituer un dossier de déclaration de vol de drone, quel que
-          soit ce que tu as sous la main pour décrire ta zone de vol : un fichier KML, une simple capture
-          d'écran, ou même un Cerfa déjà rempli par ailleurs.
+          soit ce que vous avez sous la main pour décrire votre zone de vol : un fichier KML, une simple
+          capture d'écran, ou même un Cerfa déjà rempli par ailleurs.
         </p>
 
         <div className="mb-6 flex flex-wrap gap-2 text-xs">
           {[
             ["Créer une mission", "creer-mission"],
-            ["Décrire ta zone de vol", "zones"],
+            ["Décrire votre zone de vol", "zones"],
             ["Pas de carte sous la main ?", "pas-de-carte"],
-            ["Ton profil et tes drones", "profil"],
+            ["Votre profil et vos drones", "profil"],
             ["Générer le dossier", "generer"],
           ].map(([label, id]) => (
             <a
@@ -42,44 +42,44 @@ export default function TutorielPage() {
         <div className="space-y-6">
           <Section id="creer-mission" title="1. Créer une mission">
             <p>
-              Depuis "Mes missions", clique sur "+ Nouvelle mission". Choisis un type de mission (prise de
-              vue, inspection technique...), un titre, une plage de dates/heures, et la sous-catégorie A1,
-              A2 ou A3 (elle dépend du poids et de la classe de ton drone).
+              Depuis "Mes missions", cliquez sur "+ Nouvelle mission". Choisissez un type de mission (prise
+              de vue, inspection technique...), un titre, une plage de dates/heures, et la sous-catégorie
+              A1, A2 ou A3 (elle dépend du poids et de la classe de votre drone).
             </p>
             <p>
               "Objet précis de la mission" et "Commanditaire" sont ce qui apparaît tel quel sur le Cerfa
-              pour chaque zone de vol ; laisse-les vides pour reprendre simplement le titre de la mission.
+              pour chaque zone de vol ; laissez-les vides pour reprendre simplement le titre de la mission.
             </p>
             <p>
-              Toutes les questions ne sont pas obligatoires à la création : tu peux revenir les compléter
-              plus tard, directement depuis la page de la mission une fois créée.
+              Toutes les questions ne sont pas obligatoires à la création : vous pouvez revenir les
+              compléter plus tard, directement depuis la page de la mission une fois créée.
             </p>
           </Section>
 
-          <Section id="zones" title="2. Décrire ta zone de vol">
+          <Section id="zones" title="2. Décrire votre zone de vol">
             <p>Trois façons d'ajouter une zone, à combiner librement, y compris sur une même mission :</p>
             <p>
               <strong className="text-ink">Un Cerfa déjà rempli</strong> (par un autre outil, ou par un
-              client) : dépose-le dans "Importer un Cerfa" et l'adresse, les dates, le régime de vol, les
+              client) : déposez-le dans "Importer un Cerfa" et l'adresse, les dates, le régime de vol, les
               drones et jusqu'à 2 zones sont préremplis automatiquement.
             </p>
             <p>
               <strong className="text-ink">Un fichier KML</strong> (export d'une carte dessinée dans une
-              app comme Google My Maps, DroneKeeper ou FlySpot) : dépose-le dans "Importer un KML", la
+              app comme Google My Maps, DroneKeeper ou FlySpot) : déposez-le dans "Importer un KML", la
               hauteur maximale, l'éloignement maximal et une carte avec échelle sont calculés
-              automatiquement pour toi. C'est la méthode la plus précise.
+              automatiquement pour vous. C'est la méthode la plus précise.
             </p>
             <p>
               <strong className="text-ink">Rien de tout ça, juste une capture d'écran</strong> (Google
-              Maps, Géoportail, une carte papier...) : saisis la zone manuellement (adresse, hauteur et
-              éloignement max estimés) et dépose l'image en pièce jointe. Tu peux aussi ajouter ou remplacer
-              cette image plus tard, en cliquant sur "Modifier" sur une zone déjà créée.
+              Maps, Géoportail, une carte papier...) : saisissez la zone manuellement (adresse, hauteur et
+              éloignement max estimés) et déposez l'image en pièce jointe. Vous pouvez aussi ajouter ou
+              remplacer cette image plus tard, en cliquant sur "Modifier" sur une zone déjà créée.
             </p>
             <p>
               Pour chaque zone, une petite pastille orange apparaît si la "Description du site" n'est pas
-              encore remplie (rassure-toi, ce n'est pas bloquant, juste un rappel). Deux zones qui décrivent
-              en fait le même endroit (importées séparément par KML et par Cerfa, par exemple) peuvent être
-              fusionnées : sélectionne-les avec la case à cocher, puis "Fusionner".
+              encore remplie (rassurez-vous, ce n'est pas bloquant, juste un rappel). Deux zones qui
+              décrivent en fait le même endroit (importées séparément par KML et par Cerfa, par exemple)
+              peuvent être fusionnées : sélectionnez-les avec la case à cocher, puis "Fusionner".
             </p>
           </Section>
 
@@ -90,42 +90,42 @@ export default function TutorielPage() {
             </p>
             <p>
               <strong className="text-ink">Google My Maps</strong> (mymaps.google.com, gratuit, aucun
-              compte spécifique requis au-delà d'un compte Google) : cherche ton adresse, dessine un
-              polygone ou un cercle autour de ta zone de vol avec l'outil de tracé, puis "Menu" → "Exporter
-              vers KML/KMZ". Dépose le fichier obtenu dans "Importer un KML" ci-dessus.
+              compte spécifique requis au-delà d'un compte Google) : cherchez votre adresse, dessinez un
+              polygone ou un cercle autour de votre zone de vol avec l'outil de tracé, puis "Menu" →
+              "Exporter vers KML/KMZ". Déposez le fichier obtenu dans "Importer un KML" ci-dessus.
             </p>
             <p>
               Des apps dédiées au drone comme <strong className="text-ink">FlySpot</strong> ou{" "}
-              <strong className="text-ink">Drone-Spot</strong> sont utiles en complément pour vérifier si ta
-              zone est en zone autorisée, réglementée ou interdite avant de voler (à vérifier aussi sur le
-              Géoportail, couche "Restrictions UAS").
+              <strong className="text-ink">Drone-Spot</strong> sont utiles en complément pour vérifier si
+              votre zone est en zone autorisée, réglementée ou interdite avant de voler (à vérifier aussi
+              sur le Géoportail, couche "Restrictions UAS").
             </p>
             <p>Aucun de ces outils sous la main non plus ? Une simple capture d'écran suffit, voir ci-dessus.</p>
           </Section>
 
-          <Section id="profil" title="3. Ton profil et tes drones">
+          <Section id="profil" title="3. Votre profil et vos drones">
             <p>
-              Renseigne ton identité une seule fois dans "Profil" : elle est réutilisée pour toutes tes
-              missions. Choisis si tu déclares en ton nom (personne physique) ou au nom d'une société
-              (personne morale) : le Cerfa remplit une colonne différente selon le cas.
+              Renseignez votre identité une seule fois dans "Profil" : elle est réutilisée pour toutes vos
+              missions. Choisissez si vous déclarez en votre nom (personne physique) ou au nom d'une
+              société (personne morale) : le Cerfa remplit une colonne différente selon le cas.
             </p>
             <p>
-              Tes drones aussi se déclarent une fois dans "Mes drones" (manuellement, ou en important le CSV
-              "liste des aéronefs" depuis AlphaTango) et sont réutilisés automatiquement. Tu peux
+              Vos drones aussi se déclarent une fois dans "Mes drones" (manuellement, ou en important le
+              CSV "liste des aéronefs" depuis AlphaTango) et sont réutilisés automatiquement. Vous pouvez
               désélectionner ceux qui ne volent pas sur une mission précise.
             </p>
           </Section>
 
           <Section id="generer" title="4. Générer le dossier">
             <p>
-              Une fois les informations principales renseignées, clique sur "Générer le dossier PDF" en bas
-              de la page de la mission. Le dossier s'ouvre dans un aperçu plein écran (pagination et zoom du
-              navigateur) avant le téléchargement, pour vérifier que tout est correct.
+              Une fois les informations principales renseignées, cliquez sur "Générer le dossier PDF" en
+              bas de la page de la mission. Le dossier s'ouvre dans un aperçu plein écran (pagination et
+              zoom du navigateur) avant le téléchargement, pour vérifier que tout est correct.
             </p>
             <p>
               Une bannière rappelle en haut de page ce qu'il manque éventuellement (zone incomplète, drone
               non renseigné...) : le dossier peut quand même être généré, mais la préfecture peut demander
-              de compléter. Avant l'envoi, n'oublie pas de signer le document.
+              de compléter. Avant l'envoi, n'oubliez pas de signer le document.
             </p>
           </Section>
         </div>
@@ -133,7 +133,7 @@ export default function TutorielPage() {
         <p className="mt-8 text-xs text-slate-500">
           Une question ou une idée qui manque ici ?{" "}
           <a href="/suggestions" className="text-brand hover:underline">
-            Dis-le sur la page Suggestions
+            Dites-le sur la page Suggestions
           </a>
           .
         </p>

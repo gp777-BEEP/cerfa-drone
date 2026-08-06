@@ -153,7 +153,7 @@ export default function NewMissionForm({
       // a pas d'autre moyen de les renseigner.
       const droneHint =
         nbDrones === 0
-          ? " Pas de Cerfa DroneKeeper sous la main ? Renseigne tes drones une fois dans ton profil, ils seront réutilisés pour toutes tes missions."
+          ? " Pas de Cerfa DroneKeeper sous la main ? Renseignez vos drones une fois dans votre profil, ils seront réutilisés pour toutes vos missions."
           : "";
       if (nbZones === 0) {
         const d = json.debug;
@@ -164,7 +164,7 @@ export default function NewMissionForm({
         setImportMsg(`Importé : 0 zone et ${nbDrones} drone(s) détectés.${detail}${w}${droneHint}`);
       } else {
         setImportMsg(
-          `Importé : ${nbZones} zone(s) et ${nbDrones} drone(s) détectés. Ils seront ajoutés automatiquement à la mission (et à ton profil si vide).${droneHint}`
+          `Importé : ${nbZones} zone(s) et ${nbDrones} drone(s) détectés. Ils seront ajoutés automatiquement à la mission (et à votre profil si vide).${droneHint}`
         );
       }
     } catch (e: any) {
@@ -179,7 +179,7 @@ export default function NewMissionForm({
     setErrorMsg("");
 
     if (!dateDebut || !dateFin) {
-      setErrorMsg("Renseigne une date de début et une date de fin.");
+      setErrorMsg("Renseignez une date de début et une date de fin.");
       return;
     }
 
@@ -359,8 +359,8 @@ export default function NewMissionForm({
       <div className="bg-glass p-5">
         <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
         <p className="mb-3 text-xs text-slate-500">
-          Les deux sont indépendants, dépose ce que tu as : le KML apporte la carte des zones (avec
-          échelle) et calcule hauteur/éloignement, le Cerfa préremplit tes infos, tes drones et les dates.
+          Les deux sont indépendants, déposez ce que vous avez : le KML apporte la carte des zones (avec
+          échelle) et calcule hauteur/éloignement, le Cerfa préremplit vos infos, vos drones et les dates.
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
@@ -394,7 +394,7 @@ export default function NewMissionForm({
       <div className="bg-glass p-5">
         <h2 className="mb-1 font-medium text-ink">Drones pour cette mission</h2>
         <p className="mb-3 text-xs text-slate-500">
-          Coché par défaut : tous tes drones enregistrés. Décoche ceux qui ne volent pas sur cette
+          Coché par défaut : tous vos drones enregistrés. Décochez ceux qui ne volent pas sur cette
           mission-là.
         </p>
         <DroneChecklist drones={allDrones} checkedKeys={checkedDroneKeys} onToggle={toggleDrone} />
@@ -429,7 +429,7 @@ export default function NewMissionForm({
             className="w-full rounded-md border border-slate-300 px-3 py-2"
           />
           <span className="mt-1 block text-xs text-slate-500">
-            Sert de nom interne dans ta liste de missions, et d'objet de mission par défaut sur le Cerfa
+            Sert de nom interne dans votre liste de missions, et d'objet de mission par défaut sur le Cerfa
             (modifiable ci-dessous).
           </span>
         </label>
@@ -442,7 +442,7 @@ export default function NewMissionForm({
           <input
             value={objetMission}
             onChange={(e) => setObjetMission(e.target.value)}
-            placeholder={title || "Laisse vide pour reprendre le titre ci-dessus"}
+            placeholder={title || "Laissez vide pour reprendre le titre ci-dessus"}
             className="w-full rounded-md border border-slate-300 px-3 py-2"
           />
         </label>
@@ -450,7 +450,7 @@ export default function NewMissionForm({
         <label className="mb-4 block text-sm">
           <span className="mb-1 block text-slate-600">
             Commanditaire de la mission
-            <FieldHint text="Qui a demandé cette mission : un client, une entreprise, une administration, ou toi-même si tu voles pour ton compte." />
+            <FieldHint text="Qui a demandé cette mission : un client, une entreprise, une administration, ou vous-même si vous volez pour votre compte." />
           </span>
           <input
             value={commanditaire}
@@ -463,7 +463,7 @@ export default function NewMissionForm({
         <label className="mb-4 block text-sm">
           <span className="mb-1 block text-slate-600">
             Sous-catégorie (catégorie ouverte)
-            <FieldHint text="A1 : peut survoler des personnes isolées. A2 : peut voler à distance réduite des personnes, sans les survoler. A3 : doit rester loin de toute zone habitée ou de personnes. Dépend du poids et de la classe (C0-C4) de ton drone : vérifie sa notice si besoin." />
+            <FieldHint text="A1 : peut survoler des personnes isolées. A2 : peut voler à distance réduite des personnes, sans les survoler. A3 : doit rester loin de toute zone habitée ou de personnes. Dépend du poids et de la classe (C0-C4) de votre drone : vérifiez sa notice si besoin." />
           </span>
           <select
             value={sousCategorie}

@@ -17,9 +17,9 @@ export default function DroneChecklist({
       <p className="text-sm text-slate-500">
         Aucun drone enregistré pour l'instant.{" "}
         <Link href="/profile" className="text-brand hover:underline">
-          Ajoute-les dans ton profil
+          Ajoutez-les dans votre profil
         </Link>{" "}
-        (réutilisés ensuite pour toutes tes missions), ou importe un Cerfa qui en contient.
+        (réutilisés ensuite pour toutes vos missions), ou importez un Cerfa qui en contient.
       </p>
     );
   }

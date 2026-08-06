@@ -46,7 +46,7 @@ export default function MissionDetailsFields({
     <div className="mt-6 bg-glass p-5">
       <h2 className="mb-1 font-medium text-ink">Objet et commanditaire</h2>
       <p className="mb-3 text-xs text-slate-400">
-        Renseignés sur le Cerfa pour chaque zone de vol. Laisse "Objet précis" vide pour reprendre le
+        Renseignés sur le Cerfa pour chaque zone de vol. Laissez "Objet précis" vide pour reprendre le
         titre de la mission.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -65,7 +65,7 @@ export default function MissionDetailsFields({
         <label className="block text-sm">
           <span className="mb-1 block text-slate-600">
             Commanditaire de la mission
-            <FieldHint text="Qui a demandé cette mission : un client, une entreprise, une administration, ou toi-même si tu voles pour ton compte." />
+            <FieldHint text="Qui a demandé cette mission : un client, une entreprise, une administration, ou vous-même si vous volez pour votre compte." />
           </span>
           <input
             value={commanditaire}

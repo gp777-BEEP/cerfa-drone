@@ -22,7 +22,7 @@ export default function SuggestionForm() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setError("Tu dois être connecté.");
+      setError("Vous devez être connecté(e).");
       setSaving(false);
       return;
     }

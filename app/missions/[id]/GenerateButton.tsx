@@ -46,7 +46,7 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
         data = raw ? JSON.parse(raw) : {};
       } catch {
         throw new Error(
-          `Le serveur n'a pas répondu correctement (code ${res.status}). Réessaie dans quelques secondes.`
+          `Le serveur n'a pas répondu correctement (code ${res.status}). Réessayez dans quelques secondes.`
         );
       }
       if (!res.ok) throw new Error(data.error || "Erreur inconnue");
@@ -105,7 +105,7 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
               </div>
               <div className="flex shrink-0 items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
                 <WarningBanner className="flex-1">
-                  Avant de l'envoyer à la préfecture, n'oublie pas de signer le document.
+                  Avant de l'envoyer à la préfecture, n'oubliez pas de signer le document.
                 </WarningBanner>
                 <a
                   href={url}

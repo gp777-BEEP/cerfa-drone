@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     console.error("parse-kml error:", e);
     return NextResponse.json(
-      { error: "Impossible de lire ce fichier. Vérifie que c'est bien un export KML de zones de vol." },
+      { error: "Impossible de lire ce fichier. Vérifiez que c'est bien un export KML de zones de vol." },
       { status: 400 }
     );
   }

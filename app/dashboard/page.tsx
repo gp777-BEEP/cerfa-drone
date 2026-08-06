@@ -38,12 +38,12 @@ export default async function Dashboard() {
 
         {!profile?.full_name && (
           <WarningBanner className="mb-6">
-            Ton profil (nom, adresse, drones) n'est pas encore rempli. Ces infos sont nécessaires pour générer
+            Votre profil (nom, adresse, drones) n'est pas encore rempli. Ces infos sont nécessaires pour générer
             un Cerfa complet.{" "}
             <Link href="/profile" className="font-medium underline">
               Le compléter maintenant
             </Link>
-            {" "}(ou importe un Cerfa déjà rempli lors de la création d'une mission, ça le remplira automatiquement).
+            {" "}(ou importez un Cerfa déjà rempli lors de la création d'une mission, ça le remplira automatiquement).
           </WarningBanner>
         )}
 

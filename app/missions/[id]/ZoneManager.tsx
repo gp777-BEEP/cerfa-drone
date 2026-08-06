@@ -315,7 +315,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       const gotMissionInfo2 = Object.keys(missionUpdate).length > 0 ? ` Dates et régime de vol importés aussi.${droneNote2}` : droneNote2;
       setCerfaMsg(
         imported > 0
-          ? `${imported} zone(s) importée(s) depuis le Cerfa.${gotMissionInfo2} Pense à ajouter une carte (via KML ou une capture) si besoin.`
+          ? `${imported} zone(s) importée(s) depuis le Cerfa.${gotMissionInfo2} Pensez à ajouter une carte (via KML ou une capture) si besoin.`
           : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}${gotMissionInfo2}`
       );
     } catch (e: any) {
@@ -359,7 +359,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       const warnings = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
       setKmlMsg(
         imported > 0
-          ? `${imported} zone(s) importée(s) depuis le KML. Vérifie l'adresse, la hauteur et l'éloignement avant de générer le dossier.${warnings}`
+          ? `${imported} zone(s) importée(s) depuis le KML. Vérifiez l'adresse, la hauteur et l'éloignement avant de générer le dossier.${warnings}`
           : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}${warnings}`
       );
     } catch (e: any) {
@@ -550,7 +550,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   onChange={(e) => setEditForm((f) => ({ ...f, en_agglomeration: e.target.checked }))}
                 />
                 En agglomération
-                <FieldHint text="Coche si la zone de vol se situe en agglomération (zone urbanisée)." />
+                <FieldHint text="Cochez si la zone de vol se situe en agglomération (zone urbanisée)." />
               </label>
               <label className="mt-1 flex items-center gap-2 text-sm">
                 <input
@@ -559,7 +559,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   onChange={(e) => setEditForm((f) => ({ ...f, rassemblement: e.target.checked }))}
                 />
                 À proximité d'un rassemblement de personnes
-                <FieldHint text="Coche s'il y a un rassemblement de personnes (événement, marché, foule...) à proximité de la zone de vol." />
+                <FieldHint text="Cochez s'il y a un rassemblement de personnes (événement, marché, foule...) à proximité de la zone de vol." />
               </label>
               <span className="mt-3 block text-xs text-slate-500">
                 Description du site
@@ -587,7 +587,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               <div className="mt-3">
                 <span className="mb-1 block text-xs text-slate-500">
                   Capture(s) de la zone
-                  <FieldHint text="Carte, capture d'écran ou export de zone de vol : utile si tu n'as pas de KML, ou pour compléter une zone qui n'en a pas encore." />
+                  <FieldHint text="Carte, capture d'écran ou export de zone de vol : utile si vous n'avez pas de KML, ou pour compléter une zone qui n'en a pas encore." />
                 </span>
                 {editExistingImages.length > 0 && (
                   <div className="mb-2 flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
@@ -713,7 +713,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             {selectedForMerge.size} zone{selectedForMerge.size > 1 ? "s" : ""} sélectionnée
             {selectedForMerge.size > 1 ? "s" : ""}
             {selectedForMerge.size !== 2 && (
-              <span className="ml-2 text-xs text-slate-400">— sélectionne exactement 2 zones pour fusionner</span>
+              <span className="ml-2 text-xs text-slate-400">— sélectionnez exactement 2 zones pour fusionner</span>
             )}
           </span>
           <div className="flex items-center gap-3">
@@ -826,7 +826,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               onChange={(e) => setForm((f) => ({ ...f, en_agglomeration: e.target.checked }))}
             />
             En agglomération
-            <FieldHint text="Coche si la zone de vol se situe en agglomération (zone urbanisée)." />
+            <FieldHint text="Cochez si la zone de vol se situe en agglomération (zone urbanisée)." />
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -835,7 +835,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               onChange={(e) => setForm((f) => ({ ...f, rassemblement: e.target.checked }))}
             />
             À proximité d'un rassemblement de personnes
-            <FieldHint text="Coche s'il y a un rassemblement de personnes (événement, marché, foule...) à proximité de la zone de vol." />
+            <FieldHint text="Cochez s'il y a un rassemblement de personnes (événement, marché, foule...) à proximité de la zone de vol." />
           </label>
           <span className="block text-xs text-slate-500">
             Description du site
@@ -861,7 +861,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           />
           <div>
             <span className="mb-1 block text-sm text-slate-600">
-              Capture(s) de la zone, si tu n'as pas de KML (carte, Google Maps, DroneKeeper...)
+              Capture(s) de la zone, si vous n'avez pas de KML (carte, Google Maps, DroneKeeper...)
             </span>
             <FileDropzone
               label={files.length > 0 ? `${files.length} image(s) sélectionnée(s)` : "Glisser les images ici, ou cliquer pour parcourir"}

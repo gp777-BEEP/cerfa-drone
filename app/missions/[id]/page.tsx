@@ -44,8 +44,8 @@ export default async function MissionPage({ params }: { params: { id: string } }
     .single();
 
   const missingItems: { label: string; href: string }[] = [];
-  if (!profile?.full_name) missingItems.push({ label: "Ton nom", href: "/profile" });
-  if (!profile?.address) missingItems.push({ label: "Ton adresse", href: "/profile" });
+  if (!profile?.full_name) missingItems.push({ label: "Votre nom", href: "/profile" });
+  if (!profile?.address) missingItems.push({ label: "Votre adresse", href: "/profile" });
   const hasProfileDrones = (profile?.drones || []).filter((d: any) => d?.constructeur).length > 0;
   const hasMissionDrones = (mission.drones || []).filter((d: any) => d?.constructeur).length > 0;
   if (!hasProfileDrones && !hasMissionDrones) {
@@ -100,7 +100,7 @@ export default async function MissionPage({ params }: { params: { id: string } }
         <div className="mt-6 bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Drones utilisés</h2>
           <p className="mb-3 text-xs text-slate-400">
-            Réutilisés depuis ton profil, ou détectés à l'import d'un Cerfa pour cette mission.
+            Réutilisés depuis votre profil, ou détectés à l'import d'un Cerfa pour cette mission.
           </p>
           <MissionDrones missionId={mission.id} profileDrones={profile?.drones || []} initialSelected={mission.drones} />
         </div>
@@ -121,7 +121,7 @@ export default async function MissionPage({ params }: { params: { id: string } }
                 ))}
               </ul>
               <p className="mt-2 text-xs opacity-80">
-                Tu peux quand même générer maintenant, mais la préfecture risque de te demander de compléter.
+                Vous pouvez quand même générer maintenant, mais la préfecture risque de vous demander de compléter.
               </p>
             </WarningBanner>
           )}

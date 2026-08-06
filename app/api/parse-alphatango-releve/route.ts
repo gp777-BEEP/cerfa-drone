@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   } catch (e: any) {
     console.error("parse-alphatango-releve error:", e);
     return NextResponse.json(
-      { error: "Impossible de lire ce PDF. Vérifie que c'est bien le relevé de situation d'exploitant AlphaTango." },
+      { error: "Impossible de lire ce PDF. Vérifiez que c'est bien le relevé de situation d'exploitant AlphaTango." },
       { status: 400 }
     );
   }

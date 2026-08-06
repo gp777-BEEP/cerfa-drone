@@ -109,7 +109,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         return;
       }
       mergeDrones(imported);
-      setImportMsgDrones(`${imported.length} aéronef(s) importé(s) depuis AlphaTango. Pense à Enregistrer en bas de page.`);
+      setImportMsgDrones(`${imported.length} aéronef(s) importé(s) depuis AlphaTango. Pensez à Enregistrer en bas de page.`);
     } catch {
       setImportMsgDrones("Erreur : impossible de lire ce fichier CSV.");
     } finally {
@@ -127,7 +127,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
     } = await supabase.auth.getUser();
     if (!user) {
       setSaving(false);
-      setSaveError("Session expirée, reconnecte-toi.");
+      setSaveError("Session expirée, reconnectez-vous.");
       return;
     }
 
@@ -176,12 +176,12 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         <div className="bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Importer depuis AlphaTango</h2>
           <p className="mb-3 text-xs text-slate-500">
-            Depuis "Mon activité d'exploitant" sur AlphaTango, télécharge ton relevé de situation
-            d'exploitant et dépose-le ici pour préremplir ton nom.
+            Depuis "Mon activité d'exploitant" sur AlphaTango, téléchargez votre relevé de situation
+            d'exploitant et déposez-le ici pour préremplir votre nom.
           </p>
           <FileDropzone
             label="Relevé de situation d'exploitant"
-            hint="PDF · pour ton nom"
+            hint="PDF · pour votre nom"
             accept="application/pdf"
             disabled={importingReleve}
             onFiles={(files) => handleImportReleve(files[0])}
@@ -191,14 +191,14 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         </div>
 
         <div className="bg-glass p-5">
-          <h2 className="mb-4 font-medium text-ink">Toi</h2>
+          <h2 className="mb-4 font-medium text-ink">Vous</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Nom complet" value={fullName} onChange={setFullName} />
             <Field
               label="Qualité"
               value={qualite}
               onChange={setQualite}
-              hint="Ta fonction ou profession : « Télépilote », mais aussi « Gérant », « Salarié », « Étudiant »... selon le contexte de tes vols."
+              hint="Votre fonction ou profession : « Télépilote », mais aussi « Gérant », « Salarié », « Étudiant »... selon le contexte de vos vols."
             />
             <Field label="Adresse" value={address} onChange={setAddress} className="sm:col-span-2" />
             <Field label="Téléphone" value={phone} onChange={setPhone} />
@@ -213,8 +213,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
           <p className="mt-3 text-xs text-slate-500">
             Numéro d'enregistrement AlphaTango (format FRA...), pas de case dédiée sur le Cerfa mais
             la préfecture le demande parfois en complément : garde-le sous la main. C'est un identifiant
-            professionnel, du même ordre que ton SIREN/SIRET (pas un mot de passe), stocké comme le
-            reste de ton profil.
+            professionnel, du même ordre que votre SIREN/SIRET (pas un mot de passe), stocké comme le
+            reste de votre profil.
           </p>
         </div>
 
@@ -222,7 +222,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
           <h2 className="mb-1 font-medium text-ink">Exploitant</h2>
           <p className="mb-3 text-xs text-slate-500">
             Le Cerfa a deux colonnes différentes selon que l'exploitant (celui qui déclare le vol) est
-            toi-même ou une société. Choisis la bonne pour que le bon bloc soit rempli.
+            vous-même ou une société. Choisissez la bonne pour que le bon bloc soit rempli.
           </p>
           <div className="mb-4 flex gap-4 text-sm">
             <label className="flex items-center gap-2">
@@ -232,8 +232,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 checked={exploitantType === "physique"}
                 onChange={() => setExploitantType("physique")}
               />
-              Personne physique (toi)
-              <FieldHint text="Choisis cette option si tu voles en ton nom propre, sans société. C'est le cas le plus courant pour un usage loisir ou en freelance non constitué en société." />
+              Personne physique (vous)
+              <FieldHint text="Choisissez cette option si vous volez en votre nom propre, sans société. C'est le cas le plus courant pour un usage loisir ou en freelance non constitué en société." />
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -243,7 +243,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 onChange={() => setExploitantType("morale")}
               />
               Personne morale (société)
-              <FieldHint text="Choisis cette option si c'est une société (SARL, SAS, auto-entreprise inscrite au RCS...) qui est déclarée comme exploitant, avec toi comme représentant légal ou mandataire." />
+              <FieldHint text="Choisissez cette option si c'est une société (SARL, SAS, auto-entreprise inscrite au RCS...) qui est déclarée comme exploitant, avec vous comme représentant légal ou mandataire." />
             </label>
           </div>
 
@@ -261,7 +261,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 value={siegeSocial}
                 onChange={setSiegeSocial}
                 className="sm:col-span-2"
-                hint="L'adresse officielle du siège social de la société, pas forcément celle où tu voles."
+                hint="L'adresse officielle du siège social de la société, pas forcément celle où vous volez."
               />
               <Field
                 label="Identifiant SIREN/SIRET/RCS/RNE"
@@ -273,10 +273,10 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 label="Qualité du mandataire (ex : Gérant, Président)"
                 value={mandataireQualite}
                 onChange={setMandataireQualite}
-                hint="Ta fonction dans la société : Gérant, Président, Directeur général... C'est ce qui apparaît sur le Cerfa à côté de ton nom, dans le bloc « Mandataire social ou principal dirigeant »."
+                hint="Votre fonction dans la société : Gérant, Président, Directeur général... C'est ce qui apparaît sur le Cerfa à côté de votre nom, dans le bloc « Mandataire social ou principal dirigeant »."
               />
               <p className="text-xs text-slate-500 sm:col-span-2">
-                Le mandataire (représentant légal) déclaré sur le Cerfa sera toi, avec les infos "Toi"
+                Le mandataire (représentant légal) déclaré sur le Cerfa sera vous, avec les infos "Vous"
                 ci-dessus (nom, adresse, téléphone, email).
               </p>
             </div>
@@ -288,12 +288,12 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         <div className="bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Importer depuis AlphaTango</h2>
           <p className="mb-3 text-xs text-slate-500">
-            Depuis "Mon activité d'exploitant" sur AlphaTango, télécharge ta liste des aéronefs (CSV) et
-            dépose-la ici pour ajouter tes drones automatiquement.
+            Depuis "Mon activité d'exploitant" sur AlphaTango, téléchargez votre liste des aéronefs (CSV) et
+            déposez-la ici pour ajouter vos drones automatiquement.
           </p>
           <FileDropzone
             label="Liste des aéronefs"
-            hint="CSV · pour tes drones"
+            hint="CSV · pour vos drones"
             accept=".csv,text/csv"
             disabled={importingAeronefs}
             onFiles={(files) => handleImportAeronefs(files[0])}
@@ -349,19 +349,19 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                     label="N° signalement électronique"
                     value={d.numero_signalement}
                     onChange={(v) => updateDrone(i, { numero_signalement: v })}
-                    hint="Identifiant de l'émetteur de signalement électronique embarqué sur le drone, si ton modèle en est équipé (obligatoire pour la plupart des drones de plus de 800g)."
+                    hint="Identifiant de l'émetteur de signalement électronique embarqué sur le drone, si votre modèle en est équipé (obligatoire pour la plupart des drones de plus de 800g)."
                   />
                   <Select
                     label="Classe C5"
                     value={d.classe_c5}
                     onChange={(v) => updateDrone(i, { classe_c5: v as "oui" | "non" })}
-                    hint="Ton drone porte-t-il le marquage de classe C5 (ou C6) ? Cette classe autorise certains vols en agglomération avec des règles allégées. Vérifie l'étiquette ou la notice du drone."
+                    hint="Votre drone porte-t-il le marquage de classe C5 (ou C6) ? Cette classe autorise certains vols en agglomération avec des règles allégées. Vérifiez l'étiquette ou la notice du drone."
                   />
                   <Select
                     label="Aéronef captif"
                     value={d.captif}
                     onChange={(v) => updateDrone(i, { captif: v as "oui" | "non" })}
-                    hint="Un drone « captif » est relié au sol par un câble ou une longe qui limite sa distance de vol. La plupart des drones grand public ne le sont pas : laisse « Non » si tu ne sais pas."
+                    hint="Un drone « captif » est relié au sol par un câble ou une longe qui limite sa distance de vol. La plupart des drones grand public ne le sont pas : laissez « Non » si vous ne savez pas."
                   />
                 </div>
               </div>

@@ -4,7 +4,7 @@ import Footer from "./components/Footer";
 
 export const metadata: Metadata = {
   title: "Cerfa Drone : déclarations de vol simplifiées",
-  description: "Génère automatiquement ton dossier de déclaration préfectorale de vol de drone.",
+  description: "Générez automatiquement votre dossier de déclaration préfectorale de vol de drone.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

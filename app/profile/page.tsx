@@ -16,10 +16,10 @@ export default async function ProfilePage() {
     <>
       <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
-        <h1 className="mb-2 text-2xl font-medium text-ink">Mon profil</h1>
+        <h1 className="mb-2 text-2xl font-medium text-ink">Votre profil</h1>
         <p className="mb-6 text-sm text-slate-500">
-          Ces informations (toi + tes drones) sont réutilisées automatiquement dans chaque
-          dossier que tu génères.
+          Ces informations (vous + vos drones) sont réutilisées automatiquement dans chaque
+          dossier que vous générez.
         </p>
         <ProfileForm initialProfile={profile} />
       </main>
