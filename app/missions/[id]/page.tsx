@@ -5,6 +5,7 @@ import ZoneManager from "./ZoneManager";
 import GenerateButton from "./GenerateButton";
 import MissionTitle from "./MissionTitle";
 import MissionDetailsFields from "./MissionDetailsFields";
+import MissionAnswersFields from "./MissionAnswersFields";
 import MissionDatesFields from "./MissionDatesFields";
 import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
@@ -35,6 +36,12 @@ export default async function MissionPage({ params }: { params: { id: string } }
     .order("created_at", { ascending: false });
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+
+  const { data: missionType } = await supabase
+    .from("mission_types")
+    .select("question_schema")
+    .eq("slug", mission.mission_type)
+    .single();
 
   const missingItems: { label: string; href: string }[] = [];
   if (!profile?.full_name) missingItems.push({ label: "Ton nom", href: "/profile" });
@@ -82,6 +89,12 @@ export default async function MissionPage({ params }: { params: { id: string } }
           missionId={mission.id}
           initialObjetMission={mission.objet_mission}
           initialCommanditaire={mission.commanditaire}
+        />
+
+        <MissionAnswersFields
+          missionId={mission.id}
+          questionSchema={missionType?.question_schema || []}
+          initialAnswers={mission.answers}
         />
 
         <div className="mt-6 bg-glass p-5">
