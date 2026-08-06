@@ -1,47 +1,36 @@
 "use client";
 
-import { useState } from "react";
-
-// Aide contextuelle repliable (option "D" validée par l'utilisateur parmi 4
-// propositions) : une flèche à côté du libellé déplie une courte explication
-// de ce qu'attend le Cerfa pour ce champ. Fermé par défaut pour ne pas
-// surcharger visuellement, fonctionne aussi bien au clic qu'au clavier
-// (contrairement à une simple infobulle au survol, peu pratique sur mobile).
+// Aide contextuelle en bulle au survol (option "B" validée par l'utilisateur
+// parmi 4 propositions) : une icône "?" à côté du libellé fait apparaître une
+// courte explication de ce qu'attend le Cerfa pour ce champ, teintée en vert
+// accent. group-focus-within couvre aussi la navigation clavier (Tab).
 export default function FieldHint({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-
   return (
-    <span className="inline align-middle">
+    <span className="group relative inline-flex align-middle">
       <button
         type="button"
+        tabIndex={0}
+        aria-label="Aide"
         onClick={(e) => {
           // Empêche le comportement par défaut d'un <label> englobant (qui
-          // sinon coche/focus le champ associé en plus d'ouvrir l'aide).
+          // sinon coche/focus le champ associé au clic sur l'icône).
           e.preventDefault();
           e.stopPropagation();
-          setOpen((o) => !o);
         }}
-        aria-label={open ? "Masquer l'aide" : "Afficher l'aide"}
-        aria-expanded={open}
-        className="ml-1 inline-flex translate-y-[-1px] items-center text-slate-500 hover:text-brand"
+        className="ml-1 inline-flex translate-y-[-1px] items-center text-slate-500 hover:text-brand focus:text-brand focus:outline-none"
       >
-        <svg
-          width="11"
-          height="11"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3"
-          className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-        >
-          <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.8.4-1 .9-1 1.7" strokeLinecap="round" />
+          <circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none" />
         </svg>
       </button>
-      {open && (
-        <span className="mt-1 block max-w-md rounded-r-md border-l-2 border-brand bg-brand-light px-2 py-1 text-xs font-normal normal-case text-slate-300">
-          {text}
-        </span>
-      )}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 w-56 -translate-x-1/2 rounded-lg border border-brand/30 bg-brand-light px-2.5 py-2 text-xs font-normal normal-case leading-snug text-slate-200 opacity-0 shadow-lg backdrop-blur-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100"
+      >
+        {text}
+      </span>
     </span>
   );
 }
