@@ -7,9 +7,15 @@
 }
 
 body {
-  background: radial-gradient(60% 40% at 10% 0%, rgba(45, 217, 172, 0.12), transparent 60%),
-    radial-gradient(45% 35% at 100% 0%, rgba(90, 140, 255, 0.08), transparent 60%),
-    linear-gradient(180deg, #0a0d12 0%, #0d1117 45%, #0d1117 100%);
+  /* Fond "presque uni" mais pas plat : plusieurs halos bleus doux qui se
+     chevauchent, plutôt qu'une seule teinte plate ou un dégradé linéaire
+     franc. Volontairement plus marqué que la précédente version (glow
+     bleu au lieu de vert/teal, pour matcher l'accent de marque). */
+  background: radial-gradient(55% 45% at 12% -8%, rgba(79, 140, 255, 0.26), transparent 60%),
+    radial-gradient(50% 40% at 92% 4%, rgba(120, 160, 255, 0.16), transparent 55%),
+    radial-gradient(65% 50% at 50% 115%, rgba(60, 100, 220, 0.14), transparent 60%),
+    radial-gradient(35% 30% at 60% 35%, rgba(79, 140, 255, 0.05), transparent 60%),
+    linear-gradient(180deg, #05070d 0%, #090d15 45%, #0a0e17 100%);
   background-attachment: fixed;
   color: #eef1f4;
 }
@@ -29,7 +35,7 @@ textarea {
 
 input[type="checkbox"],
 input[type="radio"] {
-  accent-color: #2dd9ac;
+  accent-color: #4f8cff;
 }
 
 ::placeholder {
@@ -47,6 +53,8 @@ input[type="radio"] {
     border-radius: 16px;
     backdrop-filter: blur(20px) saturate(140%);
     -webkit-backdrop-filter: blur(20px) saturate(140%);
+    /* Léger glow bleu au lieu d'une carte plate à bords nets. */
+    box-shadow: 0 0 40px rgba(79, 140, 255, 0.06), 0 12px 28px rgba(0, 0, 0, 0.28);
   }
 
   .nav-glass {
@@ -75,4 +83,20 @@ input[type="radio"] {
     color: #7fe9c8;
     border-radius: 14px;
   }
+}
+
+/* Glow bleu sur les boutons principaux (border-brand), appliqué globalement
+   plutôt qu'ajouté fichier par fichier : tous les CTA suivent déjà le même
+   pattern de classes (rounded-md border border-brand ...). */
+button.border-brand:not(:disabled),
+a.border-brand {
+  box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.12), 0 4px 24px rgba(79, 140, 255, 0.16);
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+button.border-brand:not(:disabled):hover,
+a.border-brand:hover {
+  box-shadow: 0 0 0 1px rgba(79, 140, 255, 0.22), 0 6px 32px rgba(79, 140, 255, 0.3);
+}
+button.border-brand:disabled {
+  box-shadow: none;
 }

@@ -13,6 +13,15 @@ export interface Profile {
   phone?: string | null;
   email?: string | null;
   qualite?: string | null;
+  // Personne physique (par défaut) ou personne morale : détermine quelle
+  // colonne de la section "1. L'exploitant" du Cerfa est remplie. Si
+  // "morale", full_name/address/phone/email/qualite ci-dessus décrivent le
+  // mandataire (représentant légal), pas l'exploitant lui-même.
+  exploitant_type?: "physique" | "morale" | null;
+  raison_sociale?: string | null;
+  siege_social?: string | null;
+  siren_siret?: string | null;
+  mandataire_qualite?: string | null;
   drones?: Array<{
     constructeur?: string;
     modele?: string;
@@ -46,6 +55,11 @@ export interface MissionRow {
   // utilisés pour CETTE mission précise. Si absent/vide, on retombe sur
   // profile.drones en entier (comportement historique, cf. plus bas).
   drones?: Profile["drones"];
+  // Objet précis de la mission et commanditaire, dédiés au Cerfa : si
+  // absents, on retombe sur mission.title / answers.commanditaire
+  // (comportement historique).
+  objet_mission?: string | null;
+  commanditaire?: string | null;
 }
 
 export interface ZoneRow {
@@ -79,14 +93,28 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
   const { nom, prenom } = splitName(profile.full_name);
   const answers = mission.answers || {};
 
+  // Section "1. L'exploitant" du Cerfa a deux colonnes bien distinctes :
+  // "personne physique" (Nom/Prénom/adresse... = exploitant.*) ou "personne
+  // morale" (raison sociale/siège social/SIREN = toujours exploitant.*, sous
+  // d'autres clés) + dans ce 2e cas un sous-bloc "Mandataire social ou
+  // principal dirigeant" (mandataire.*) pour la personne physique qui
+  // représente la société. On ne remplit jamais les deux colonnes à la fois.
+  const isMorale = profile.exploitant_type === "morale";
+
   const data: Record<string, any> = {
-    exploitant: {
-      nom,
-      prenom,
-      adresse: profile.address || "",
-      telephone_portable: profile.phone || "",
-      courriel: profile.email || "",
-    },
+    exploitant: isMorale
+      ? {
+          raison_sociale: profile.raison_sociale || "",
+          siege_social: profile.siege_social || "",
+          siren_siret: profile.siren_siret || "",
+        }
+      : {
+          nom,
+          prenom,
+          adresse: profile.address || "",
+          telephone_portable: profile.phone || "",
+          courriel: profile.email || "",
+        },
     telepilote1: {
       nom,
       prenom,
@@ -130,6 +158,20 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
     },
   };
 
+  // Bloc "Mandataire social ou principal dirigeant" : uniquement rempli si
+  // l'exploitant est une personne morale (le représentant légal de la
+  // société, identifié par les mêmes infos de contact que le profil).
+  if (isMorale) {
+    data.mandataire = {
+      nom,
+      prenom,
+      adresse: profile.address || "",
+      telephone_portable: profile.phone || "",
+      courriel: profile.email || "",
+      qualite: profile.mandataire_qualite || "",
+    };
+  }
+
   // Drones déclarés pour CETTE mission si l'utilisateur en a choisi (cf.
   // MissionDrones.tsx / NewMissionForm.tsx) ; sinon tous les drones du
   // profil, comme avant que la sélection par mission n'existe.
@@ -149,6 +191,13 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
     };
   });
 
+  // Objet précis de la mission / commanditaire : champs dédiés (saisis à la
+  // création de la mission ou préremplis depuis un Cerfa importé) si
+  // présents, sinon on retombe sur le titre interne de la mission / l'ancien
+  // sac "answers.commanditaire" (jamais vraiment exposé en UI jusqu'ici).
+  const objetMission = mission.objet_mission || mission.title;
+  const commanditaire = mission.commanditaire || answers.commanditaire || "";
+
   zones.slice(0, 2).forEach((zone, i) => {
     const siteKey = i === 0 ? "site1" : "site2";
     data[siteKey] = {
@@ -158,8 +207,8 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
       en_agglomeration: !!zone.en_agglomeration,
       rassemblement: !!zone.rassemblement,
       rassemblement_description: zone.rassemblement_description || "",
-      objet_mission: mission.title,
-      commanditaire: answers.commanditaire || "",
+      objet_mission: objetMission,
+      commanditaire,
       localisation_precise: zone.adresse || "",
       eloignement_max_m: zone.distance_max_m ?? answers.eloignement_max ?? "",
       hauteur_max_m: zone.hauteur_max_m ?? answers.hauteur_max ?? "",

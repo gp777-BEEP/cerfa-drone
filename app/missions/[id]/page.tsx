@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import ZoneManager from "./ZoneManager";
 import GenerateButton from "./GenerateButton";
 import MissionTitle from "./MissionTitle";
+import MissionDetailsFields from "./MissionDetailsFields";
 import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
 import MissionDrones from "./MissionDrones";
@@ -67,6 +68,12 @@ export default async function MissionPage({ params }: { params: { id: string } }
         </p>
 
         <ZoneManager missionId={mission.id} initialZones={zones || []} />
+
+        <MissionDetailsFields
+          missionId={mission.id}
+          initialObjetMission={mission.objet_mission}
+          initialCommanditaire={mission.commanditaire}
+        />
 
         <div className="mt-6 bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Drones utilisés</h2>

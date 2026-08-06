@@ -43,6 +43,13 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [email, setEmail] = useState(initialProfile?.email || "");
   const [qualite, setQualite] = useState(initialProfile?.qualite || "Télépilote");
   const [numeroExploitant, setNumeroExploitant] = useState(initialProfile?.numero_exploitant || "");
+  const [exploitantType, setExploitantType] = useState<"physique" | "morale">(
+    initialProfile?.exploitant_type === "morale" ? "morale" : "physique"
+  );
+  const [raisonSociale, setRaisonSociale] = useState(initialProfile?.raison_sociale || "");
+  const [siegeSocial, setSiegeSocial] = useState(initialProfile?.siege_social || "");
+  const [sirenSiret, setSirenSiret] = useState(initialProfile?.siren_siret || "");
+  const [mandataireQualite, setMandataireQualite] = useState(initialProfile?.mandataire_qualite || "Gérant");
   const [drones, setDrones] = useState<Drone[]>(initialProfile?.drones?.length ? initialProfile.drones : [EMPTY_DRONE]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -132,6 +139,11 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         email,
         qualite,
         numero_exploitant: numeroExploitant,
+        exploitant_type: exploitantType,
+        raison_sociale: exploitantType === "morale" ? raisonSociale : null,
+        siege_social: exploitantType === "morale" ? siegeSocial : null,
+        siren_siret: exploitantType === "morale" ? sirenSiret : null,
+        mandataire_qualite: exploitantType === "morale" ? mandataireQualite : null,
         drones: drones.filter((d) => d.constructeur || d.modele),
         updated_at: new Date().toISOString(),
       })
@@ -197,6 +209,61 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             professionnel, du même ordre que ton SIREN/SIRET (pas un mot de passe), stocké comme le
             reste de ton profil.
           </p>
+        </div>
+
+        <div className="bg-glass p-5">
+          <h2 className="mb-1 font-medium text-ink">Exploitant</h2>
+          <p className="mb-3 text-xs text-slate-500">
+            Le Cerfa a deux colonnes différentes selon que l'exploitant (celui qui déclare le vol) est
+            toi-même ou une société. Choisis la bonne pour que le bon bloc soit rempli.
+          </p>
+          <div className="mb-4 flex gap-4 text-sm">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="exploitant_type"
+                checked={exploitantType === "physique"}
+                onChange={() => setExploitantType("physique")}
+              />
+              Personne physique (toi)
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="exploitant_type"
+                checked={exploitantType === "morale"}
+                onChange={() => setExploitantType("morale")}
+              />
+              Personne morale (société)
+            </label>
+          </div>
+
+          {exploitantType === "morale" && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field
+                label="Raison sociale / dénomination"
+                value={raisonSociale}
+                onChange={setRaisonSociale}
+                className="sm:col-span-2"
+              />
+              <Field
+                label="Adresse du siège social"
+                value={siegeSocial}
+                onChange={setSiegeSocial}
+                className="sm:col-span-2"
+              />
+              <Field label="Identifiant SIREN/SIRET/RCS/RNE" value={sirenSiret} onChange={setSirenSiret} />
+              <Field
+                label="Qualité du mandataire (ex : Gérant, Président)"
+                value={mandataireQualite}
+                onChange={setMandataireQualite}
+              />
+              <p className="text-xs text-slate-500 sm:col-span-2">
+                Le mandataire (représentant légal) déclaré sur le Cerfa sera toi, avec les infos "Toi"
+                ci-dessus (nom, adresse, téléphone, email).
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

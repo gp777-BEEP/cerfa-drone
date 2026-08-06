@@ -32,6 +32,8 @@ export default function NewMissionForm({
 
   const [typeSlug, setTypeSlug] = useState(missionTypes[0]?.slug || "");
   const [title, setTitle] = useState("");
+  const [objetMission, setObjetMission] = useState("");
+  const [commanditaire, setCommanditaire] = useState("");
   const [dateDebut, setDateDebut] = useState("");
   const [heureDebut, setHeureDebut] = useState("09:00");
   const [dateFin, setDateFin] = useState("");
@@ -92,8 +94,13 @@ export default function NewMissionForm({
       setImportedData(data);
 
       // pré-remplit ce qu'on peut
-      if (data.site1?.objet_mission) setTitle(data.site1.objet_mission);
-      else if (data.site1?.adresse) setTitle(`Mission · ${data.site1.adresse}`);
+      if (data.site1?.objet_mission) {
+        setTitle(data.site1.objet_mission);
+        setObjetMission(data.site1.objet_mission);
+      } else if (data.site1?.adresse) {
+        setTitle(`Mission · ${data.site1.adresse}`);
+      }
+      if (data.site1?.commanditaire) setCommanditaire(data.site1.commanditaire);
 
       if (data.dates?.debut_date) setDateDebut(frToIso(data.dates.debut_date));
       if (data.dates?.debut_heure) setHeureDebut(`${data.dates.debut_heure}:${data.dates.debut_min || "00"}`);
@@ -178,6 +185,8 @@ export default function NewMissionForm({
         user_id: user.id,
         mission_type: typeSlug,
         title,
+        objet_mission: objetMission || title,
+        commanditaire,
         answers,
         date_debut: dateDebut || null,
         heure_debut: heureDebut,
@@ -374,6 +383,30 @@ export default function NewMissionForm({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="ex : Inspection toiture, Cabourg"
+            className="w-full rounded-md border border-slate-300 px-3 py-2"
+          />
+          <span className="mt-1 block text-xs text-slate-500">
+            Sert de nom interne dans ta liste de missions, et d'objet de mission par défaut sur le Cerfa
+            (modifiable ci-dessous).
+          </span>
+        </label>
+
+        <label className="mb-4 block text-sm">
+          <span className="mb-1 block text-slate-600">Objet précis de la mission (Cerfa)</span>
+          <input
+            value={objetMission}
+            onChange={(e) => setObjetMission(e.target.value)}
+            placeholder={title || "Laisse vide pour reprendre le titre ci-dessus"}
+            className="w-full rounded-md border border-slate-300 px-3 py-2"
+          />
+        </label>
+
+        <label className="mb-4 block text-sm">
+          <span className="mb-1 block text-slate-600">Commanditaire de la mission</span>
+          <input
+            value={commanditaire}
+            onChange={(e) => setCommanditaire(e.target.value)}
+            placeholder="ex : Mairie de Cabourg, particulier, ma société..."
             className="w-full rounded-md border border-slate-300 px-3 py-2"
           />
         </label>

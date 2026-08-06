@@ -11,8 +11,12 @@ create table if not exists profiles (
   phone text,
   email text,
   qualite text default 'Télépilote',
-  siren_siret text,
+  siren_siret text, -- réutilisé pour l'identifiant SIREN/SIRET/RCS/RNE si exploitant_type = 'morale'
   numero_exploitant text, -- numéro d'enregistrement AlphaTango (FRAxxxxxxxxxxxx), parfois demandé par la préfecture
+  exploitant_type text default 'physique', -- 'physique' | 'morale', cf. section 1 du Cerfa
+  raison_sociale text,
+  siege_social text,
+  mandataire_qualite text, -- ex: "Gérant", "Président" (si exploitant_type = 'morale')
   drones jsonb default '[]',
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -87,6 +91,8 @@ create table if not exists missions (
   user_id uuid not null references auth.users(id) on delete cascade,
   mission_type text not null references mission_types(slug),
   title text not null,
+  objet_mission text, -- objet précis de la mission pour le Cerfa ; si vide, retombe sur title
+  commanditaire text,
   status text not null default 'draft', -- draft | ready | dossier_genere
   archived boolean default false,
   answers jsonb not null default '{}',

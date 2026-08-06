@@ -128,6 +128,8 @@ async function handle(req: NextRequest) {
       const annexePath = path.join(process.cwd(), "public", "cerfa_annexe.pdf");
       const annexeTemplateBytes = await readFile(annexePath);
       const answers = (mission as any).answers || {};
+      const objetMission = (mission as any).objet_mission || mission.title;
+      const commanditaire = (mission as any).commanditaire || answers.commanditaire || "";
       const annexeInput = extraZones.map((zone: any, i: number) => ({
         numero: i + 3,
         code_postal: zone.code_postal || "",
@@ -136,8 +138,8 @@ async function handle(req: NextRequest) {
         en_agglomeration: !!zone.en_agglomeration,
         rassemblement: !!zone.rassemblement,
         rassemblement_description: zone.rassemblement_description || "",
-        objet_mission: mission.title,
-        commanditaire: answers.commanditaire || "",
+        objet_mission: objetMission,
+        commanditaire,
         eloignement_max_m: zone.distance_max_m ?? "",
         hauteur_max_m: zone.hauteur_max_m ?? "",
         descriptif_joint: true,
