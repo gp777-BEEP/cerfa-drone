@@ -47,8 +47,8 @@ export default function FileDropzone({
         disabled
           ? "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60"
           : dragOver
-          ? "cursor-pointer border-brand bg-brand-light"
-          : "cursor-pointer border-brand/40 bg-brand-light/40 hover:border-brand hover:bg-brand-light"
+          ? "cursor-pointer border-brand/60 bg-[rgba(45,217,172,0.10)]"
+          : "cursor-pointer border-white/10 bg-white/[0.02] hover:border-brand/40 hover:bg-[rgba(45,217,172,0.05)]"
       }`}
     >
       <p className="font-medium text-ink">{label}</p>
