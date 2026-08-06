@@ -103,6 +103,16 @@ export default function NewMissionForm({
       }
       if (data.site1?.commanditaire) setCommanditaire(data.site1.commanditaire);
 
+      // Préremplit aussi "Hauteur maximale de vol envisagée" / "Éloignement
+      // maximal du télépilote" (les questions du type de mission) depuis la
+      // zone 1 du Cerfa importé, si l'utilisateur n'a rien saisi lui-même :
+      // évite de redemander une info déjà présente dans le fichier.
+      setAnswers((prev) => ({
+        ...prev,
+        hauteur_max: prev.hauteur_max || data.site1?.hauteur_max_m || "",
+        eloignement_max: prev.eloignement_max || data.site1?.eloignement_max_m || "",
+      }));
+
       if (data.dates?.debut_date) setDateDebut(frToIso(data.dates.debut_date));
       if (data.dates?.debut_heure) setHeureDebut(`${data.dates.debut_heure}:${data.dates.debut_min || "00"}`);
       if (data.dates?.fin_date) setDateFin(frToIso(data.dates.fin_date));
@@ -216,6 +226,13 @@ export default function NewMissionForm({
     // calculés) passe en premier, le Cerfa comble les emplacements restants
     // s'il y en a.
     let slotsUsed = 0;
+    // Zone 1 importée (KML en priorité, sinon Cerfa) : sert à compléter
+    // "Hauteur maximale de vol envisagée" / "Éloignement maximal du
+    // télépilote" si l'utilisateur ne les a pas renseignées lui-même. Le KML
+    // n'est parsé qu'ici (après création de la mission), donc ce prérempli
+    // ne peut se faire qu'après coup, contrairement au Cerfa (cf.
+    // handleImportCerfa, prérempli en direct pendant la saisie).
+    let firstZoneHeights: { hauteur_max_m?: number | null; distance_max_m?: number | null } | null = null;
 
     if (kmlFile) {
       try {
@@ -245,6 +262,7 @@ export default function NewMissionForm({
             setKmlMsg(`Erreur en enregistrant les zones importées : ${insertErr.message} (la mission a quand même été créée)`);
           } else {
             slotsUsed = toInsert.length;
+            firstZoneHeights = { hauteur_max_m: toInsert[0].hauteur_max_m, distance_max_m: toInsert[0].distance_max_m };
           }
         }
       } catch (e: any) {
@@ -278,6 +296,11 @@ export default function NewMissionForm({
         const { error: insertErr } = await supabase.from("zones").insert(zonesToInsert);
         if (insertErr) {
           setImportMsg(`Erreur en enregistrant les zones du Cerfa : ${insertErr.message} (la mission a quand même été créée)`);
+        } else if (!firstZoneHeights) {
+          firstZoneHeights = {
+            hauteur_max_m: zonesToInsert[0].hauteur_max_m,
+            distance_max_m: zonesToInsert[0].distance_max_m,
+          };
         }
       }
 
@@ -308,6 +331,22 @@ export default function NewMissionForm({
             drones: profile.drones?.length ? profile.drones : drones,
           })
           .eq("id", user.id);
+      }
+    }
+
+    // Si une zone importée (KML ou Cerfa) a une hauteur/éloignement et que
+    // les questions du type de mission ne les ont pas déjà (ni saisies à la
+    // main, ni préremplies pendant l'import Cerfa ci-dessus), on complète
+    // maintenant : la mission existe déjà à ce stade (id nécessaire).
+    if (firstZoneHeights && (firstZoneHeights.hauteur_max_m != null || firstZoneHeights.distance_max_m != null)) {
+      const patch: Record<string, any> = {};
+      if (!answers.hauteur_max && firstZoneHeights.hauteur_max_m != null) patch.hauteur_max = firstZoneHeights.hauteur_max_m;
+      if (!answers.eloignement_max && firstZoneHeights.distance_max_m != null) patch.eloignement_max = firstZoneHeights.distance_max_m;
+      if (Object.keys(patch).length > 0) {
+        await supabase
+          .from("missions")
+          .update({ answers: { ...answers, ...patch } })
+          .eq("id", mission.id);
       }
     }
 
