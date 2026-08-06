@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ErrorBanner, WarningBanner } from "../../components/Banner";
 
 export default function GenerateButton({ missionId }: { missionId: string }) {
@@ -12,6 +13,13 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
   // dans une modale (l'iframe utilise le lecteur PDF natif du navigateur,
   // qui gère déjà pagination/zoom/impression sans code supplémentaire).
   const [previewOpen, setPreviewOpen] = useState(false);
+  // Ce bouton est rendu à l'intérieur d'une carte .bg-glass (backdrop-filter),
+  // qui crée un nouveau "containing block" pour tout descendant en
+  // position:fixed (comportement CSS standard) : la modale se retrouvait donc
+  // coincée dans les limites de la carte au lieu de couvrir tout l'écran.
+  // On la sort du DOM de la carte via un portail directement dans <body>.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!previewOpen) return;
@@ -70,44 +78,48 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
         </button>
       )}
 
-      {previewOpen && url && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-          onClick={() => setPreviewOpen(false)}
-        >
+      {mounted &&
+        previewOpen &&
+        url &&
+        createPortal(
           <div
-            className="flex h-full max-h-[900px] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0d1512] shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            onClick={() => setPreviewOpen(false)}
           >
-            <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
-              <span className="text-sm font-medium text-ink">Aperçu du dossier</span>
-              <button
-                onClick={() => setPreviewOpen(false)}
-                aria-label="Fermer l'aperçu"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-white/5 hover:text-ink"
-              >
-                ✕
-              </button>
+            <div
+              className="flex h-full max-h-[900px] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-white/10 bg-[#0d1512] shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+                <span className="text-sm font-medium text-ink">Aperçu du dossier</span>
+                <button
+                  onClick={() => setPreviewOpen(false)}
+                  aria-label="Fermer l'aperçu"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-white/5 hover:text-ink"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 bg-slate-900">
+                <iframe src={url} title="Aperçu du dossier PDF" className="h-full w-full border-0" />
+              </div>
+              <div className="flex shrink-0 items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
+                <WarningBanner className="flex-1">
+                  Avant de l'envoyer à la préfecture, n'oublie pas de signer le document.
+                </WarningBanner>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+                >
+                  Télécharger
+                </a>
+              </div>
             </div>
-            <div className="min-h-0 flex-1 bg-slate-900">
-              <iframe src={url} title="Aperçu du dossier PDF" className="h-full w-full border-0" />
-            </div>
-            <div className="flex shrink-0 items-center justify-between gap-3 border-t border-white/10 px-4 py-3">
-              <WarningBanner className="flex-1">
-                Avant de l'envoyer à la préfecture, n'oublie pas de signer le document.
-              </WarningBanner>
-              <a
-                href={url}
-                target="_blank"
-                rel="noreferrer"
-                className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
-              >
-                Télécharger
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
