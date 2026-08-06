@@ -1,18 +1,28 @@
 /**
- * Génère une image de carte (fond OpenStreetMap + polygone de la zone de vol
- * + position(s) du télépilote) pour illustrer une fiche "zone" importée
- * depuis un KML. Pas de dépendance à une clé API (Google/Mapbox) : on
- * compose l'image nous-mêmes à partir des tuiles raster publiques d'OSM,
- * comme le ferait n'importe quel viewer de carte "slippy map".
+ * Génère une image de carte (fond satellite + repères + polygone de la zone
+ * de vol + position(s) du télépilote) pour illustrer une fiche "zone"
+ * importée depuis un KML. Pas de dépendance à une clé API (Google/Mapbox) :
+ * on compose l'image nous-mêmes à partir de tuiles raster publiques.
  *
- * Respect de la politique d'usage des tuiles OSM (User-Agent identifiable,
- * volumétrie faible : quelques tuiles par zone importée, pas de cache
- * bulk/systématique).
+ * Fond "hybride" (vue satellite + noms de rues/lieux par-dessus), demandé
+ * pour remplacer le fond plan OSM plat : 3 couches Esri superposées, la
+ * combinaison officielle "Imagery Hybrid" d'Esri (vérifiée disponible sans
+ * clé API, cf. https://server.arcgisonline.com/.../World_Imagery et
+ * https://services.arcgisonline.com/.../Reference/*) :
+ *  1. World_Imagery (photo satellite/aérienne)
+ *  2. Reference/World_Transportation (routes, en transparence)
+ *  3. Reference/World_Boundaries_and_Places (noms de lieux/rues, en
+ *     transparence, prévue par Esri spécifiquement pour être posée sur un
+ *     fond satellite)
+ * Adressage Esri : {z}/{y}/{x} (rangée avant colonne), à l'inverse d'OSM.
  */
 import sharp from "sharp";
 
 const TILE_SIZE = 256;
 const OSM_USER_AGENT = "CerfaDrone/1.0 (+https://cerfa-drone.vercel.app; contact via app)";
+const ESRI_IMAGERY_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile";
+const ESRI_TRANSPORT_URL = "https://services.arcgisonline.com/arcgis/rest/services/Reference/World_Transportation/MapServer/tile";
+const ESRI_PLACES_URL = "https://services.arcgisonline.com/arcgis/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile";
 
 // Les fonctions serverless de Vercel n'ont AUCUNE police système installée,
 // et même une police embarquée en base64 dans le SVG (@font-face) ressort en
@@ -136,25 +146,68 @@ export async function renderZoneMap(
   const tileMaxY = Math.floor((originWorldY + height) / TILE_SIZE);
   const maxTileIndex = Math.pow(2, zoom) - 1;
 
+  async function fetchTile(baseUrl: string): Promise<Buffer | null> {
+    try {
+      const res = await fetch(baseUrl, {
+        headers: { "User-Agent": OSM_USER_AGENT },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) return null;
+      return Buffer.from(await res.arrayBuffer());
+    } catch {
+      return null;
+    }
+  }
+
+  // 3 couches par position de tuile (imagerie, routes, lieux), récupérées en
+  // parallèle puis empilées dans cet ordre. Une couche manquante (timeout,
+  // zoom trop élevé pour la zone, etc.) est simplement sautée plutôt que de
+  // faire échouer toute la carte.
   const composites: sharp.OverlayOptions[] = [];
+  let imageryOk = 0;
+  let imageryAttempted = 0;
   for (let tx = tileMinX; tx <= tileMaxX; tx++) {
     for (let ty = tileMinY; ty <= tileMaxY; ty++) {
       const wrappedX = ((tx % (maxTileIndex + 1)) + (maxTileIndex + 1)) % (maxTileIndex + 1);
       if (ty < 0 || ty > maxTileIndex) continue;
-      try {
-        const res = await fetch(`https://tile.openstreetmap.org/${zoom}/${wrappedX}/${ty}.png`, {
-          headers: { "User-Agent": OSM_USER_AGENT },
-          signal: AbortSignal.timeout(8000),
-        });
-        if (!res.ok) continue;
-        const buf = Buffer.from(await res.arrayBuffer());
-        composites.push({
-          input: buf,
-          left: Math.round(tx * TILE_SIZE - originWorldX),
-          top: Math.round(ty * TILE_SIZE - originWorldY),
-        });
-      } catch {
-        // tuile manquante : on continue avec un fond blanc à cet endroit
+      const left = Math.round(tx * TILE_SIZE - originWorldX);
+      const top = Math.round(ty * TILE_SIZE - originWorldY);
+      imageryAttempted++;
+
+      const [imagery, transport, places] = await Promise.all([
+        fetchTile(`${ESRI_IMAGERY_URL}/${zoom}/${ty}/${wrappedX}`),
+        fetchTile(`${ESRI_TRANSPORT_URL}/${zoom}/${ty}/${wrappedX}`),
+        fetchTile(`${ESRI_PLACES_URL}/${zoom}/${ty}/${wrappedX}`),
+      ]);
+      if (imagery) {
+        imageryOk++;
+        composites.push({ input: imagery, left, top });
+      }
+      if (transport) composites.push({ input: transport, left, top });
+      if (places) composites.push({ input: places, left, top });
+    }
+  }
+
+  // Filet de sécurité : si Esri est injoignable (pare-feu, panne...), on ne
+  // veut surtout pas livrer une carte vide sur un document officiel. Si
+  // AUCUNE tuile satellite n'a pu être récupérée, on retombe entièrement sur
+  // l'ancien fond de plan OSM (fiable, déjà utilisé en prod auparavant).
+  let usedOsmFallback = false;
+  if (imageryAttempted > 0 && imageryOk === 0) {
+    usedOsmFallback = true;
+    composites.length = 0;
+    for (let tx = tileMinX; tx <= tileMaxX; tx++) {
+      for (let ty = tileMinY; ty <= tileMaxY; ty++) {
+        const wrappedX = ((tx % (maxTileIndex + 1)) + (maxTileIndex + 1)) % (maxTileIndex + 1);
+        if (ty < 0 || ty > maxTileIndex) continue;
+        const osm = await fetchTile(`https://tile.openstreetmap.org/${zoom}/${wrappedX}/${ty}.png`);
+        if (osm) {
+          composites.push({
+            input: osm,
+            left: Math.round(tx * TILE_SIZE - originWorldX),
+            top: Math.round(ty * TILE_SIZE - originWorldY),
+          });
+        }
       }
     }
   }
@@ -207,6 +260,10 @@ export async function renderZoneMap(
     height,
     hasPilot: pilots.length > 0,
     scaleBar: { xPx: barX + widthPx / 2, yPx: barY - 8, widthPx, label: formatDistance(distanceM) },
-    attribution: { xPx: width - 8, yPx: height - 8, text: "© OpenStreetMap contributors" },
+    attribution: {
+      xPx: width - 8,
+      yPx: height - 8,
+      text: usedOsmFallback ? "© OpenStreetMap contributors" : "Esri, HERE, Garmin, © OpenStreetMap contributors",
+    },
   };
 }
