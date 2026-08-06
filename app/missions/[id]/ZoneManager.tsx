@@ -766,6 +766,9 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 />
                 {importingKml && <p className="mt-2 text-sm text-slate-500">Lecture et géolocalisation en cours...</p>}
                 <StatusMessage text={kmlMsg} />
+                <a href="/tutoriel#pas-de-carte" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
+                  Pas de carte sous la main ?
+                </a>
               </div>
             </div>
             <p className="mt-2 text-xs text-slate-400">

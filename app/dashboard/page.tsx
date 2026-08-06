@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppHeader from "../components/AppHeader";
 import MissionList from "./MissionList";
+import TutorialBanner from "./TutorialBanner";
 import { WarningBanner } from "../components/Banner";
 
 export default async function Dashboard() {
@@ -32,6 +33,8 @@ export default async function Dashboard() {
             + Nouvelle mission
           </Link>
         </div>
+
+        <TutorialBanner />
 
         {!profile?.full_name && (
           <WarningBanner className="mb-6">

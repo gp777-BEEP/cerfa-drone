@@ -372,6 +372,9 @@ export default function NewMissionForm({
               onFiles={(files) => handleSelectKml(files[0])}
             />
             <StatusMessage text={kmlMsg} />
+            <a href="/tutoriel#pas-de-carte" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
+              Pas de carte sous la main ?
+            </a>
           </div>
           <div>
             <span className="mb-2 block text-sm font-medium text-ink">Cerfa déjà rempli</span>

@@ -6,6 +6,9 @@ export default function Footer() {
       <div className="mx-auto flex max-w-3xl flex-col items-center justify-between gap-3 px-6 text-xs text-slate-400 sm:flex-row">
         <span>© {new Date().getFullYear()} Cerfa Drone</span>
         <nav className="flex gap-5">
+          <Link href="/tutoriel" className="hover:text-brand">
+            Tutoriel
+          </Link>
           <Link href="/contact" className="hover:text-brand">
             Contact
           </Link>
