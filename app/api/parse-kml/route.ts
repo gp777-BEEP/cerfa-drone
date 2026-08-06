@@ -52,7 +52,14 @@ async function reverseGeocode(lat: number, lon: number): Promise<{ adresse: stri
     const props = json?.features?.[0]?.properties;
     if (!props) return null;
     return {
-      adresse: props.label || props.name || "",
+      // props.name = rue + numéro seuls (ex: "172 Impasse du Nantillet").
+      // props.label = adresse complète avec code postal et ville déjà inclus
+      // (ex: "172 Impasse du Nantillet 74970 Marignier") -- comme
+      // code_postal/localite sont stockés et affichés séparément à côté de
+      // adresse, utiliser label ici doublait le code postal et la ville à
+      // l'écran ("...Marignier 74970 Marignier"). props.label garde en
+      // secours pour les résultats qui n'ont pas de "name" (rare).
+      adresse: props.name || props.label || "",
       code_postal: props.postcode || "",
       localite: props.city || "",
     };

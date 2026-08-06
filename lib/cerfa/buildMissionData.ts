@@ -42,6 +42,10 @@ export interface MissionRow {
     sts01?: boolean;
     s3?: boolean;
   } | null;
+  // Sous-ensemble des drones du profil (ou drones ajoutés ponctuellement)
+  // utilisés pour CETTE mission précise. Si absent/vide, on retombe sur
+  // profile.drones en entier (comportement historique, cf. plus bas).
+  drones?: Profile["drones"];
 }
 
 export interface ZoneRow {
@@ -126,7 +130,12 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
     },
   };
 
-  (profile.drones || []).slice(0, 5).forEach((drone, i) => {
+  // Drones déclarés pour CETTE mission si l'utilisateur en a choisi (cf.
+  // MissionDrones.tsx / NewMissionForm.tsx) ; sinon tous les drones du
+  // profil, comme avant que la sélection par mission n'existe.
+  const missionDrones = mission.drones && mission.drones.length > 0 ? mission.drones : profile.drones || [];
+
+  missionDrones.slice(0, 5).forEach((drone, i) => {
     data[`aeronef${i + 1}`] = {
       constructeur: drone.constructeur || "",
       modele: drone.modele || "",

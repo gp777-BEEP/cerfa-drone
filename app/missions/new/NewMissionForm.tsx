@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 import DateRangePicker from "../../components/DateRangePicker";
+import DroneChecklist from "../../components/DroneChecklist";
 import { ErrorBanner } from "../../components/Banner";
 import StatusMessage from "../../components/StatusMessage";
+import { Drone, droneKey, mergeDroneLists } from "@/lib/drones";
 
 type Question = { key: string; label: string; type: "text" | "textarea" | "boolean" | "number" };
 type MissionType = { slug: string; label: string; description: string; question_schema: Question[] };
@@ -18,7 +20,13 @@ function frToIso(dmy?: string): string {
   return `${y}-${m}-${d}`;
 }
 
-export default function NewMissionForm({ missionTypes }: { missionTypes: MissionType[] }) {
+export default function NewMissionForm({
+  missionTypes,
+  initialProfileDrones = [],
+}: {
+  missionTypes: MissionType[];
+  initialProfileDrones?: Drone[];
+}) {
   const supabase = createClient();
   const router = useRouter();
 
@@ -40,7 +48,30 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
   const [kmlFile, setKmlFile] = useState<File | null>(null);
   const [kmlMsg, setKmlMsg] = useState("");
 
+  // Drones pour CETTE mission : tous les drones du profil sont cochés par
+  // défaut (comportement historique), mais si un Cerfa est importé et en
+  // détecte un sous-ensemble précis (ex: seulement le Mavic 3 Pro), la
+  // sélection bascule sur uniquement ceux-là plutôt que de garder tout le
+  // profil coché en plus de ce qui vient d'être importé.
+  const [extraDrones, setExtraDrones] = useState<Drone[]>([]);
+  const [checkedDroneKeys, setCheckedDroneKeys] = useState<Set<string>>(
+    () => new Set(initialProfileDrones.map(droneKey))
+  );
+  const allDrones = useMemo(
+    () => mergeDroneLists(initialProfileDrones, extraDrones),
+    [initialProfileDrones, extraDrones]
+  );
+
   const selectedType = useMemo(() => missionTypes.find((t) => t.slug === typeSlug), [typeSlug, missionTypes]);
+
+  function toggleDrone(key: string) {
+    setCheckedDroneKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   function handleSelectKml(file: File) {
     setKmlFile(file);
@@ -74,7 +105,28 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
       else if (data.regime?.sous_categorie_a3) setSousCategorie("a3");
 
       const nbZones = [data.site1, data.site2].filter(Boolean).length;
-      const nbDrones = [1, 2, 3, 4, 5].filter((i) => data[`aeronef${i}`]?.constructeur).length;
+      const importedDrones: Drone[] = [1, 2, 3, 4, 5]
+        .map((i) => data[`aeronef${i}`])
+        .filter((d) => d && d.constructeur)
+        .map((d) => ({
+          constructeur: d.constructeur || "",
+          modele: d.modele || "",
+          type: d.type || "Drone",
+          numero_serie: d.numero_serie || "",
+          masse_kg: d.masse_kg || "",
+          classe_c5: d.classe_c5 || "non",
+          captif: d.captif || "non",
+          numero_enregistrement: d.numero_enregistrement || "",
+          numero_signalement: d.numero_signalement || "",
+        }));
+      const nbDrones = importedDrones.length;
+      if (nbDrones > 0) {
+        // On ajoute ceux qui ne sont pas déjà dans le profil, et on ne coche
+        // QUE les drones importés (pas "tous les drones du profil + ceux
+        // importés") : c'est précisément ce qu'un Cerfa importé décrit.
+        setExtraDrones((prev) => mergeDroneLists(prev, importedDrones));
+        setCheckedDroneKeys(new Set(importedDrones.map(droneKey)));
+      }
       // Pas besoin de réimporter un Cerfa à chaque mission juste pour le(s)
       // drone(s) : ils sont enregistrés une fois dans le profil et réutilisés
       // automatiquement pour toutes les missions (buildMissionData.ts). Si
@@ -137,6 +189,7 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
           sous_categorie_a2: sousCategorie === "a2",
           sous_categorie_a3: sousCategorie === "a3",
         },
+        drones: allDrones.filter((d) => checkedDroneKeys.has(droneKey(d))),
       })
       .select()
       .single();
@@ -281,6 +334,15 @@ export default function NewMissionForm({ missionTypes }: { missionTypes: Mission
             <StatusMessage text={importMsg} />
           </div>
         </div>
+      </div>
+
+      <div className="bg-glass p-5">
+        <h2 className="mb-1 font-medium text-ink">Drones pour cette mission</h2>
+        <p className="mb-3 text-xs text-slate-500">
+          Coché par défaut : tous tes drones enregistrés. Décoche ceux qui ne volent pas sur cette
+          mission-là.
+        </p>
+        <DroneChecklist drones={allDrones} checkedKeys={checkedDroneKeys} onToggle={toggleDrone} />
       </div>
 
       <div className="bg-glass p-5">

@@ -15,12 +15,14 @@ export default async function NewMissionPage() {
     .select("*")
     .order("sort_order", { ascending: true });
 
+  const { data: profile } = await supabase.from("profiles").select("drones").eq("id", user.id).single();
+
   return (
     <>
       <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <h1 className="mb-6 text-2xl font-medium text-ink">Nouvelle mission</h1>
-        <NewMissionForm missionTypes={missionTypes || []} />
+        <NewMissionForm missionTypes={missionTypes || []} initialProfileDrones={profile?.drones || []} />
       </main>
     </>
   );

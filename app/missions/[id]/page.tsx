@@ -5,6 +5,7 @@ import GenerateButton from "./GenerateButton";
 import MissionTitle from "./MissionTitle";
 import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
+import MissionDrones from "./MissionDrones";
 import AppHeader from "../../components/AppHeader";
 import { WarningBanner } from "../../components/Banner";
 
@@ -35,7 +36,9 @@ export default async function MissionPage({ params }: { params: { id: string } }
   const missingItems: { label: string; href: string }[] = [];
   if (!profile?.full_name) missingItems.push({ label: "Ton nom", href: "/profile" });
   if (!profile?.address) missingItems.push({ label: "Ton adresse", href: "/profile" });
-  if (!profile?.drones || profile.drones.filter((d: any) => d?.constructeur).length === 0) {
+  const hasProfileDrones = (profile?.drones || []).filter((d: any) => d?.constructeur).length > 0;
+  const hasMissionDrones = (mission.drones || []).filter((d: any) => d?.constructeur).length > 0;
+  if (!hasProfileDrones && !hasMissionDrones) {
     missingItems.push({ label: "Au moins un drone", href: "/profile" });
   }
   const zonesList = zones || [];
@@ -65,7 +68,15 @@ export default async function MissionPage({ params }: { params: { id: string } }
 
         <ZoneManager missionId={mission.id} initialZones={zones || []} />
 
-        <div className="mt-8 bg-glass p-5">
+        <div className="mt-6 bg-glass p-5">
+          <h2 className="mb-1 font-medium text-ink">Drones utilisés</h2>
+          <p className="mb-3 text-xs text-slate-400">
+            Réutilisés depuis ton profil, ou détectés à l'import d'un Cerfa pour cette mission.
+          </p>
+          <MissionDrones missionId={mission.id} profileDrones={profile?.drones || []} initialSelected={mission.drones} />
+        </div>
+
+        <div className="mt-6 bg-glass p-5">
           <h2 className="mb-3 font-medium text-ink">Générer le dossier</h2>
 
           {missingItems.length > 0 && (

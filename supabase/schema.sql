@@ -95,6 +95,7 @@ create table if not exists missions (
   date_fin date,
   heure_fin text,
   regime jsonb not null default '{}', -- {categorie_ouverte, sous_categorie_a1/a2/a3, sts01, s3}
+  drones jsonb, -- sous-ensemble des drones du profil utilisés pour CETTE mission ; null/vide = tous les drones du profil (comportement par défaut)
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

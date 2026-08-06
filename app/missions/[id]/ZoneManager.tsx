@@ -81,6 +81,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [kmlMsg, setKmlMsg] = useState("");
   const [importingCerfa, setImportingCerfa] = useState(false);
   const [cerfaMsg, setCerfaMsg] = useState("");
+  const [merging, setMerging] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY);
@@ -202,6 +203,26 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           s3: !!r.s3,
         };
       }
+      // Drones : un Cerfa importé sur une mission déjà créée remplace la
+      // sélection de drones de CETTE mission par ceux qu'il décrit (visible
+      // et modifiable ensuite dans "Drones utilisés", cf. MissionDrones.tsx)
+      // plutôt que de les ajouter au profil global.
+      const importedDrones = [1, 2, 3, 4, 5]
+        .map((i) => json.data[`aeronef${i}`])
+        .filter((dr: any) => dr && dr.constructeur)
+        .map((dr: any) => ({
+          constructeur: dr.constructeur || "",
+          modele: dr.modele || "",
+          type: dr.type || "Drone",
+          numero_serie: dr.numero_serie || "",
+          masse_kg: dr.masse_kg || "",
+          classe_c5: dr.classe_c5 || "non",
+          captif: dr.captif || "non",
+          numero_enregistrement: dr.numero_enregistrement || "",
+          numero_signalement: dr.numero_signalement || "",
+        }));
+      if (importedDrones.length > 0) missionUpdate.drones = importedDrones;
+
       if (Object.keys(missionUpdate).length > 0) {
         await supabase.from("missions").update(missionUpdate).eq("id", missionId);
         router.refresh();
@@ -219,7 +240,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           ? ` (${dbg.totalFields} champ(s) détecté(s), ${dbg.textFieldsWithValue} rempli(s), ${dbg.matched} reconnu(s), secours utilisé ${dbg.usedRawFallback} fois, ${dbg.bytesReceived} octets reçus)`
           : "";
         const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
-        const gotMissionInfo = Object.keys(missionUpdate).length > 0 ? " Les dates et le régime de vol ont été importés." : "";
+        const droneNote = importedDrones.length > 0 ? ` ${importedDrones.length} drone(s) importé(s) (voir "Drones utilisés" plus bas).` : "";
+        const gotMissionInfo = Object.keys(missionUpdate).length > 0 ? ` Les dates et le régime de vol ont été importés.${droneNote}` : droneNote;
         setCerfaMsg(
           slotsLeft === 0
             ? "Déjà 2 zones sur cette mission, retire-en une avant d'en importer d'autres."
@@ -242,7 +264,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           image_paths: [],
         }))
       );
-      const gotMissionInfo2 = Object.keys(missionUpdate).length > 0 ? " Dates et régime de vol importés aussi." : "";
+      const droneNote2 = importedDrones.length > 0 ? ` ${importedDrones.length} drone(s) importé(s) (voir "Drones utilisés" plus bas).` : "";
+      const gotMissionInfo2 = Object.keys(missionUpdate).length > 0 ? ` Dates et régime de vol importés aussi.${droneNote2}` : droneNote2;
       setCerfaMsg(
         imported > 0
           ? `${imported} zone(s) importée(s) depuis le Cerfa.${gotMissionInfo2} Pense à ajouter une carte (via KML ou une capture) si besoin.`
@@ -350,6 +373,52 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     setZones((prev) => prev.filter((z) => z.id !== id));
     if (editingId === id) setEditingId(null);
     router.refresh();
+  }
+
+  // Cas fréquent : le KML et le Cerfa décrivent en fait le même lieu de vol
+  // (importés séparément, donc créés comme 2 zones distinctes). Plutôt que
+  // de forcer à choisir laquelle garder et ressaisir ce qui manque, on
+  // combine les deux en une seule : on garde la 1ère zone, on complète ses
+  // champs vides avec ceux de la 2nde, on prend le maximum des hauteurs et
+  // éloignements (jamais sous-estimer dans une déclaration), et l'image/la
+  // carte de l'une ou l'autre si l'une des deux n'en a pas.
+  async function mergeZones(idKeep: string, idDrop: string) {
+    const zKeep = zones.find((z) => z.id === idKeep);
+    const zDrop = zones.find((z) => z.id === idDrop);
+    if (!zKeep || !zDrop) return;
+    if (
+      !confirm(
+        "Fusionner ces 2 zones en une seule ? La 2nde sera supprimée après avoir complété la 1ère avec ses informations."
+      )
+    )
+      return;
+
+    const maxOrNull = (a: number | null, b: number | null) =>
+      a == null && b == null ? null : Math.max(a ?? -Infinity, b ?? -Infinity);
+
+    setMerging(true);
+    const merged = {
+      title: zKeep.title || zDrop.title,
+      adresse: zKeep.adresse || zDrop.adresse,
+      code_postal: zKeep.code_postal || zDrop.code_postal,
+      localite: zKeep.localite || zDrop.localite,
+      en_agglomeration: !!zKeep.en_agglomeration || !!zDrop.en_agglomeration,
+      rassemblement: !!zKeep.rassemblement || !!zDrop.rassemblement,
+      distance_max_m: maxOrNull(zKeep.distance_max_m, zDrop.distance_max_m),
+      hauteur_max_m: maxOrNull(zKeep.hauteur_max_m, zDrop.hauteur_max_m),
+      notes: [zKeep.notes, zDrop.notes].filter(Boolean).join(" / ") || null,
+      image_paths: zKeep.image_paths?.length ? zKeep.image_paths : zDrop.image_paths || [],
+      map_meta: zKeep.map_meta || zDrop.map_meta || null,
+    };
+
+    const { data, error } = await supabase.from("zones").update(merged).eq("id", idKeep).select().single();
+    if (!error && data) {
+      await supabase.from("zones").delete().eq("id", idDrop);
+      setZones((prev) => prev.filter((z) => z.id !== idDrop).map((z) => (z.id === idKeep ? data : z)));
+      setEditingId(null);
+      router.refresh();
+    }
+    setMerging(false);
   }
 
   return (
@@ -468,6 +537,19 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           )
         )}
       </div>
+
+      {zones.length === 2 && (
+        <p className="mb-4 text-xs text-slate-500">
+          En fait le même lieu de vol (ex: importé à la fois via KML et Cerfa) ?{" "}
+          <button
+            onClick={() => mergeZones(zones[0].id, zones[1].id)}
+            disabled={merging}
+            className="text-brand hover:underline disabled:opacity-50"
+          >
+            {merging ? "Fusion..." : "Fusionner ces 2 zones en une seule"}
+          </button>
+        </p>
+      )}
 
       {zones.length < 2 && (
         <div className="mb-5 border-t border-slate-100 pt-4">
