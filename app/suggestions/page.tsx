@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppHeader from "../components/AppHeader";
 import SuggestionForm from "./SuggestionForm";
+import TutorielReminderLink from "./TutorielReminderLink";
 
 export default async function SuggestionsPage() {
   const supabase = createClient();
@@ -26,13 +26,7 @@ export default async function SuggestionsPage() {
           format d'import KML ? Dites-le ici, ça m'aide à prioriser.
         </p>
 
-        <Link
-          href="/tutoriel"
-          className="mb-6 flex items-center justify-between rounded-xl border border-brand/30 bg-brand-light px-4 py-3 text-sm text-ink hover:bg-brand-light/70"
-        >
-          <span>Besoin d'un rappel sur comment utiliser l'app ? Revoir le tutoriel</span>
-          <span className="text-brand">→</span>
-        </Link>
+        <TutorielReminderLink />
 
         <SuggestionForm />
 

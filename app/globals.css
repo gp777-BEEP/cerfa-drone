@@ -6,6 +6,18 @@
   color-scheme: dark;
 }
 
+/* Le rectangle gris qui "restait collé" sur les boutons/liens après un tap,
+   signalé plusieurs fois malgré les correctifs côté React (reset au clic,
+   blur...) : ce n'est pas notre effet de survol qui coince, c'est le
+   surlignage de tap natif de Safari/Chrome mobile, qui peut rester affiché
+   après une navigation en client-side routing (pas de rechargement complet
+   de page pour le faire disparaître). Indépendant de tout notre JS -> on le
+   désactive globalement, une bonne pratique standard pour les apps avec leur
+   propre style de survol/focus personnalisé de toute façon. */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   /* Fond "presque uni" mais pas plat : plusieurs halos verts doux qui se
      chevauchent (accent de marque), plus un très léger halo bleu-violet en
