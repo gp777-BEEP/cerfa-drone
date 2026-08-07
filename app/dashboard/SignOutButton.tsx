@@ -2,10 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useSpotlightHover } from "@/lib/useSpotlightHover";
 
 export default function SignOutButton() {
   const supabase = createClient();
   const router = useRouter();
+  const spotlight = useSpotlightHover();
 
   return (
     <button
@@ -14,7 +16,10 @@ export default function SignOutButton() {
         router.push("/login");
         router.refresh();
       }}
-      className="text-sm text-slate-500 hover:text-brand"
+      className="px-2 py-1 text-sm text-slate-500 transition-colors hover:text-ink"
+      style={spotlight.style}
+      onMouseMove={spotlight.onMouseMove}
+      onMouseLeave={spotlight.onMouseLeave}
     >
       Se déconnecter
     </button>

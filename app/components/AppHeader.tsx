@@ -1,6 +1,25 @@
+"use client";
+
+import type { ReactNode } from "react";
 import Link from "next/link";
 import SignOutButton from "../dashboard/SignOutButton";
 import DroneIcon from "./DroneIcon";
+import { useSpotlightHover } from "@/lib/useSpotlightHover";
+
+function NavLink({ href, children }: { href: string; children: ReactNode }) {
+  const spotlight = useSpotlightHover();
+  return (
+    <Link
+      href={href}
+      className="px-2 py-1 text-slate-500 transition-colors hover:text-ink"
+      style={spotlight.style}
+      onMouseMove={spotlight.onMouseMove}
+      onMouseLeave={spotlight.onMouseLeave}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export default function AppHeader() {
   return (
@@ -14,13 +33,9 @@ export default function AppHeader() {
           />
           Cerfa Drone
         </Link>
-        <nav className="flex items-center gap-5 text-sm text-slate-500">
-          <Link href="/dashboard" className="hover:text-brand">
-            Missions
-          </Link>
-          <Link href="/profile" className="hover:text-brand">
-            Profil
-          </Link>
+        <nav className="flex items-center gap-2 text-sm text-slate-500">
+          <NavLink href="/dashboard">Missions</NavLink>
+          <NavLink href="/profile">Profil</NavLink>
           <SignOutButton />
         </nav>
       </div>
