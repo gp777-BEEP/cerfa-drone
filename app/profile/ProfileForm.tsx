@@ -392,6 +392,23 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               </div>
             </div>
           </div>
+
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <span className="mb-2 block text-sm font-medium text-ink">Aperçu</span>
+            <p className="mb-3 text-xs text-slate-500">
+              Ce à quoi ressemblera le coin des fiches de zone générées, avec ce logo et cette couleur.
+            </p>
+            <div className="relative h-40 w-28 rounded-md bg-white">
+              <div className="absolute left-3 top-3 h-1 w-12 rounded-full bg-slate-800/70" />
+              <div className="absolute left-3 top-6 right-3 bottom-9 rounded-sm bg-slate-100" />
+              <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1">
+                {logoPreviewUrl && (
+                  <img src={logoPreviewUrl} alt="" className="h-3 w-3 object-contain opacity-45" />
+                )}
+                <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: brandColor, opacity: 0.55 }} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

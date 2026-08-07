@@ -55,7 +55,7 @@ export default function MissionList({ initialMissions }: { initialMissions: Miss
 
       <div className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10">
         {visible.length === 0 && (
-          <p className="p-6 text-sm text-slate-500">Aucune mission pour l'instant. Crée la première !</p>
+          <p className="p-6 text-sm text-slate-500">Aucune mission pour l'instant. Créez la première !</p>
         )}
         {visible.map((m) => {
           const [borderColor, textColor] = STATUS_COLOR[m.status] || ["border-slate-300", "text-slate-400"];
