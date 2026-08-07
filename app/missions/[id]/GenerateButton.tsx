@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ErrorBanner, WarningBanner } from "../../components/Banner";
+import Coachmark from "../../components/Coachmark";
 
 export default function GenerateButton({ missionId }: { missionId: string }) {
   const [loading, setLoading] = useState(false);
@@ -61,6 +62,11 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
 
   return (
     <div>
+      <Coachmark
+        id="apercu-avant-generation"
+        text="Le dossier s'affichera d'abord dans un aperçu, avant le téléchargement, pour vérifier que tout est correct."
+        className="mb-3"
+      />
       <button
         onClick={handleClick}
         disabled={loading}

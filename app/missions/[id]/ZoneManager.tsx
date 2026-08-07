@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 import StatusMessage from "../../components/StatusMessage";
 import FieldHint from "../../components/FieldHint";
+import Coachmark from "../../components/Coachmark";
 
 function frToIso(dmy?: string): string {
   if (!dmy) return "";
@@ -498,6 +499,14 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         Nombre de zones illimité : les 2 premières vont sur la page principale du Cerfa, les suivantes sur
         l'annexe officielle jointe automatiquement au dossier.
       </p>
+
+      {zones.length >= 2 && (
+        <Coachmark
+          id="fusion-zones"
+          text="Deux zones qui décrivent en fait le même endroit (une importée par KML, l'autre par Cerfa, par exemple) ? Cliquez sur leurs cases à cocher puis sur « Fusionner »."
+          className="mb-3"
+        />
+      )}
 
       <div className="mb-4 space-y-3">
         {zones.map((z) =>

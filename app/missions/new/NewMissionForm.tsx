@@ -7,6 +7,7 @@ import FileDropzone from "../../components/FileDropzone";
 import DateRangePicker from "../../components/DateRangePicker";
 import DroneChecklist from "../../components/DroneChecklist";
 import FieldHint from "../../components/FieldHint";
+import Coachmark from "../../components/Coachmark";
 import { ErrorBanner } from "../../components/Banner";
 import StatusMessage from "../../components/StatusMessage";
 import { Drone, droneKey, mergeDroneLists } from "@/lib/drones";
@@ -362,6 +363,11 @@ export default function NewMissionForm({
           Les deux sont indépendants, déposez ce que vous avez : le KML apporte la carte des zones (avec
           échelle) et calcule hauteur/éloignement, le Cerfa préremplit vos infos, vos drones et les dates.
         </p>
+        <Coachmark
+          id="import-optionnel-mission"
+          text="Ni Cerfa ni KML sous la main ? Pas de problème : vous pourrez décrire votre zone de vol manuellement, avec juste une capture d'écran, une fois la mission créée."
+          className="mb-3"
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <span className="mb-2 block text-sm font-medium text-ink">Zones de vol (KML)</span>

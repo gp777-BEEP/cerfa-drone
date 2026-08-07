@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppHeader from "../components/AppHeader";
 import MissionList from "./MissionList";
-import TutorialBanner from "./TutorialBanner";
+import Coachmark from "../components/Coachmark";
 import { WarningBanner } from "../components/Banner";
 
 export default async function Dashboard() {
@@ -34,7 +34,15 @@ export default async function Dashboard() {
           </Link>
         </div>
 
-        <TutorialBanner />
+        {(missions || []).length === 0 && (
+          <Coachmark
+            id="dashboard-premiere-mission"
+            text="Nouveau ici ? Créez votre première mission avec le bouton ci-dessus : le Cerfa, les zones et les drones se remplissent au fur et à mesure, avec des astuces qui apparaissent au bon moment."
+            linkHref="/tutoriel"
+            linkLabel="Voir le guide complet"
+            className="mb-6"
+          />
+        )}
 
         {!profile?.full_name && (
           <WarningBanner className="mb-6">
