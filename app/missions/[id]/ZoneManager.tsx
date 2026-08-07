@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
@@ -119,6 +120,35 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   // n'a qu'un screenshot à ajouter plus tard). Réplique le même mécanisme ici.
   const [editExistingImages, setEditExistingImages] = useState<string[]>([]);
   const [editNewFiles, setEditNewFiles] = useState<File[]>([]);
+  // Aperçu (option "A" validée par l'utilisateur parmi 2 propositions) :
+  // vraies vignettes des images déjà attachées plutôt qu'un simple compteur
+  // texte, avec une croix au survol pour retirer individuellement et un clic
+  // pour agrandir en plein écran.
+  const [editImageUrls, setEditImageUrls] = useState<Record<string, string>>({});
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadThumbs() {
+      const missing = editExistingImages.filter((p) => !editImageUrls[p]);
+      if (missing.length === 0) return;
+      const entries: [string, string][] = [];
+      for (const path of missing) {
+        const { data } = await supabase.storage.from("zone-images").createSignedUrl(path, 3600);
+        if (data?.signedUrl) entries.push([path, data.signedUrl]);
+      }
+      if (!cancelled && entries.length > 0) {
+        setEditImageUrls((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+      }
+    }
+    loadThumbs();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editExistingImages]);
 
   // Arrivée via un lien "#zone-xxx" (ex: depuis le récap "il manque des
   // informations") -> ouvre directement l'édition de cette zone.
@@ -603,18 +633,47 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   <FieldHint text="Carte, capture d'écran ou export de zone de vol : utile si vous n'avez pas de KML, ou pour compléter une zone qui n'en a pas encore." />
                 </span>
                 {editExistingImages.length > 0 && (
-                  <div className="mb-2 flex items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                    <span>
-                      {editExistingImages.length} image{editExistingImages.length > 1 ? "s" : ""} déjà attachée
-                      {editExistingImages.length > 1 ? "s" : ""}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setEditExistingImages([])}
-                      className="text-red-500 hover:underline"
-                    >
-                      Tout retirer
-                    </button>
+                  <div className="mb-2">
+                    <div className="mb-1.5 flex items-center justify-between text-xs text-slate-500">
+                      <span>
+                        {editExistingImages.length} image{editExistingImages.length > 1 ? "s" : ""} déjà attachée
+                        {editExistingImages.length > 1 ? "s" : ""}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setEditExistingImages([])}
+                        className="text-red-500 hover:underline"
+                      >
+                        Tout retirer
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {editExistingImages.map((path) => (
+                        <div
+                          key={path}
+                          className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border border-slate-200 bg-slate-100"
+                          onClick={() => editImageUrls[path] && setLightboxUrl(editImageUrls[path])}
+                        >
+                          {editImageUrls[path] ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={editImageUrls[path]} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="h-full w-full animate-pulse bg-slate-200" />
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditExistingImages((prev) => prev.filter((p) => p !== path));
+                            }}
+                            title="Retirer cette image"
+                            className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded bg-black/60 text-xs text-red-300 opacity-0 transition-opacity group-hover:opacity-100"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <FileDropzone
@@ -901,8 +960,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         </>
       ) : (
         <button
-          onClick={() => {
-            spotlightAddZoneToggle.onClick();
+          onClick={(e) => {
+            spotlightAddZoneToggle.onClick(e);
             setShowAddZone(true);
           }}
           className="w-full rounded-md border border-dashed border-slate-300 py-2.5 text-sm text-slate-400 outline-none transition-colors hover:border-brand hover:text-brand focus-visible:ring-2 focus-visible:ring-brand/50"
@@ -913,6 +972,26 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           + Ajouter une zone de vol
         </button>
       )}
+
+      {mounted &&
+        lightboxUrl &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            onClick={() => setLightboxUrl(null)}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={lightboxUrl} alt="" className="max-h-full max-w-full rounded-lg object-contain" />
+            <button
+              onClick={() => setLightboxUrl(null)}
+              aria-label="Fermer"
+              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-lg text-white hover:bg-black/80"
+            >
+              ✕
+            </button>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

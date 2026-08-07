@@ -78,13 +78,17 @@ Vous trouverez ci-joint le dossier de déclaration de vol de drone pour la missi
 Zone(s) de vol concernée(s) :
 ${zonesLines}
 
-Le dossier PDF est joint à ce message (pensez à l'attacher : il a été téléchargé lors de la génération sur Cerfa Drone).
-
 Cordialement,
 ${pilotName || ""}`;
 
   return (
     <div className="mt-4 space-y-2">
+      <p className="text-xs text-slate-400">
+        Avant d'envoyer : le mail s'ouvre pré-rempli dans votre logiciel de messagerie habituel, mais un lien de ce
+        type ne peut pas joindre de fichier automatiquement (limitation de sécurité des navigateurs). Pensez à{" "}
+        <strong className="text-ink">joindre le dossier PDF téléchargé</strong> et à relire le message avant de
+        l'envoyer.
+      </p>
       {destinataires.map((pref) => (
         <a
           key={pref.code}
@@ -110,10 +114,6 @@ ${pilotName || ""}`;
           {sansCodePostal > 1 ? "ont" : "a"} pas pu être rattachée{sansCodePostal > 1 ? "s" : ""} à une préfecture.
         </p>
       )}
-      <p className="text-xs text-slate-400">
-        Le mail s'ouvre dans votre logiciel de messagerie habituel, objet et texte déjà remplis. N'oubliez pas d'y
-        joindre le dossier PDF téléchargé (un lien mailto ne peut pas joindre de fichier automatiquement).
-      </p>
     </div>
   );
 }

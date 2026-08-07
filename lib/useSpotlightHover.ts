@@ -9,16 +9,25 @@ import type { CSSProperties, MouseEvent } from "react";
 // exactement sous le curseur plutôt que sur tout le lien d'un coup, et un
 // contour arrondi se dessine en fondu autour de l'élément survolé.
 //
-// onClick réinitialise l'effet immédiatement : sur un lien de navigation, un
-// clic ne déplace pas forcément la souris d'un seul pixel avant que la page
-// change, donc "mouseleave" ne se déclenche jamais et le halo/contour restait
-// figé visuellement après le clic. On force le reset dès le clic, sans
-// attendre que le curseur quitte réellement l'élément.
+// onClick réinitialise l'effet ET retire le focus de l'élément (blur) :
+// double filet de sécurité contre le contour qui restait visible après un
+// clic. Le reset de state gère le cas où c'est notre halo/bordure inline qui
+// restait figé (mouseleave qui ne se déclenche jamais si le clic navigue
+// sans que la souris ne bouge d'un pixel) ; le blur() gère le cas où c'est
+// l'anneau de focus par défaut du navigateur qui reste affiché après un
+// clic sur un lien/bouton, indépendamment de notre propre style.
 const BASE_STYLE: CSSProperties = {
   transition: "background 0.15s ease, border-color 0.35s ease, color 0.25s ease",
   borderRadius: 8,
   border: "1px solid transparent",
 };
+
+function makeReset(setDynamic: (v: CSSProperties) => void) {
+  return function reset(e?: MouseEvent<HTMLElement>) {
+    setDynamic({});
+    e?.currentTarget?.blur();
+  };
+}
 
 export function useSpotlightHover() {
   const [dynamic, setDynamic] = useState<CSSProperties>({});
@@ -33,9 +42,7 @@ export function useSpotlightHover() {
     });
   }
 
-  function reset() {
-    setDynamic({});
-  }
+  const reset = makeReset(setDynamic);
 
   return { style: { ...BASE_STYLE, ...dynamic }, onMouseMove, onMouseLeave: reset, onClick: reset };
 }
@@ -63,9 +70,7 @@ export function useSpotlightHoverFilled(hoverBg: string, borderRadius = 6) {
     });
   }
 
-  function reset() {
-    setDynamic({});
-  }
+  const reset = makeReset(setDynamic);
 
   return {
     style: { ...BASE_STYLE_FILLED, borderRadius, ...dynamic },
@@ -96,9 +101,7 @@ export function useSpotlightHoverBgOnly() {
     });
   }
 
-  function reset() {
-    setDynamic({});
-  }
+  const reset = makeReset(setDynamic);
 
   return { style: { ...BASE_STYLE_BG_ONLY, ...dynamic }, onMouseMove, onMouseLeave: reset, onClick: reset };
 }

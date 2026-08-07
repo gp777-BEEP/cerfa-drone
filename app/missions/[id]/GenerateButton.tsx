@@ -71,8 +71,8 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
         className="mb-3"
       />
       <button
-        onClick={() => {
-          spotlightMain.onClick();
+        onClick={(e) => {
+          spotlightMain.onClick(e);
           handleClick();
         }}
         disabled={loading}
