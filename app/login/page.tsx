@@ -1,18 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { createClient } from "@/lib/supabase/client";
+import { ErrorBanner } from "../components/Banner";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [ready, setReady] = useState(false);
+  const [origin, setOrigin] = useState("");
 
   useEffect(() => {
     setReady(true);
+    setOrigin(window.location.origin);
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") {
         router.push("/dashboard");
@@ -24,12 +36,23 @@ export default function LoginPage() {
 
   if (!ready) return null;
 
+  const authError = searchParams.get("error");
+
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <h1 className="mb-6 text-center text-2xl font-medium text-ink">Cerfa Drone</h1>
+
+      {authError === "confirmation_failed" && (
+        <ErrorBanner className="mb-4">
+          Le lien de confirmation n'est plus valide (déjà utilisé, ou expiré). Reconnectez-vous, ou
+          recommencez l'inscription si besoin.
+        </ErrorBanner>
+      )}
+
       <div className="bg-glass p-6">
         <Auth
           supabaseClient={supabase}
+          redirectTo={origin ? `${origin}/auth/callback` : undefined}
           appearance={{
             theme: ThemeSupa,
             variables: {
@@ -66,8 +89,34 @@ export default function LoginPage() {
           providers={[]}
           localization={{
             variables: {
-              sign_in: { email_label: "Email", password_label: "Mot de passe", button_label: "Se connecter" },
-              sign_up: { email_label: "Email", password_label: "Mot de passe", button_label: "Créer un compte" },
+              sign_in: {
+                email_label: "Email",
+                password_label: "Mot de passe",
+                email_input_placeholder: "vous@exemple.fr",
+                password_input_placeholder: "Votre mot de passe",
+                button_label: "Se connecter",
+                loading_button_label: "Connexion...",
+                link_text: "Vous avez déjà un compte ? Connectez-vous",
+              },
+              sign_up: {
+                email_label: "Email",
+                password_label: "Mot de passe",
+                email_input_placeholder: "vous@exemple.fr",
+                password_input_placeholder: "Choisissez un mot de passe",
+                button_label: "Créer un compte",
+                loading_button_label: "Création du compte...",
+                link_text: "Pas encore de compte ? Inscrivez-vous",
+                confirmation_text: "Vérifiez vos emails (pensez aussi aux spams) pour confirmer votre inscription.",
+              },
+              forgotten_password: {
+                email_label: "Email",
+                password_label: "Mot de passe",
+                email_input_placeholder: "vous@exemple.fr",
+                button_label: "Envoyer les instructions",
+                loading_button_label: "Envoi en cours...",
+                link_text: "Mot de passe oublié ?",
+                confirmation_text: "Vérifiez vos emails (pensez aussi aux spams) pour réinitialiser votre mot de passe.",
+              },
             },
           }}
         />

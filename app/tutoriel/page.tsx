@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import AppHeader from "../components/AppHeader";
+import GuideCompletLink from "./GuideCompletLink";
 
 // Version "digest" du tutoriel (l'ancienne page, très complète, avait été
 // jugée trop dense pour un premier coup d'œil) : l'essentiel en une ligne
@@ -97,13 +97,7 @@ export default function TutorielPage() {
           </Step>
         </div>
 
-        <Link
-          href="/tutoriel/detail"
-          className="mt-6 flex items-center justify-between rounded-xl border border-brand/30 bg-brand-light px-4 py-3 text-sm text-ink hover:bg-brand-light/70"
-        >
-          <span>Besoin de plus de détails, cas par cas ?</span>
-          <span className="text-brand">Guide complet →</span>
-        </Link>
+        <GuideCompletLink />
 
         <p className="mt-6 text-xs text-slate-500">
           Une question ou une idée qui manque ?{" "}
