@@ -10,6 +10,7 @@ import MissionDatesFields from "./MissionDatesFields";
 import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
 import MissionDrones from "./MissionDrones";
+import MissionProgressBar from "./MissionProgressBar";
 import AppHeader from "../../components/AppHeader";
 import { WarningBanner } from "../../components/Banner";
 
@@ -66,6 +67,20 @@ export default async function MissionPage({ params }: { params: { id: string } }
     });
   }
 
+  const datesOk = !!mission.date_debut && !!mission.date_fin;
+  const zonesOk =
+    zonesList.length > 0 &&
+    zonesList.every((z) => z.adresse && z.hauteur_max_m !== null && z.hauteur_max_m !== undefined && z.distance_max_m !== null && z.distance_max_m !== undefined);
+  const dronesOk = hasProfileDrones || hasMissionDrones;
+  const generationOk = (documents || []).length > 0;
+
+  const progressSteps = [
+    { id: "infos-dates", label: "Infos", done: datesOk },
+    { id: "zones-de-vol", label: "Zones", done: zonesOk },
+    { id: "drones", label: "Drones", done: dronesOk },
+    { id: "generation", label: "Génération", done: generationOk },
+  ];
+
   return (
     <>
       <AppHeader />
@@ -75,29 +90,34 @@ export default async function MissionPage({ params }: { params: { id: string } }
         </Link>
         <MissionTitle missionId={mission.id} initialTitle={mission.title} />
         <MissionActions missionId={mission.id} title={mission.title} initialArchived={!!mission.archived} />
-        <MissionDatesFields
-          missionId={mission.id}
-          initialDateDebut={mission.date_debut}
-          initialHeureDebut={mission.heure_debut}
-          initialDateFin={mission.date_fin}
-          initialHeureFin={mission.heure_fin}
-        />
+
+        <MissionProgressBar steps={progressSteps} />
+
+        <div id="infos-dates" className="scroll-mt-32">
+          <MissionDatesFields
+            missionId={mission.id}
+            initialDateDebut={mission.date_debut}
+            initialHeureDebut={mission.heure_debut}
+            initialDateFin={mission.date_fin}
+            initialHeureFin={mission.heure_fin}
+          />
+
+          <MissionDetailsFields
+            missionId={mission.id}
+            initialObjetMission={mission.objet_mission}
+            initialCommanditaire={mission.commanditaire}
+          />
+
+          <MissionAnswersFields
+            missionId={mission.id}
+            questionSchema={missionType?.question_schema || []}
+            initialAnswers={mission.answers}
+          />
+        </div>
 
         <ZoneManager missionId={mission.id} initialZones={zones || []} />
 
-        <MissionDetailsFields
-          missionId={mission.id}
-          initialObjetMission={mission.objet_mission}
-          initialCommanditaire={mission.commanditaire}
-        />
-
-        <MissionAnswersFields
-          missionId={mission.id}
-          questionSchema={missionType?.question_schema || []}
-          initialAnswers={mission.answers}
-        />
-
-        <div className="mt-6 bg-glass p-5">
+        <div id="drones" className="mt-6 scroll-mt-32 bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Drones utilisés</h2>
           <p className="mb-3 text-xs text-slate-400">
             Réutilisés depuis votre profil, ou détectés à l'import d'un Cerfa pour cette mission.
@@ -105,7 +125,7 @@ export default async function MissionPage({ params }: { params: { id: string } }
           <MissionDrones missionId={mission.id} profileDrones={profile?.drones || []} initialSelected={mission.drones} />
         </div>
 
-        <div className="mt-6 bg-glass p-5">
+        <div id="generation" className="mt-6 scroll-mt-32 bg-glass p-5">
           <h2 className="mb-3 font-medium text-ink">Générer le dossier</h2>
 
           {missingItems.length > 0 && (
