@@ -89,6 +89,29 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
     setLogoPreviewUrl(URL.createObjectURL(file));
   }
 
+  // Emplacement du logo dans l'aperçu : si aucun logo n'est encore importé,
+  // affiche un cadre en pointillés à sa place plutôt que de le faire
+  // disparaître complètement (sinon on ne voit pas où il apparaîtrait une
+  // fois ajouté, cf. retour utilisateur "pas clair où est le logo").
+  function logoSlot(size: number) {
+    if (logoPreviewUrl) {
+      return <img src={logoPreviewUrl} alt="" style={{ height: size, width: size }} className="shrink-0 object-contain" />;
+    }
+    return (
+      <div
+        className="flex shrink-0 items-center justify-center rounded-sm border border-dashed border-slate-400"
+        style={{ height: size, width: size }}
+        title="Emplacement du logo"
+      >
+        <svg width={Math.round(size * 0.6)} height={Math.round(size * 0.6)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="M21 15l-5-5L5 21" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+    );
+  }
+
   function removeLogo() {
     setLogoFile(null);
     setLogoPreviewUrl(null);
@@ -436,25 +459,22 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 <div className="absolute left-3 top-3 h-1 w-12 rounded-full bg-slate-800/70" />
                 <div className="absolute left-3 top-6 right-3 bottom-9 rounded-sm bg-slate-100" />
                 <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1">
-                  {logoPreviewUrl && <img src={logoPreviewUrl} alt="" className="h-3 w-3 object-contain opacity-45" />}
+                  {logoSlot(12)}
                   <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: brandColor, opacity: 0.55 }} />
                 </div>
               </div>
             )}
             {dossierStyle === "bandeau" && (
               <div className="relative h-40 w-28 rounded-md bg-white p-2.5">
-                {logoPreviewUrl && <img src={logoPreviewUrl} alt="" className="h-3.5 w-3.5 object-contain" />}
+                {logoSlot(16)}
                 <div className="mt-2 h-[3px] w-full rounded-full" style={{ backgroundColor: brandColor }} />
                 <div className="mt-2 h-24 rounded-sm bg-slate-100" />
               </div>
             )}
             {dossierStyle === "garde" && (
               <div className="relative h-40 w-28 overflow-hidden rounded-md bg-white">
-                <div
-                  className="flex h-9 items-center justify-center"
-                  style={{ backgroundColor: brandColor }}
-                >
-                  {logoPreviewUrl && <img src={logoPreviewUrl} alt="" className="h-5 w-5 object-contain" />}
+                <div className="flex h-9 items-center justify-center" style={{ backgroundColor: brandColor }}>
+                  {logoSlot(20)}
                 </div>
                 <div className="p-2.5">
                   <div className="mx-auto h-1 w-14 rounded-full bg-slate-800/60" />
@@ -464,17 +484,19 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             )}
             {dossierStyle === "combine" && (
               <div className="relative h-40 w-28 overflow-hidden rounded-md bg-white">
-                <div
-                  className="flex h-6 items-center justify-center"
-                  style={{ backgroundColor: brandColor }}
-                >
-                  {logoPreviewUrl && <img src={logoPreviewUrl} alt="" className="h-3.5 w-3.5 object-contain" />}
+                <div className="flex h-6 items-center justify-center" style={{ backgroundColor: brandColor }}>
+                  {logoSlot(14)}
                 </div>
                 <div className="p-2.5">
                   <div className="h-1 w-12 rounded-full bg-slate-800/60" />
                   <div className="mt-2 h-24 rounded-sm bg-slate-100" />
                 </div>
               </div>
+            )}
+            {!logoPreviewUrl && (
+              <p className="mt-2 max-w-[224px] text-[11px] text-slate-500">
+                Le cadre en pointillés indique l'emplacement du logo, une fois importé.
+              </p>
             )}
           </div>
         </div>
