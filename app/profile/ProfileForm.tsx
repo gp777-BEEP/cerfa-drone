@@ -65,6 +65,15 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [logoError, setLogoError] = useState("");
   const BRAND_PRESETS = ["#2dd9ac", "#378ADD", "#D85A30", "#7F77DD", "#BA7517"];
   const [brandColor, setBrandColor] = useState<string>(initialProfile?.brand_color || BRAND_PRESETS[0]);
+  const DOSSIER_STYLES: { id: "bandeau" | "garde" | "filigrane" | "combine"; label: string; description: string }[] = [
+    { id: "bandeau", label: "Bandeau discret", description: "Petit logo en coin + filet de couleur sous le titre de chaque page." },
+    { id: "garde", label: "Page de garde brandée", description: "Bandeau coloré et logo en grand sur la page de garde, fiches neutres." },
+    { id: "filigrane", label: "Filigrane discret", description: "Logo et couleur relégués en petit, dans un coin. Le plus sobre." },
+    { id: "combine", label: "Bandeau + page de garde", description: "Petite page de garde marquée, puis le même bandeau sur chaque fiche." },
+  ];
+  const [dossierStyle, setDossierStyle] = useState<"bandeau" | "garde" | "filigrane" | "combine">(
+    initialProfile?.dossier_style || "filigrane"
+  );
 
   function handleLogoFile(file: File) {
     setLogoError("");
@@ -193,6 +202,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         drones: drones.filter((d) => d.constructeur || d.modele),
         logo_path: finalLogoPath,
         brand_color: brandColor,
+        dossier_style: dossierStyle,
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id);
@@ -335,9 +345,9 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         <div className="bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Personnalisation du dossier</h2>
           <p className="mb-4 text-xs text-slate-500">
-            Un petit logo et une couleur d'accent, affichés en filigrane discret sur la page de garde et les
-            fiches de zone que l'app génère. Le Cerfa officiel, lui, reste toujours le formulaire standard,
-            inchangé.
+            Un logo et une couleur d'accent, affichés sur la page de garde et les fiches de zone que l'app
+            génère, selon le style choisi ci-dessous. Le Cerfa officiel, lui, reste toujours le formulaire
+            standard, inchangé.
           </p>
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
@@ -394,20 +404,78 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
           </div>
 
           <div className="mt-5 border-t border-white/10 pt-4">
+            <span className="mb-2 block text-sm font-medium text-ink">Style d'intégration</span>
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {DOSSIER_STYLES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setDossierStyle(s.id)}
+                  className={`rounded-lg border p-2.5 text-left transition-colors ${
+                    dossierStyle === s.id
+                      ? "border-brand bg-brand-light"
+                      : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                  }`}
+                >
+                  <p className={`mb-0.5 text-xs font-medium ${dossierStyle === s.id ? "text-brand" : "text-ink"}`}>
+                    {s.label}
+                  </p>
+                  <p className="text-[11px] leading-snug text-slate-500">{s.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-white/10 pt-4">
             <span className="mb-2 block text-sm font-medium text-ink">Aperçu</span>
             <p className="mb-3 text-xs text-slate-500">
-              Ce à quoi ressemblera le coin des fiches de zone générées, avec ce logo et cette couleur.
+              Ce à quoi ressemblera le dossier généré, avec ce logo, cette couleur et ce style.
             </p>
-            <div className="relative h-40 w-28 rounded-md bg-white">
-              <div className="absolute left-3 top-3 h-1 w-12 rounded-full bg-slate-800/70" />
-              <div className="absolute left-3 top-6 right-3 bottom-9 rounded-sm bg-slate-100" />
-              <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1">
-                {logoPreviewUrl && (
-                  <img src={logoPreviewUrl} alt="" className="h-3 w-3 object-contain opacity-45" />
-                )}
-                <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: brandColor, opacity: 0.55 }} />
+            {dossierStyle === "filigrane" && (
+              <div className="relative h-40 w-28 rounded-md bg-white">
+                <div className="absolute left-3 top-3 h-1 w-12 rounded-full bg-slate-800/70" />
+                <div className="absolute left-3 top-6 right-3 bottom-9 rounded-sm bg-slate-100" />
+                <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1">
+                  {logoPreviewUrl && <img src={logoPreviewUrl} alt="" className="h-3 w-3 object-contain opacity-45" />}
+                  <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: brandColor, opacity: 0.55 }} />
+                </div>
               </div>
-            </div>
+            )}
+            {dossierStyle === "bandeau" && (
+              <div className="relative h-40 w-28 rounded-md bg-white p-2.5">
+                {logoPreviewUrl && <img src={logoPreviewUrl} alt="" className="h-3.5 w-3.5 object-contain" />}
+                <div className="mt-2 h-[3px] w-full rounded-full" style={{ backgroundColor: brandColor }} />
+                <div className="mt-2 h-24 rounded-sm bg-slate-100" />
+              </div>
+            )}
+            {dossierStyle === "garde" && (
+              <div className="relative h-40 w-28 overflow-hidden rounded-md bg-white">
+                <div
+                  className="flex h-9 items-center justify-center"
+                  style={{ backgroundColor: brandColor }}
+                >
+                  {logoPreviewUrl && <img src={logoPreviewUrl} alt="" className="h-5 w-5 object-contain" />}
+                </div>
+                <div className="p-2.5">
+                  <div className="mx-auto h-1 w-14 rounded-full bg-slate-800/60" />
+                  <div className="mt-2 h-20 rounded-sm bg-slate-100" />
+                </div>
+              </div>
+            )}
+            {dossierStyle === "combine" && (
+              <div className="relative h-40 w-28 overflow-hidden rounded-md bg-white">
+                <div
+                  className="flex h-6 items-center justify-center"
+                  style={{ backgroundColor: brandColor }}
+                >
+                  {logoPreviewUrl && <img src={logoPreviewUrl} alt="" className="h-3.5 w-3.5 object-contain" />}
+                </div>
+                <div className="p-2.5">
+                  <div className="h-1 w-12 rounded-full bg-slate-800/60" />
+                  <div className="mt-2 h-24 rounded-sm bg-slate-100" />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

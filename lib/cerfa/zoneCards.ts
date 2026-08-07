@@ -45,11 +45,15 @@ function hexToRgbColor(hex: string) {
   return rgb(parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255);
 }
 
-// Personnalisation du dossier (option "filigrane discret" validée par
-// l'utilisateur parmi 4 propositions) : logo + couleur d'accent affichés en
-// petit, en bas à droite de chaque page générée, jamais sur le Cerfa officiel
+// Personnalisation du dossier : logo + couleur d'accent affichés sur la page
+// de garde et les fiches de zone générées, jamais sur le Cerfa officiel
 // lui-même (ce fichier ne touche que les fiches de zone / page de garde).
-function drawWatermark(page: any, logoImg: PDFImage | null, color: ReturnType<typeof rgb>) {
+// Quatre styles au choix (présentés à l'utilisateur sous forme de 4
+// propositions visuelles), du plus discret au plus marqué.
+export type DossierStyle = "bandeau" | "garde" | "filigrane" | "combine";
+
+// Style "filigrane" : petit repère en bas à droite, présence minimale.
+function drawCornerTick(page: any, logoImg: PDFImage | null, color: ReturnType<typeof rgb>) {
   const tickSize = 8;
   const tickX = PAGE_W - MARGIN - tickSize;
   const tickY = MARGIN - 6;
@@ -67,6 +71,53 @@ function drawWatermark(page: any, logoImg: PDFImage | null, color: ReturnType<ty
       opacity: 0.45,
     });
   }
+}
+
+// Style "bandeau" : petit logo en coin, filet de couleur sous le titre de
+// chaque page (repris à l'identique sur la page de garde et les fiches).
+function drawHeaderBandeau(page: any, logoImg: PDFImage | null, color: ReturnType<typeof rgb>) {
+  const lineY = PAGE_H - MARGIN - 44;
+  page.drawRectangle({ x: MARGIN, y: lineY, width: PAGE_W - 2 * MARGIN, height: 1.4, color });
+  if (logoImg) {
+    const maxDim = 20;
+    const scale = Math.min(maxDim / logoImg.width, maxDim / logoImg.height, 1);
+    const w = logoImg.width * scale;
+    const h = logoImg.height * scale;
+    page.drawImage(logoImg, { x: MARGIN, y: PAGE_H - 30 - h, width: w, height: h, opacity: 0.9 });
+  }
+}
+
+// Style "garde" (et variante "combine") : bandeau coloré en haut de la page
+// de garde, avec le logo centré dedans (en blanc si pas de logo, un simple
+// bandeau de couleur reste marquant).
+function drawCoverBand(page: any, logoImg: PDFImage | null, color: ReturnType<typeof rgb>, slim: boolean) {
+  const bandH = slim ? 70 : PAGE_H * 0.24;
+  page.drawRectangle({ x: 0, y: PAGE_H - bandH, width: PAGE_W, height: bandH, color });
+  if (logoImg) {
+    const maxDim = slim ? 34 : 64;
+    const scale = Math.min(maxDim / logoImg.width, maxDim / logoImg.height, 1);
+    const w = logoImg.width * scale;
+    const h = logoImg.height * scale;
+    page.drawImage(logoImg, { x: PAGE_W / 2 - w / 2, y: PAGE_H - bandH / 2 - h / 2, width: w, height: h });
+  }
+}
+
+function drawBranding(page: any, style: DossierStyle, isCover: boolean, logoImg: PDFImage | null, color: ReturnType<typeof rgb>) {
+  if (style === "garde") {
+    if (isCover) drawCoverBand(page, logoImg, color, false);
+    else drawCornerTick(page, null, color); // fiches de zone : couleur seule, sobre
+    return;
+  }
+  if (style === "combine") {
+    if (isCover) drawCoverBand(page, logoImg, color, true);
+    else drawHeaderBandeau(page, logoImg, color);
+    return;
+  }
+  if (style === "bandeau") {
+    drawHeaderBandeau(page, logoImg, color);
+    return;
+  }
+  drawCornerTick(page, logoImg, color); // "filigrane", par défaut
 }
 
 // Découpe un texte libre en lignes qui tiennent dans maxWidth, pour un rendu
@@ -99,7 +150,7 @@ function wrapText(text: string, font: Awaited<ReturnType<PDFDocument["embedFont"
 export async function generateZoneCards(
   missionTitle: string | undefined,
   zones: ZoneCardInput[],
-  branding?: { logoBytes?: Uint8Array | null; color?: string | null } | null
+  branding?: { logoBytes?: Uint8Array | null; color?: string | null; style?: DossierStyle | null } | null
 ) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -117,7 +168,8 @@ export async function generateZoneCards(
       logoImg = null;
     }
   }
-  const watermarkColor = branding?.logoBytes ? hexToRgbColor(branding.color || "#2dd9ac") : null;
+  const brandColor = branding?.logoBytes ? hexToRgbColor(branding.color || "#2dd9ac") : null;
+  const dossierStyle: DossierStyle = branding?.style || "filigrane";
 
   if (missionTitle) {
     const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
@@ -127,12 +179,12 @@ export async function generateZoneCards(
       size: 26,
       font,
     });
-    if (watermarkColor) drawWatermark(page, logoImg, watermarkColor);
+    if (brandColor) drawBranding(page, dossierStyle, true, logoImg, brandColor);
   }
 
   for (const zone of zones) {
     const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
-    if (watermarkColor) drawWatermark(page, logoImg, watermarkColor);
+    if (brandColor) drawBranding(page, dossierStyle, false, logoImg, brandColor);
     let y = PAGE_H - MARGIN;
 
     if (missionTitle) {

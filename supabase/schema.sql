@@ -20,6 +20,7 @@ create table if not exists profiles (
   drones jsonb default '[]',
   logo_path text, -- chemin dans le bucket "logos", pour le filigrane des fiches de zone générées
   brand_color text, -- couleur d'accent hex, même usage
+  dossier_style text default 'filigrane', -- 'bandeau' | 'garde' | 'filigrane' | 'combine'
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
