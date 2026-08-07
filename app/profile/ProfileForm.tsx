@@ -41,7 +41,16 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [tab, setTab] = useState<"infos" | "drones">("infos");
 
   const [fullName, setFullName] = useState(initialProfile?.full_name || "");
-  const [address, setAddress] = useState(initialProfile?.address || "");
+  // Adresse en 3 champs séparés (rue / code postal / ville) plutôt qu'un
+  // seul champ texte libre, plus fiable à relire et à recopier sur le Cerfa
+  // -- retour bêta-testeur. Si le profil existant n'a que l'ancienne adresse
+  // "à plat" (avant cette migration), on la reprend telle quelle dans "Rue"
+  // pour ne rien perdre ; CP/Ville restent à compléter.
+  const [addressStreet, setAddressStreet] = useState(
+    initialProfile?.address_street || initialProfile?.address || ""
+  );
+  const [addressPostalCode, setAddressPostalCode] = useState(initialProfile?.address_postal_code || "");
+  const [addressCity, setAddressCity] = useState(initialProfile?.address_city || "");
   const [phone, setPhone] = useState(initialProfile?.phone || "");
   const [email, setEmail] = useState(initialProfile?.email || "");
   const [qualite, setQualite] = useState(initialProfile?.qualite || "Télépilote");
@@ -207,11 +216,21 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       finalLogoPath = path;
     }
 
+    // Recompose l'adresse "à plat" à partir des 3 champs pour tout le reste
+    // de l'app (Cerfa, imports...) qui continue de lire profile.address sans
+    // rien changer côté buildMissionData.ts.
+    const composedAddress = [addressStreet, [addressPostalCode, addressCity].filter(Boolean).join(" ")]
+      .filter(Boolean)
+      .join(", ");
+
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: fullName,
-        address,
+        address: composedAddress,
+        address_street: addressStreet,
+        address_postal_code: addressPostalCode,
+        address_city: addressCity,
         phone,
         email,
         qualite,
@@ -281,7 +300,9 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               onChange={setQualite}
               hint="Votre fonction ou profession : « Télépilote », mais aussi « Gérant », « Salarié », « Étudiant »... selon le contexte de vos vols."
             />
-            <Field label="Adresse" value={address} onChange={setAddress} className="sm:col-span-2" />
+            <Field label="Adresse (rue, numéro)" value={addressStreet} onChange={setAddressStreet} className="sm:col-span-2" />
+            <Field label="Code postal" value={addressPostalCode} onChange={setAddressPostalCode} />
+            <Field label="Ville" value={addressCity} onChange={setAddressCity} />
             <Field label="Téléphone" value={phone} onChange={setPhone} />
             <Field label="Email" value={email} onChange={setEmail} type="email" />
             <Field

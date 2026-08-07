@@ -2,8 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import ZoneManager from "./ZoneManager";
-import GenerateButton from "./GenerateButton";
-import SendToPrefectureButton from "./SendToPrefectureButton";
+import GenerateAndSendFlow from "./GenerateAndSendFlow";
 import MissionTitle from "./MissionTitle";
 import MissionDetailsFields from "./MissionDetailsFields";
 import MissionAnswersFields from "./MissionAnswersFields";
@@ -129,22 +128,20 @@ export default async function MissionPage({ params }: { params: { id: string } }
       done: generationOk,
       content: (
         <div className="bg-glass p-5">
-          <h2 className="mb-3 font-medium text-ink">Générer le dossier</h2>
+          <h2 className="mb-3 font-medium text-ink">Générer et envoyer le dossier</h2>
 
-          <GenerateButton missionId={mission.id} />
-          <DocumentsList documents={documents || []} />
+          <GenerateAndSendFlow
+            missionId={mission.id}
+            hasExistingDocument={(documents || []).length > 0}
+            missionTitle={mission.title}
+            dateDebut={mission.date_debut}
+            dateFin={mission.date_fin}
+            pilotName={profile?.exploitant_type === "morale" ? profile?.raison_sociale : profile?.full_name}
+            zones={zonesList}
+          />
 
           <div className="mt-5 border-t border-white/10 pt-4">
-            <h3 className="mb-1 text-sm font-medium text-ink">Envoyer le dossier à la préfecture</h3>
-            <SendToPrefectureButton
-              missionTitle={mission.title}
-              dateDebut={mission.date_debut}
-              dateFin={mission.date_fin}
-              pilotName={
-                profile?.exploitant_type === "morale" ? profile?.raison_sociale : profile?.full_name
-              }
-              zones={zonesList}
-            />
+            <DocumentsList documents={documents || []} />
           </div>
         </div>
       ),

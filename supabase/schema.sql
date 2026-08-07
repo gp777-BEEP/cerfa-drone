@@ -7,7 +7,10 @@
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
-  address text,
+  address text, -- composée automatiquement depuis address_street/address_postal_code/address_city
+  address_street text,
+  address_postal_code text,
+  address_city text,
   phone text,
   email text,
   qualite text default 'Télépilote',

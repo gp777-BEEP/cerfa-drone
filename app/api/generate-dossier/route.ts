@@ -132,7 +132,12 @@ async function handle(req: NextRequest) {
     const cerfaDoc = await PDFDocument.load(cerfaBytes);
 
     if (hasImages || zoneCardInputs.length > 0) {
-      const zoneBytes = await generateZoneCards(mission.title, zoneCardInputs, branding);
+      const zoneBytes = await generateZoneCards(
+        mission.title,
+        zoneCardInputs,
+        branding,
+        (mission as any).objet_mission || null
+      );
       const zonesDoc = await PDFDocument.load(zoneBytes);
       const zonePages = await cerfaDoc.copyPages(zonesDoc, zonesDoc.getPageIndices());
       zonePages.forEach((p) => cerfaDoc.addPage(p));

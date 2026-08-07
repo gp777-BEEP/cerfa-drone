@@ -63,6 +63,14 @@ export default function NewMissionForm({
   const [sousCategorie, setSousCategorie] = useState<"a1" | "a2" | "a3">("a3");
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  // Nouvelle 1re étape (retour bêta-testeur) : demande d'abord si un Cerfa
+  // pré-rempli existe déjà, avant même d'afficher le reste du formulaire
+  // (qui, lui, ne change pas selon la réponse -- juste une étape en plus au
+  // tout début, pour orienter directement vers le bon geste : importer, ou
+  // saisir à la main).
+  const [hasCerfa, setHasCerfa] = useState<"oui" | "non" | null>(null);
+  const spotlightHasCerfaOui = useSpotlightHoverBgOnly();
+  const spotlightHasCerfaNon = useSpotlightHoverBgOnly();
   const spotlightSubmit = useSpotlightHoverBgOnly();
   const [errorMsg, setErrorMsg] = useState("");
   const [titleTouched, setTitleTouched] = useState(false);
@@ -392,8 +400,56 @@ export default function NewMissionForm({
     router.push(`/missions/${mission.id}`);
   }
 
+  if (hasCerfa === null) {
+    return (
+      <div className="bg-glass p-6">
+        <h2 className="mb-2 text-lg font-medium text-ink">Avez-vous déjà un Cerfa pré-rempli pour cette mission ?</h2>
+        <p className="mb-5 text-sm text-slate-500">
+          Un fichier PDF déjà rempli (DroneKeeper ou un autre outil) permet de préremplir automatiquement vos
+          infos, vos drones et les dates. Sans Cerfa, pas de problème : vous pourrez tout saisir à la main juste
+          après (et importer un fichier KML pour la carte).
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={(e) => {
+              spotlightHasCerfaOui.onClick(e);
+              setHasCerfa("oui");
+            }}
+            className="rounded-md bg-brand px-6 py-2.5 font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50"
+            style={spotlightHasCerfaOui.style}
+            onMouseMove={spotlightHasCerfaOui.onMouseMove}
+            onMouseLeave={spotlightHasCerfaOui.onMouseLeave}
+          >
+            Oui, je l'ai
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              spotlightHasCerfaNon.onClick(e);
+              setHasCerfa("non");
+            }}
+            className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
+            style={spotlightHasCerfaNon.style}
+            onMouseMove={spotlightHasCerfaNon.onMouseMove}
+            onMouseLeave={spotlightHasCerfaNon.onMouseLeave}
+          >
+            Non, je pars de zéro
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-6">
+      <button
+        type="button"
+        onClick={() => setHasCerfa(null)}
+        className="text-xs text-slate-400 hover:text-brand hover:underline"
+      >
+        ← Revenir en arrière
+      </button>
       <div className="bg-glass p-5">
         <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
         <p className="mb-3 text-xs text-slate-500">

@@ -150,7 +150,13 @@ function wrapText(text: string, font: Awaited<ReturnType<PDFDocument["embedFont"
 export async function generateZoneCards(
   missionTitle: string | undefined,
   zones: ZoneCardInput[],
-  branding?: { logoBytes?: Uint8Array | null; color?: string | null; style?: DossierStyle | null } | null
+  branding?: { logoBytes?: Uint8Array | null; color?: string | null; style?: DossierStyle | null } | null,
+  // Objet précis de la mission (ex : "Inspection de toiture") : affiché en
+  // sous-titre sous le titre sur la page de garde, quand il est renseigné et
+  // distinct du titre lui-même (sinon la page de garde répétait juste deux
+  // fois la même chose) -- retour bêta-testeur : la page de garde n'affichait
+  // aucune description du contenu du dossier.
+  missionDescription?: string | null
 ) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -179,6 +185,17 @@ export async function generateZoneCards(
       size: 26,
       font,
     });
+    const showSubtitle =
+      missionDescription && missionDescription.trim() && missionDescription.trim() !== missionTitle.trim();
+    if (showSubtitle) {
+      const subtitleLines = wrapText(missionDescription!.trim(), font, 13, PAGE_W - 2 * MARGIN - 40);
+      let subY = PAGE_H / 2 - 34;
+      for (const line of subtitleLines.slice(0, 4)) {
+        const w = font.widthOfTextAtSize(line, 13);
+        page.drawText(line, { x: PAGE_W / 2 - w / 2, y: subY, size: 13, font, color: GRAY });
+        subY -= 18;
+      }
+    }
     if (brandColor) drawBranding(page, dossierStyle, true, logoImg, brandColor);
   }
 

@@ -86,6 +86,33 @@ function NumberFieldWithUnit({
   );
 }
 
+// Remplace l'ancienne pastille jaune/verte (peu claire, signalée par un beta
+// testeur : impossible de deviner ce qu'elle voulait dire sans survol) par un
+// badge texte explicite listant ce qui manque, ou confirmant que la zone est
+// complète.
+function ZoneCompletenessBadge({ zone }: { zone: Zone }) {
+  const missing: string[] = [];
+  if (!zone.description_site) missing.push("description");
+  if (zone.hauteur_max_m == null || zone.distance_max_m == null) missing.push("hauteur/éloignement");
+  if (!zone.image_paths || zone.image_paths.length === 0) missing.push("image");
+
+  if (missing.length === 0) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand-light px-2 py-0.5 text-[11px] font-normal text-brand">
+        Zone complète
+      </span>
+    );
+  }
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-0.5 text-[11px] font-normal text-warning"
+      title={`Manque : ${missing.join(", ")}`}
+    >
+      {missing.length === 1 ? `${missing[0]} manquant` : `${missing.length} infos manquantes`}
+    </span>
+  );
+}
+
 export default function ZoneManager({ missionId, initialZones }: { missionId: string; initialZones: Zone[] }) {
   const supabase = createClient();
   const router = useRouter();
@@ -734,14 +761,9 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   />
                 )}
                 <div>
-                  <p className="flex items-center gap-1.5 font-medium">
-                    {!z.description_site && (
-                      <span
-                        className="inline-block h-[7px] w-[7px] shrink-0 rounded-full bg-warning"
-                        title="Description du site manquante"
-                      />
-                    )}
+                  <p className="flex items-center gap-2 font-medium">
                     {z.title || z.adresse}
+                    <ZoneCompletenessBadge zone={z} />
                   </p>
                   <p className="text-slate-500">
                     {z.adresse} {z.code_postal} {z.localite}
