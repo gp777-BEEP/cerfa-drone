@@ -5,6 +5,7 @@ import AppHeader from "../components/AppHeader";
 import MissionList from "./MissionList";
 import Coachmark from "../components/Coachmark";
 import { WarningBanner } from "../components/Banner";
+import NewMissionLink from "./NewMissionLink";
 
 export default async function Dashboard() {
   const supabase = createClient();
@@ -26,12 +27,7 @@ export default async function Dashboard() {
       <main className="mx-auto max-w-3xl px-6 py-10">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-2xl font-medium text-ink">Mes missions</h1>
-          <Link
-            href="/missions/new"
-            className="rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light"
-          >
-            + Nouvelle mission
-          </Link>
+          <NewMissionLink />
         </div>
 
         {(missions || []).length === 0 && (

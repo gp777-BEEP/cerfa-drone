@@ -9,7 +9,7 @@ function FooterLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="px-1.5 py-1 transition-colors hover:text-ink"
+      className="px-1.5 py-1 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}

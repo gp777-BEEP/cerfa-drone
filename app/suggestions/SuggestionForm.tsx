@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ErrorBanner } from "../components/Banner";
+import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 export default function SuggestionForm() {
   const router = useRouter();
@@ -11,6 +12,7 @@ export default function SuggestionForm() {
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const spotlight = useSpotlightHoverBgOnly();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -55,7 +57,10 @@ export default function SuggestionForm() {
         <button
           type="submit"
           disabled={saving || !message.trim()}
-          className="rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-50"
+          className="rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
+          style={spotlight.style}
+          onMouseMove={spotlight.onMouseMove}
+          onMouseLeave={spotlight.onMouseLeave}
         >
           {saving ? "Envoi..." : "Envoyer"}
         </button>

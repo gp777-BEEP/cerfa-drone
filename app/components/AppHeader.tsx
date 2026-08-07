@@ -11,7 +11,7 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className="px-2 py-1 text-slate-500 transition-colors hover:text-ink"
+      className="px-2 py-1 text-slate-500 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}

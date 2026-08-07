@@ -16,7 +16,7 @@ export default function SignOutButton() {
         router.push("/login");
         router.refresh();
       }}
-      className="px-2 py-1 text-sm text-slate-500 transition-colors hover:text-ink"
+      className="px-2 py-1 text-sm text-slate-500 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}

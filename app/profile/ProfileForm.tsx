@@ -9,6 +9,7 @@ import { ErrorBanner } from "../components/Banner";
 import StatusMessage from "../components/StatusMessage";
 import FieldHint from "../components/FieldHint";
 import DroneIcon from "../components/DroneIcon";
+import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 type Drone = {
   constructeur: string;
@@ -54,6 +55,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [mandataireQualite, setMandataireQualite] = useState(initialProfile?.mandataire_qualite || "Gérant");
   const [drones, setDrones] = useState<Drone[]>(initialProfile?.drones?.length ? initialProfile.drones : [EMPTY_DRONE]);
   const [saving, setSaving] = useState(false);
+  const spotlightSave = useSpotlightHoverBgOnly();
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
 
@@ -589,7 +591,10 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand hover:bg-brand-light disabled:opacity-50"
+          className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
+          style={spotlightSave.style}
+          onMouseMove={spotlightSave.onMouseMove}
+          onMouseLeave={spotlightSave.onMouseLeave}
         >
           {saving ? "Enregistrement..." : "Enregistrer"}
         </button>

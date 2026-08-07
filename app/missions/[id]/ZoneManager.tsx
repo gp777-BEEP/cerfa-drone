@@ -7,6 +7,7 @@ import FileDropzone from "../../components/FileDropzone";
 import StatusMessage from "../../components/StatusMessage";
 import FieldHint from "../../components/FieldHint";
 import Coachmark from "../../components/Coachmark";
+import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 function frToIso(dmy?: string): string {
   if (!dmy) return "";
@@ -96,6 +97,9 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [importingCerfa, setImportingCerfa] = useState(false);
   const [cerfaMsg, setCerfaMsg] = useState("");
   const [merging, setMerging] = useState(false);
+  const spotlightMerge = useSpotlightHoverBgOnly();
+  const spotlightAddZoneSubmit = useSpotlightHoverBgOnly();
+  const spotlightAddZoneToggle = useSpotlightHoverBgOnly();
   // Fusion en mode sélection : on coche les zones à combiner, une barre
   // récapitule le choix et confirme (validé avec l'utilisateur en option D
   // d'une proposition à 4 designs).
@@ -729,7 +733,10 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             <button
               onClick={confirmMerge}
               disabled={merging || selectedForMerge.size !== 2}
-              className="rounded-md border border-brand px-3 py-1.5 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-40"
+              className="rounded-md border border-brand px-3 py-1.5 text-sm font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-40"
+              style={spotlightMerge.style}
+              onMouseMove={spotlightMerge.onMouseMove}
+              onMouseLeave={spotlightMerge.onMouseLeave}
             >
               {merging ? "Fusion..." : "Fusionner"}
             </button>
@@ -883,7 +890,10 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           <button
             type="submit"
             disabled={saving}
-            className="rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-50"
+            className="rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
+            style={spotlightAddZoneSubmit.style}
+            onMouseMove={spotlightAddZoneSubmit.onMouseMove}
+            onMouseLeave={spotlightAddZoneSubmit.onMouseLeave}
           >
             {saving ? "Ajout..." : "+ Ajouter la zone"}
           </button>
@@ -892,7 +902,10 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       ) : (
         <button
           onClick={() => setShowAddZone(true)}
-          className="w-full rounded-md border border-dashed border-slate-300 py-2.5 text-sm text-slate-400 hover:border-brand hover:text-brand"
+          className="w-full rounded-md border border-dashed border-slate-300 py-2.5 text-sm text-slate-400 outline-none transition-colors hover:border-brand hover:text-brand focus-visible:ring-2 focus-visible:ring-brand/50"
+          style={spotlightAddZoneToggle.style}
+          onMouseMove={spotlightAddZoneToggle.onMouseMove}
+          onMouseLeave={spotlightAddZoneToggle.onMouseLeave}
         >
           + Ajouter une zone de vol
         </button>

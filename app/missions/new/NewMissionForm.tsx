@@ -12,6 +12,7 @@ import { ErrorBanner } from "../../components/Banner";
 import StatusMessage from "../../components/StatusMessage";
 import { Drone, droneKey, mergeDroneLists } from "@/lib/drones";
 import { Question, QUESTION_HINTS } from "@/lib/missionQuestions";
+import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 type MissionType = { slug: string; label: string; description: string; question_schema: Question[] };
 
@@ -43,6 +44,7 @@ export default function NewMissionForm({
   const [sousCategorie, setSousCategorie] = useState<"a1" | "a2" | "a3">("a3");
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
+  const spotlightSubmit = useSpotlightHoverBgOnly();
   const [errorMsg, setErrorMsg] = useState("");
 
   const [importing, setImporting] = useState(false);
@@ -523,7 +525,10 @@ export default function NewMissionForm({
       <button
         type="submit"
         disabled={saving}
-        className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand hover:bg-brand-light disabled:opacity-50"
+        className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
+        style={spotlightSubmit.style}
+        onMouseMove={spotlightSubmit.onMouseMove}
+        onMouseLeave={spotlightSubmit.onMouseLeave}
       >
         {saving ? "Création..." : "Créer la mission"}
       </button>

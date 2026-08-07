@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ErrorBanner, WarningBanner } from "../../components/Banner";
 import Coachmark from "../../components/Coachmark";
+import { useSpotlightHoverFilled } from "@/lib/useSpotlightHover";
 
 export default function GenerateButton({ missionId }: { missionId: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [url, setUrl] = useState("");
+  const spotlightMain = useSpotlightHoverFilled("#005333");
+  const spotlightDownload = useSpotlightHoverFilled("#005333");
   // Visionneuse plein écran (option "C" validée par l'utilisateur parmi 4
   // propositions) : avant de télécharger/envoyer le dossier, on l'affiche
   // dans une modale (l'iframe utilise le lecteur PDF natif du navigateur,
@@ -70,7 +73,10 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
       <button
         onClick={handleClick}
         disabled={loading}
-        className="rounded-md bg-brand px-6 py-2.5 font-medium text-brand-ink hover:bg-brand-dark hover:text-white disabled:opacity-50"
+        className="rounded-md bg-brand px-6 py-2.5 font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
+        style={spotlightMain.style}
+        onMouseMove={spotlightMain.onMouseMove}
+        onMouseLeave={spotlightMain.onMouseLeave}
       >
         {loading ? "Génération en cours..." : "Générer le dossier PDF"}
       </button>
@@ -117,7 +123,10 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:bg-brand-dark hover:text-white"
+                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50"
+                  style={spotlightDownload.style}
+                  onMouseMove={spotlightDownload.onMouseMove}
+                  onMouseLeave={spotlightDownload.onMouseLeave}
                 >
                   Télécharger
                 </a>

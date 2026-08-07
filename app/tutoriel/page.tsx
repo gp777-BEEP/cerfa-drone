@@ -1,9 +1,76 @@
+import type { ReactNode } from "react";
 import AppHeader from "../components/AppHeader";
 
-function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+// Icônes minimales (trait, currentColor) pour identifier chaque étape en un
+// coup d'œil sur les cartes ci-dessous (option "B" validée par l'utilisateur
+// parmi 4 propositions pour la page tutoriel : des cartes illustrées par
+// étape plutôt qu'un mur de texte continu).
+function IconMission() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" />
+      <path d="M12 11v6M9 14h6" />
+    </svg>
+  );
+}
+
+function IconZone() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
+      <circle cx="12" cy="9.5" r="2.3" />
+    </svg>
+  );
+}
+
+function IconCompass() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M15 9l-2 5-5 2 2-5 5-2Z" />
+    </svg>
+  );
+}
+
+function IconProfile() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="3.2" />
+      <path d="M5 21c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5" />
+    </svg>
+  );
+}
+
+function IconGenerate() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 3h7l4 4v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+      <path d="M14 3v4h4" />
+      <path d="M12 12v5M9.5 14.5 12 17l2.5-2.5" />
+    </svg>
+  );
+}
+
+function Section({
+  id,
+  title,
+  icon,
+  children,
+}: {
+  id: string;
+  title: string;
+  icon: ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div id={id} className="scroll-mt-20 bg-glass p-5">
-      <h2 className="mb-3 font-medium text-ink">{title}</h2>
+      <div className="mb-3 flex items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-light text-brand">
+          <div className="h-5 w-5">{icon}</div>
+        </div>
+        <h2 className="font-medium text-ink">{title}</h2>
+      </div>
       <div className="space-y-3 text-sm leading-relaxed text-slate-600">{children}</div>
     </div>
   );
@@ -40,7 +107,7 @@ export default function TutorielPage() {
         </div>
 
         <div className="space-y-6">
-          <Section id="creer-mission" title="1. Créer une mission">
+          <Section id="creer-mission" title="1. Créer une mission" icon={<IconMission />}>
             <p>
               Depuis "Mes missions", cliquez sur "+ Nouvelle mission". Choisissez un type de mission (prise
               de vue, inspection technique...), un titre, une plage de dates/heures, et la sous-catégorie
@@ -56,7 +123,7 @@ export default function TutorielPage() {
             </p>
           </Section>
 
-          <Section id="zones" title="2. Décrire votre zone de vol">
+          <Section id="zones" title="2. Décrire votre zone de vol" icon={<IconZone />}>
             <p>Trois façons d'ajouter une zone, à combiner librement, y compris sur une même mission :</p>
             <p>
               <strong className="text-ink">Un Cerfa déjà rempli</strong> (par un autre outil, ou par un
@@ -83,7 +150,7 @@ export default function TutorielPage() {
             </p>
           </Section>
 
-          <Section id="pas-de-carte" title="Pas de carte sous la main ?">
+          <Section id="pas-de-carte" title="Pas de carte sous la main ?" icon={<IconCompass />}>
             <p>
               L'app ne propose pas d'éditeur de carte intégré (dessiner un polygone précis demande un vrai
               outil de cartographie). La solution la plus simple et gratuite :
@@ -103,7 +170,7 @@ export default function TutorielPage() {
             <p>Aucun de ces outils sous la main non plus ? Une simple capture d'écran suffit, voir ci-dessus.</p>
           </Section>
 
-          <Section id="profil" title="3. Votre profil et vos drones">
+          <Section id="profil" title="3. Votre profil et vos drones" icon={<IconProfile />}>
             <p>
               Renseignez votre identité une seule fois dans "Profil" : elle est réutilisée pour toutes vos
               missions. Choisissez si vous déclarez en votre nom (personne physique) ou au nom d'une
@@ -116,7 +183,7 @@ export default function TutorielPage() {
             </p>
           </Section>
 
-          <Section id="generer" title="4. Générer le dossier">
+          <Section id="generer" title="4. Générer le dossier" icon={<IconGenerate />}>
             <p>
               Une fois les informations principales renseignées, cliquez sur "Générer le dossier PDF" en
               bas de la page de la mission. Le dossier s'ouvre dans un aperçu plein écran (pagination et
