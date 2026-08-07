@@ -901,7 +901,10 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         </>
       ) : (
         <button
-          onClick={() => setShowAddZone(true)}
+          onClick={() => {
+            spotlightAddZoneToggle.onClick();
+            setShowAddZone(true);
+          }}
           className="w-full rounded-md border border-dashed border-slate-300 py-2.5 text-sm text-slate-400 outline-none transition-colors hover:border-brand hover:text-brand focus-visible:ring-2 focus-visible:ring-brand/50"
           style={spotlightAddZoneToggle.style}
           onMouseMove={spotlightAddZoneToggle.onMouseMove}

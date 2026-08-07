@@ -8,6 +8,12 @@ import type { CSSProperties, MouseEvent } from "react";
 // direct dans le chat avant d'être intégrées). Une lueur douce apparaît
 // exactement sous le curseur plutôt que sur tout le lien d'un coup, et un
 // contour arrondi se dessine en fondu autour de l'élément survolé.
+//
+// onClick réinitialise l'effet immédiatement : sur un lien de navigation, un
+// clic ne déplace pas forcément la souris d'un seul pixel avant que la page
+// change, donc "mouseleave" ne se déclenche jamais et le halo/contour restait
+// figé visuellement après le clic. On force le reset dès le clic, sans
+// attendre que le curseur quitte réellement l'élément.
 const BASE_STYLE: CSSProperties = {
   transition: "background 0.15s ease, border-color 0.35s ease, color 0.25s ease",
   borderRadius: 8,
@@ -27,11 +33,11 @@ export function useSpotlightHover() {
     });
   }
 
-  function onMouseLeave() {
+  function reset() {
     setDynamic({});
   }
 
-  return { style: { ...BASE_STYLE, ...dynamic }, onMouseMove, onMouseLeave };
+  return { style: { ...BASE_STYLE, ...dynamic }, onMouseMove, onMouseLeave: reset, onClick: reset };
 }
 
 // Variante pour les boutons pleins (fond de couleur, ex. "Générer le dossier
@@ -57,14 +63,15 @@ export function useSpotlightHoverFilled(hoverBg: string, borderRadius = 6) {
     });
   }
 
-  function onMouseLeave() {
+  function reset() {
     setDynamic({});
   }
 
   return {
     style: { ...BASE_STYLE_FILLED, borderRadius, ...dynamic },
     onMouseMove,
-    onMouseLeave,
+    onMouseLeave: reset,
+    onClick: reset,
   };
 }
 
@@ -89,9 +96,9 @@ export function useSpotlightHoverBgOnly() {
     });
   }
 
-  function onMouseLeave() {
+  function reset() {
     setDynamic({});
   }
 
-  return { style: { ...BASE_STYLE_BG_ONLY, ...dynamic }, onMouseMove, onMouseLeave };
+  return { style: { ...BASE_STYLE_BG_ONLY, ...dynamic }, onMouseMove, onMouseLeave: reset, onClick: reset };
 }

@@ -15,6 +15,7 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}
+      onClick={spotlight.onClick}
     >
       {children}
     </Link>

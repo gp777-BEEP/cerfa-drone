@@ -71,7 +71,10 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
         className="mb-3"
       />
       <button
-        onClick={handleClick}
+        onClick={() => {
+          spotlightMain.onClick();
+          handleClick();
+        }}
         disabled={loading}
         className="rounded-md bg-brand px-6 py-2.5 font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
         style={spotlightMain.style}
@@ -127,6 +130,7 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
                   style={spotlightDownload.style}
                   onMouseMove={spotlightDownload.onMouseMove}
                   onMouseLeave={spotlightDownload.onMouseLeave}
+                  onClick={spotlightDownload.onClick}
                 >
                   Télécharger
                 </a>

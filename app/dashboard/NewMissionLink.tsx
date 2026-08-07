@@ -12,6 +12,7 @@ export default function NewMissionLink() {
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}
+      onClick={spotlight.onClick}
     >
       + Nouvelle mission
     </Link>

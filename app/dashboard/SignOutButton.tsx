@@ -12,6 +12,7 @@ export default function SignOutButton() {
   return (
     <button
       onClick={async () => {
+        spotlight.onClick();
         await supabase.auth.signOut();
         router.push("/login");
         router.refresh();
