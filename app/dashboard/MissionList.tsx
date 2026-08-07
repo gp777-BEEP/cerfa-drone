@@ -21,7 +21,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_COLOR: Record<string, [string, string]> = {
   draft: ["border-slate-300", "text-slate-400"],
-  ready: ["border-amber-400", "text-amber-300"],
+  ready: ["border-warning", "text-warning-text"],
   dossier_genere: ["border-brand", "text-brand"],
 };
 

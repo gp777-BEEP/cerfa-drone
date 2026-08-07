@@ -6,9 +6,25 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: "#2dd9ac",
-          dark: "#22b891",
-          light: "rgba(45, 217, 172, 0.14)",
+          // Identité 2026 : accent plus lumineux/contrasté (oklch(88% 0.17 165)),
+          // "dark" recalculé pour servir à la fois de hover et de texte sur fond
+          // clair (oklch(38% 0.11 165)) -- cf. demande de refonte logo/couleurs.
+          DEFAULT: "#41fabb",
+          dark: "#005333",
+          light: "rgba(65, 250, 187, 0.14)",
+          ink: "#062018", // texte foncé lisible sur bg-brand (bouton clair)
+        },
+        success: {
+          DEFAULT: "#6bc670",
+          text: "#aee0b0",
+        },
+        warning: {
+          DEFAULT: "#e3b831",
+          text: "#f0d88e",
+        },
+        danger: {
+          DEFAULT: "#e45d58",
+          text: "#f0a6a3",
         },
         ink: "#f2f4f7",
         // Palette "slate" redéfinie pour le thème sombre verre dépoli : tout

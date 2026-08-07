@@ -674,7 +674,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   <p className="flex items-center gap-1.5 font-medium">
                     {!z.description_site && (
                       <span
-                        className="inline-block h-[7px] w-[7px] shrink-0 rounded-full bg-amber-400"
+                        className="inline-block h-[7px] w-[7px] shrink-0 rounded-full bg-warning"
                         title="Description du site manquante"
                       />
                     )}

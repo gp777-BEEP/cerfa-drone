@@ -13,7 +13,7 @@ export default function StatusMessage({ text, className = "" }: { text: string; 
   if (isError) {
     return (
       <div className={`mt-2 flex items-start gap-2 border banner-error px-3 py-2 text-xs ${className}`}>
-        <span className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-red-400/20 text-[10px] font-bold text-red-300">
+        <span className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-danger/20 text-[10px] font-bold text-danger-text">
           !
         </span>
         <p className="leading-relaxed">{text}</p>

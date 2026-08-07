@@ -41,7 +41,7 @@ export default function DocumentsList({ documents }: { documents: Doc[] }) {
           ? "Préparation du lien..."
           : `Télécharger (${new Date(latest.created_at).toLocaleString("fr-FR")})`}
       </button>
-      {errorId === latest.id && <p className="mt-1 text-xs text-red-400">Lien indisponible, réessaie.</p>}
+      {errorId === latest.id && <p className="mt-1 text-xs text-red-400">Lien indisponible, réessayez.</p>}
 
       {older.length > 0 && (
         <details className="mt-3">

@@ -12,7 +12,7 @@ export default function MissionProgressBar({
   steps: { id: string; label: string; done: boolean }[];
 }) {
   return (
-    <div className="sticky top-14 z-40 -mx-6 mb-6 border-b border-white/10 bg-[#0a0f11]/95 px-6 py-2.5 backdrop-blur-sm sm:mx-0 sm:rounded-lg sm:border sm:px-4">
+    <div className="sticky top-14 z-40 -mx-6 mb-6 border-b border-white/10 bg-[#050706]/95 px-6 py-2.5 backdrop-blur-sm sm:mx-0 sm:rounded-lg sm:border sm:px-4">
       <div className="mb-1.5 flex gap-1.5">
         {steps.map((s) => (
           <div

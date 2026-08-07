@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 const STYLES = {
-  error: { cls: "banner-error", dot: "bg-red-400/20 text-red-300" },
-  warning: { cls: "banner-warning", dot: "bg-amber-400/20 text-amber-300" },
+  error: { cls: "banner-error", dot: "bg-danger/20 text-danger-text" },
+  warning: { cls: "banner-warning", dot: "bg-warning/20 text-warning-text" },
 } as const;
 
 function Banner({ kind, children, className = "" }: { kind: "error" | "warning"; children: ReactNode; className?: string }) {

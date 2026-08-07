@@ -69,7 +69,7 @@ async function handle(req: NextRequest) {
     if (logoData) logoBytes = new Uint8Array(await logoData.arrayBuffer());
   }
   const branding = logoBytes
-    ? { logoBytes, color: profile?.brand_color || "#2dd9ac", style: profile?.dossier_style || "filigrane" }
+    ? { logoBytes, color: profile?.brand_color || "#41fabb", style: profile?.dossier_style || "filigrane" }
     : null;
 
   // Télécharge les images de zones (stockage privé -> il faut la clé service)

@@ -134,7 +134,7 @@ export default async function MissionPage({ params }: { params: { id: string } }
               <ul className="ml-4 list-disc">
                 {missingItems.map((item, i) => (
                   <li key={i}>
-                    <a href={item.href} className="underline hover:text-amber-100">
+                    <a href={item.href} className="underline hover:text-warning-text">
                       {item.label}
                     </a>
                   </li>

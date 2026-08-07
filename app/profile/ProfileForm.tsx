@@ -8,6 +8,7 @@ import { parseAeronefsCsv } from "@/lib/alphatango/parseAeronefs";
 import { ErrorBanner } from "../components/Banner";
 import StatusMessage from "../components/StatusMessage";
 import FieldHint from "../components/FieldHint";
+import DroneIcon from "../components/DroneIcon";
 
 type Drone = {
   constructeur: string;
@@ -63,7 +64,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(initialProfile?.logo_signed_url || null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoError, setLogoError] = useState("");
-  const BRAND_PRESETS = ["#2dd9ac", "#378ADD", "#D85A30", "#7F77DD", "#BA7517"];
+  const BRAND_PRESETS = ["#41fabb", "#378ADD", "#D85A30", "#7F77DD", "#BA7517"];
   const [brandColor, setBrandColor] = useState<string>(initialProfile?.brand_color || BRAND_PRESETS[0]);
   const DOSSIER_STYLES: { id: "bandeau" | "garde" | "filigrane" | "combine"; label: string; description: string }[] = [
     { id: "bandeau", label: "Bandeau discret", description: "Petit logo en coin + filet de couleur sous le titre de chaque page." },
@@ -103,11 +104,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         style={{ height: size, width: size }}
         title="Emplacement du logo"
       >
-        <svg width={Math.round(size * 0.6)} height={Math.round(size * 0.6)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <path d="M21 15l-5-5L5 21" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <DroneIcon size={Math.round(size * 0.62)} className="text-slate-500" />
       </div>
     );
   }

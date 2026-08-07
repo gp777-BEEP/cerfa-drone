@@ -70,7 +70,7 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
       <button
         onClick={handleClick}
         disabled={loading}
-        className="rounded-md bg-brand px-6 py-2.5 font-medium text-white hover:bg-brand-dark disabled:opacity-50"
+        className="rounded-md bg-brand px-6 py-2.5 font-medium text-brand-ink hover:bg-brand-dark hover:text-white disabled:opacity-50"
       >
         {loading ? "Génération en cours..." : "Générer le dossier PDF"}
       </button>
@@ -117,7 +117,7 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
                   href={url}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-dark"
+                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink hover:bg-brand-dark hover:text-white"
                 >
                   Télécharger
                 </a>

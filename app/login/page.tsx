@@ -35,8 +35,13 @@ export default function LoginPage() {
             variables: {
               default: {
                 colors: {
-                  brand: "#2dd9ac",
-                  brandAccent: "#22b891",
+                  brand: "#41fabb",
+                  // Ni le vert clair (bg par défaut) ni le vert très foncé
+                  // (oklch 38%, réservé au texte sur fond clair) ne
+                  // conviennent ici : ce composant tiers applique le même
+                  // brandButtonText (foncé) aux deux états, donc le survol
+                  // reste un ton intermédiaire pour rester lisible.
+                  brandAccent: "#2fcb95",
                   brandButtonText: "#062018",
                   defaultButtonBackground: "rgba(255,255,255,0.05)",
                   defaultButtonBackgroundHover: "rgba(255,255,255,0.09)",
@@ -45,14 +50,14 @@ export default function LoginPage() {
                   inputBackground: "rgba(255,255,255,0.03)",
                   inputBorder: "rgba(255,255,255,0.16)",
                   inputBorderHover: "rgba(45,217,172,0.5)",
-                  inputBorderFocus: "#2dd9ac",
+                  inputBorderFocus: "#41fabb",
                   inputText: "#eef1f4",
                   inputLabelText: "#969daa",
                   inputPlaceholder: "#6b7280",
                   messageText: "#eef1f4",
                   messageTextDanger: "#ffb4b4",
-                  anchorTextColor: "#2dd9ac",
-                  anchorTextHoverColor: "#22b891",
+                  anchorTextColor: "#41fabb",
+                  anchorTextHoverColor: "#2fcb95",
                 },
               },
             },

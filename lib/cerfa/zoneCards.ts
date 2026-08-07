@@ -41,7 +41,7 @@ async function embedAny(pdfDoc: PDFDocument, bytes: Uint8Array): Promise<PDFImag
 
 function hexToRgbColor(hex: string) {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
-  if (!m) return rgb(0.176, 0.851, 0.675); // vert par défaut (#2dd9ac)
+  if (!m) return rgb(0.255, 0.98, 0.733); // vert par défaut (#41fabb)
   return rgb(parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255);
 }
 
@@ -168,7 +168,7 @@ export async function generateZoneCards(
       logoImg = null;
     }
   }
-  const brandColor = branding?.logoBytes ? hexToRgbColor(branding.color || "#2dd9ac") : null;
+  const brandColor = branding?.logoBytes ? hexToRgbColor(branding.color || "#41fabb") : null;
   const dossierStyle: DossierStyle = branding?.style || "filigrane";
 
   if (missionTitle) {
