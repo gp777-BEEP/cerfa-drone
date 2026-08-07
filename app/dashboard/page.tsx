@@ -17,9 +17,29 @@ export default async function Dashboard() {
   const { data: missions } = await supabase
     .from("missions")
     .select("id, title, mission_type, status, date_debut, created_at, archived")
+    // Trié par date de vol (les missions à venir en premier) plutôt que par
+    // date de création : plus utile pour se repérer dans un planning de vol.
+    // Les missions sans date (pas encore renseignée) restent en bas.
+    .order("date_debut", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false });
 
   const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).single();
+
+  // Dernier dossier généré par mission (pour l'aperçu au clic sur le statut
+  // "Dossier généré" dans la liste), une seule requête groupée plutôt qu'une
+  // par mission.
+  const missionIds = (missions || []).map((m) => m.id);
+  const latestDocByMission: Record<string, string> = {};
+  if (missionIds.length > 0) {
+    const { data: docs } = await supabase
+      .from("documents")
+      .select("mission_id, file_path, created_at")
+      .in("mission_id", missionIds)
+      .order("created_at", { ascending: false });
+    for (const d of docs || []) {
+      if (!latestDocByMission[d.mission_id]) latestDocByMission[d.mission_id] = d.file_path;
+    }
+  }
 
   return (
     <>
@@ -47,11 +67,15 @@ export default async function Dashboard() {
             <Link href="/profile" className="font-medium underline">
               Le compléter maintenant
             </Link>
-            {" "}(ou importez un Cerfa déjà rempli lors de la création d'une mission, ça le remplira automatiquement).
+            .
           </WarningBanner>
         )}
 
-        <MissionList initialMissions={missions || []} />
+        <MissionList
+          initialMissions={missions || []}
+          emptyProfile={!profile?.full_name}
+          latestDocByMission={latestDocByMission}
+        />
       </main>
     </>
   );

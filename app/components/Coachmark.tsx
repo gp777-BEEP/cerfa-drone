@@ -51,7 +51,7 @@ export default function Coachmark({
 
   return (
     <div
-      className={`flex items-start gap-2.5 rounded-lg border border-brand/30 bg-brand-light px-3 py-2.5 text-xs text-ink ${className}`}
+      className={`flex items-start gap-2.5 rounded-[14px] border border-brand/30 bg-brand-light px-3.5 py-3 text-sm text-ink ${className}`}
     >
       <svg
         width="15"

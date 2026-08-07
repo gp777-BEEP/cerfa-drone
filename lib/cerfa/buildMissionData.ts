@@ -60,6 +60,11 @@ export interface MissionRow {
   // (comportement historique).
   objet_mission?: string | null;
   commanditaire?: string | null;
+  // Champs généraux du Cerfa (haut du formulaire, pas par zone) : déjà
+  // mappés dans fieldMap.ts (dates.raisons_horaires/prescriptions_restrictives
+  // -> Texte59/Texte60), remplacent l'ancien bloc "questions par zone".
+  raisons_horaires?: string | null;
+  prescriptions_restrictives?: string | null;
 }
 
 export interface ZoneRow {
@@ -148,6 +153,8 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
         fin_date: toDdMmYyyy(mission.date_fin),
         fin_heure: finHeure || "",
         fin_min: finMin || "",
+        raisons_horaires: mission.raisons_horaires || "",
+        prescriptions_restrictives: mission.prescriptions_restrictives || "",
       };
     })(),
     signature: {

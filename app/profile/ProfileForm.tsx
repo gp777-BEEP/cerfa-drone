@@ -433,16 +433,13 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                   key={s.id}
                   type="button"
                   onClick={() => setDossierStyle(s.id)}
-                  className={`rounded-lg border p-2.5 text-left transition-colors ${
+                  className={`rounded-lg border p-2.5 text-center text-xs font-medium transition-colors ${
                     dossierStyle === s.id
-                      ? "border-brand bg-brand-light"
-                      : "border-white/10 bg-white/[0.02] hover:border-white/20"
+                      ? "border-brand bg-brand-light text-brand"
+                      : "border-white/10 bg-white/[0.02] text-ink hover:border-white/20"
                   }`}
                 >
-                  <p className={`mb-0.5 text-xs font-medium ${dossierStyle === s.id ? "text-brand" : "text-ink"}`}>
-                    {s.label}
-                  </p>
-                  <p className="text-[11px] leading-snug text-slate-500">{s.description}</p>
+                  {s.label}
                 </button>
               ))}
             </div>

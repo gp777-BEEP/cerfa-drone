@@ -7,8 +7,9 @@ import FileDropzone from "../../components/FileDropzone";
 import DateRangePicker from "../../components/DateRangePicker";
 import DroneChecklist from "../../components/DroneChecklist";
 import FieldHint from "../../components/FieldHint";
+import FieldError from "../../components/FieldError";
 import Coachmark from "../../components/Coachmark";
-import { ErrorBanner } from "../../components/Banner";
+import { ErrorBanner, WarningBanner } from "../../components/Banner";
 import StatusMessage from "../../components/StatusMessage";
 import { Drone, droneKey, mergeDroneLists } from "@/lib/drones";
 import { Question, QUESTION_HINTS } from "@/lib/missionQuestions";
@@ -21,6 +22,24 @@ function frToIso(dmy?: string): string {
   const [d, m, y] = dmy.split("/");
   if (!d || !m || !y) return "";
   return `${y}-${m}-${d}`;
+}
+
+// Jours ouvrés (lun-ven, hors jours fériés) entre aujourd'hui et une date de
+// début : certaines préfectures demandent jusqu'à 10 jours ouvrés de délai,
+// d'autres seulement 5 -> avertissement non bloquant plutôt qu'un blocage.
+function businessDaysUntil(dateIso: string): number {
+  const target = new Date(dateIso + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (target <= today) return 0;
+  let count = 0;
+  const d = new Date(today);
+  while (d < target) {
+    d.setDate(d.getDate() + 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
 }
 
 export default function NewMissionForm({
@@ -46,6 +65,10 @@ export default function NewMissionForm({
   const [saving, setSaving] = useState(false);
   const spotlightSubmit = useSpotlightHoverBgOnly();
   const [errorMsg, setErrorMsg] = useState("");
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const [raisonsHoraires, setRaisonsHoraires] = useState("");
+  const [prescriptionsRestrictives, setPrescriptionsRestrictives] = useState("");
 
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState("");
@@ -180,6 +203,9 @@ export default function NewMissionForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrorMsg("");
+    setTitleTouched(true);
+
+    if (!title.trim()) return;
 
     if (!dateDebut || !dateFin) {
       setErrorMsg("Renseignez une date de début et une date de fin.");
@@ -191,7 +217,10 @@ export default function NewMissionForm({
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setSaving(false);
+      return;
+    }
 
     const { data: mission, error } = await supabase
       .from("missions")
@@ -202,6 +231,8 @@ export default function NewMissionForm({
         objet_mission: objetMission || title,
         commanditaire,
         answers,
+        raisons_horaires: raisonsHoraires || null,
+        prescriptions_restrictives: prescriptionsRestrictives || null,
         date_debut: dateDebut || null,
         heure_debut: heureDebut,
         date_fin: dateFin || null,
@@ -353,12 +384,16 @@ export default function NewMissionForm({
       }
     }
 
-    setSaving(false);
+    // On ne repasse pas saving à false ici : le bouton reste désactivé
+    // (spinner) jusqu'à ce que la navigation charge la page mission, plutôt
+    // que de redevenir cliquable un court instant avant que la page suivante
+    // n'apparaisse (petit flash déroutant signalé par un beta testeur).
+    setRedirecting(true);
     router.push(`/missions/${mission.id}`);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} noValidate className="space-y-6">
       <div className="bg-glass p-5">
         <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
         <p className="mb-3 text-xs text-slate-500">
@@ -372,20 +407,20 @@ export default function NewMissionForm({
         />
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <span className="mb-2 block text-sm font-medium text-ink">Zones de vol (KML)</span>
+            <span className="mb-2 block text-sm font-medium text-ink">Zones de vol (fichier KML)</span>
             <FileDropzone
               label={kmlFile ? kmlFile.name : "Glisser le fichier KML ici, ou cliquer pour parcourir"}
-              hint="Export des zones de vol (DroneKeeper ou autre)"
+              hint="Export de carte (DroneKeeper, Google My Maps...)"
               accept=".kml"
               onFiles={(files) => handleSelectKml(files[0])}
             />
             <StatusMessage text={kmlMsg} />
             <a href="/tutoriel#pas-de-carte" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
-              Pas de carte sous la main ?
+              Pas de fichier KML ? Une carte ou capture d'écran (JPEG/PNG) suffit aussi, une fois la mission créée
             </a>
           </div>
           <div>
-            <span className="mb-2 block text-sm font-medium text-ink">Cerfa déjà rempli</span>
+            <span className="mb-2 block text-sm font-medium text-ink">Cerfa pré-rempli</span>
             <FileDropzone
               label="Glisser le Cerfa ici, ou cliquer pour parcourir"
               hint="Fichier PDF rempli (DroneKeeper ou autre)"
@@ -425,17 +460,25 @@ export default function NewMissionForm({
           {selectedType?.description && (
             <span className="mt-1 block text-xs text-slate-400">{selectedType.description}</span>
           )}
+          {selectedType?.label?.toLowerCase().includes("autre") && (
+            <input
+              value={answers.type_autre_precision || ""}
+              onChange={(e) => setAnswers((prev) => ({ ...prev, type_autre_precision: e.target.value }))}
+              placeholder="Précisez le type de mission"
+              className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2"
+            />
+          )}
         </label>
 
         <label className="mb-4 block text-sm">
           <span className="mb-1 block text-slate-600">Titre de la mission</span>
           <input
-            required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="ex : Inspection toiture, Cabourg"
             className="w-full rounded-md border border-slate-300 px-3 py-2"
           />
+          {titleTouched && !title.trim() && <FieldError />}
           <span className="mt-1 block text-xs text-slate-500">
             Sert de nom interne dans votre liste de missions, et d'objet de mission par défaut sur le Cerfa
             (modifiable ci-dessous).
@@ -497,28 +540,52 @@ export default function NewMissionForm({
           heureFin={heureFin}
           setHeureFin={setHeureFin}
         />
+        {dateDebut &&
+          (() => {
+            const days = businessDaysUntil(dateDebut);
+            return days > 0 && days < 10 ? (
+              <WarningBanner className="mt-3">
+                Cette mission commence dans {days} jour{days > 1 ? "s" : ""} ouvré{days > 1 ? "s" : ""}. Certaines
+                préfectures demandent jusqu'à 10 jours ouvrés de délai (d'autres seulement 5) : ça n'empêche pas
+                de créer la mission, mais mieux vaut l'envoyer sans tarder.
+              </WarningBanner>
+            ) : null;
+          })()}
       </div>
 
-      {selectedType && selectedType.question_schema?.length > 0 && (
-        <div className="bg-glass p-5">
-          <h2 className="mb-1 font-medium text-ink">Quelques questions sur la mission</h2>
-          <p className="mb-4 text-xs text-slate-500">
-            Pas obligatoire ici : ces réponses restent modifiables plus tard, depuis la page de la
-            mission une fois créée.
-          </p>
-          <div className="space-y-4">
-            {selectedType.question_schema.map((q) => (
-              <QuestionField
-                key={q.key}
-                question={q}
-                value={answers[q.key]}
-                onChange={(v) => setAnswers((prev) => ({ ...prev, [q.key]: v }))}
-                hint={QUESTION_HINTS[q.key]}
-              />
-            ))}
-          </div>
+      <div className="bg-glass p-5">
+        <h2 className="mb-1 font-medium text-ink">Informations générales sur le vol</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Reprises telles quelles en haut du Cerfa. Pas obligatoire ici : modifiable plus tard, depuis la page de
+          la mission.
+        </p>
+        <div className="space-y-4">
+          <label className="block text-sm">
+            <span className="mb-1 block text-slate-600">
+              Raisons qui ont présidé à la détermination des horaires de survol déclarés
+              <FieldHint text="Pourquoi ces horaires précisément (luminosité, activité du site, disponibilité...). Champ général du Cerfa, pas propre à une zone en particulier." />
+            </span>
+            <textarea
+              value={raisonsHoraires}
+              onChange={(e) => setRaisonsHoraires(e.target.value)}
+              rows={2}
+              className="w-full rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-slate-600">
+              Prescriptions restrictives de survol imposées par les gestionnaires des sites concernés
+              <FieldHint text="Contraintes fixées par le(s) gestionnaire(s) du ou des sites survolés (mairie, propriétaire, exploitant...), s'il y en a. Laissez vide si aucune." />
+            </span>
+            <textarea
+              value={prescriptionsRestrictives}
+              onChange={(e) => setPrescriptionsRestrictives(e.target.value)}
+              rows={2}
+              className="w-full rounded-md border border-slate-300 px-3 py-2"
+            />
+          </label>
         </div>
-      )}
+      </div>
 
       {errorMsg && <ErrorBanner>{errorMsg}</ErrorBanner>}
 
@@ -530,8 +597,24 @@ export default function NewMissionForm({
         onMouseMove={spotlightSubmit.onMouseMove}
         onMouseLeave={spotlightSubmit.onMouseLeave}
       >
-        {saving ? "Création..." : "Créer la mission"}
+        {redirecting ? "Ouverture de la mission..." : saving ? "Création..." : "Créer la mission"}
       </button>
+
+      {redirecting && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#05100c]/90 backdrop-blur-sm">
+          <svg
+            className="h-8 w-8 animate-spin text-brand"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
+            <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
+          </svg>
+          <p className="text-sm text-slate-300">Mission créée, ouverture en cours...</p>
+        </div>
+      )}
     </form>
   );
 }

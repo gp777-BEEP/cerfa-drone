@@ -96,6 +96,8 @@ create table if not exists missions (
   title text not null,
   objet_mission text, -- objet précis de la mission pour le Cerfa ; si vide, retombe sur title
   commanditaire text,
+  raisons_horaires text, -- Cerfa : "Raisons qui ont présidé à la détermination des horaires de survol déclarés"
+  prescriptions_restrictives text, -- Cerfa : "Prescriptions restrictives de survol imposées par les gestionnaires des sites concernés"
   status text not null default 'draft', -- draft | ready | dossier_genere
   archived boolean default false,
   answers jsonb not null default '{}',

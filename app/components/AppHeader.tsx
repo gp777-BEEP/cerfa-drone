@@ -2,16 +2,23 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import SignOutButton from "../dashboard/SignOutButton";
 import DroneIcon from "./DroneIcon";
 import { useSpotlightHover } from "@/lib/useSpotlightHover";
 
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
   const spotlight = useSpotlightHover();
+  const pathname = usePathname();
+  // Surligne le lien de la page actuellement affichée (demandé par un beta
+  // testeur : difficile de savoir où on se trouve dans le site sinon).
+  const isActive = pathname === href || pathname?.startsWith(href + "/");
   return (
     <Link
       href={href}
-      className="px-2 py-1 text-slate-500 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
+      className={`px-2 py-1 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 ${
+        isActive ? "font-medium text-brand" : "text-slate-500 hover:text-ink"
+      }`}
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}

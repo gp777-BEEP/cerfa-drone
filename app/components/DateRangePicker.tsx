@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const MONTHS = [
   "Janvier",
@@ -67,6 +67,16 @@ export default function DateRangePicker({
   const end = parseIso(dateFin);
   const [picking, setPicking] = useState<"debut" | "fin">(start ? "fin" : "debut");
   const [viewDate, setViewDate] = useState(() => start || end || new Date());
+
+  // dateDebut/dateFin arrivent parfois APRÈS le montage (import Cerfa
+  // asynchrone qui préremplit les dates une fois la réponse reçue) : sans
+  // ça, le calendrier restait bloqué sur le mois du jour de la création,
+  // même une fois une date d'octobre importée et affichée au-dessus.
+  useEffect(() => {
+    if (start) setViewDate(start);
+    else if (end) setViewDate(end);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateDebut, dateFin]);
 
   const viewYear = viewDate.getFullYear();
   const viewMonth = viewDate.getMonth();

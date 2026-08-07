@@ -31,6 +31,14 @@ export default function MissionDatesFields({
   const [heureFin, setHeureFin] = useState(initialHeureFin || "18:00");
   const [saving, setSaving] = useState(false);
 
+  // Format lisible "JJ/MM/AAAA à HH:MM" plutôt que l'ISO brut affiché avant
+  // (ex. "2026-08-12 09:00"), signalé confus par un beta testeur.
+  function fmt(dateIso: string | null, heure: string | null): string {
+    if (!dateIso) return "Non renseignée";
+    const [y, m, d] = dateIso.split("-");
+    return `${d}/${m}/${y} à ${heure || "?"}`;
+  }
+
   async function save() {
     setSaving(true);
     const { error } = await supabase
@@ -54,11 +62,28 @@ export default function MissionDatesFields({
       <button
         type="button"
         onClick={() => setEditing(true)}
-        className="group mb-6 flex items-center gap-2 text-left text-sm text-slate-500 hover:text-brand"
+        className="group mb-6 flex items-start gap-2.5 text-left text-sm text-slate-500 hover:text-brand"
         title="Modifier les dates et horaires"
       >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          className="mt-0.5 shrink-0"
+        >
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
+        </svg>
         <span>
-          {initialDateDebut || "?"} {initialHeureDebut} → {initialDateFin || "?"} {initialHeureFin}
+          <span className="block">
+            <span className="text-ink">Début</span> : {fmt(initialDateDebut, initialHeureDebut)}
+          </span>
+          <span className="block">
+            <span className="text-ink">Fin</span> : {fmt(initialDateFin, initialHeureFin)}
+          </span>
         </span>
         <svg
           width="13"
@@ -67,7 +92,7 @@ export default function MissionDatesFields({
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+          className="mt-0.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
         >
           <path d="M12 20h9" strokeLinecap="round" />
           <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" strokeLinecap="round" strokeLinejoin="round" />

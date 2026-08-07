@@ -7,6 +7,19 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { createClient } from "@/lib/supabase/client";
 import { ErrorBanner } from "../components/Banner";
 
+type View = "sign_in" | "sign_up" | "forgotten_password";
+
+// Titre + onglets pilotés par nous plutôt que par le composant tiers : un
+// beta testeur a signalé que rien n'indiquait "vous êtes en train de créer
+// un compte" en cliquant sur ce bouton. showLinks={false} cache le lien de
+// bascule interne du composant (qui ne mettait pas à jour ce titre) ; on
+// pilote la vue nous-mêmes à la place, avec un intitulé toujours exact.
+const VIEW_TITLE: Record<View, string> = {
+  sign_in: "Connexion",
+  sign_up: "Créer un compte",
+  forgotten_password: "Mot de passe oublié",
+};
+
 export default function LoginPage() {
   return (
     <Suspense fallback={null}>
@@ -21,6 +34,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const [ready, setReady] = useState(false);
   const [origin, setOrigin] = useState("");
+  const [view, setView] = useState<View>("sign_in");
 
   useEffect(() => {
     setReady(true);
@@ -40,7 +54,8 @@ function LoginForm() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <h1 className="mb-6 text-center text-2xl font-medium text-ink">Cerfa Drone</h1>
+      <h1 className="mb-1 text-center text-2xl font-medium text-ink">Cerfa Drone</h1>
+      <p className="mb-6 text-center text-sm text-slate-400">{VIEW_TITLE[view]}</p>
 
       {authError === "confirmation_failed" && (
         <ErrorBanner className="mb-4">
@@ -49,8 +64,34 @@ function LoginForm() {
         </ErrorBanner>
       )}
 
+      {view !== "forgotten_password" && (
+        <div className="mb-4 flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1 text-sm">
+          <button
+            type="button"
+            onClick={() => setView("sign_in")}
+            className={`flex-1 rounded-md py-1.5 transition-colors ${
+              view === "sign_in" ? "bg-brand-light font-medium text-brand" : "text-slate-400 hover:text-ink"
+            }`}
+          >
+            Se connecter
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("sign_up")}
+            className={`flex-1 rounded-md py-1.5 transition-colors ${
+              view === "sign_up" ? "bg-brand-light font-medium text-brand" : "text-slate-400 hover:text-ink"
+            }`}
+          >
+            Créer un compte
+          </button>
+        </div>
+      )}
+
       <div className="bg-glass p-6">
         <Auth
+          key={view}
+          view={view}
+          showLinks={false}
           supabaseClient={supabase}
           redirectTo={origin ? `${origin}/auth/callback` : undefined}
           appearance={{
@@ -120,6 +161,20 @@ function LoginForm() {
             },
           }}
         />
+        {view === "sign_in" && (
+          <button
+            type="button"
+            onClick={() => setView("forgotten_password")}
+            className="mt-3 text-sm text-brand hover:underline"
+          >
+            Mot de passe oublié ?
+          </button>
+        )}
+        {view === "forgotten_password" && (
+          <button type="button" onClick={() => setView("sign_in")} className="mt-3 text-sm text-brand hover:underline">
+            ← Retour à la connexion
+          </button>
+        )}
       </div>
     </main>
   );
