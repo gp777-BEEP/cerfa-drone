@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import ZoneManager from "./ZoneManager";
 import GenerateButton from "./GenerateButton";
+import SendToPrefectureButton from "./SendToPrefectureButton";
 import MissionTitle from "./MissionTitle";
 import MissionDetailsFields from "./MissionDetailsFields";
 import MissionAnswersFields from "./MissionAnswersFields";
@@ -148,6 +149,19 @@ export default async function MissionPage({ params }: { params: { id: string } }
 
           <GenerateButton missionId={mission.id} />
           <DocumentsList documents={documents || []} />
+
+          <div className="mt-5 border-t border-white/10 pt-4">
+            <h3 className="mb-1 text-sm font-medium text-ink">Envoyer le dossier à la préfecture</h3>
+            <SendToPrefectureButton
+              missionTitle={mission.title}
+              dateDebut={mission.date_debut}
+              dateFin={mission.date_fin}
+              pilotName={
+                profile?.exploitant_type === "morale" ? profile?.raison_sociale : profile?.full_name
+              }
+              zones={zonesList}
+            />
+          </div>
         </div>
       </main>
     </>

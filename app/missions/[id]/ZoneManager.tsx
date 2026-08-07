@@ -497,7 +497,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   }
 
   return (
-    <div id="zones-de-vol" className="scroll-mt-32 bg-glass p-5">
+    <div id="zones-de-vol" className="mt-6 scroll-mt-32 bg-glass p-5">
       <h2 className="mb-1 font-medium text-ink">Zones de vol</h2>
       <p className="mb-4 text-xs text-slate-400">
         Nombre de zones illimité : les 2 premières vont sur la page principale du Cerfa, les suivantes sur
