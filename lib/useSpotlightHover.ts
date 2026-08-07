@@ -16,10 +16,17 @@ import type { CSSProperties, MouseEvent } from "react";
 // sans que la souris ne bouge d'un pixel) ; le blur() gère le cas où c'est
 // l'anneau de focus par défaut du navigateur qui reste affiché après un
 // clic sur un lien/bouton, indépendamment de notre propre style.
+// Le contour passait de transparent à vert au survol, et restait parfois
+// "coincé" visuellement après un clic malgré plusieurs correctifs (reset au
+// clic, blur, tap-highlight désactivé). Plutôt que de continuer à chasser
+// la cause exacte : le contour est maintenant TOUJOURS visible, fin et
+// discret au repos -> il n'y a plus d'état "transparent" dans lequel rester
+// coincé, juste une transition entre deux verts (fin -> plus marqué) au
+// survol, parfaitement réversible.
 const BASE_STYLE: CSSProperties = {
   transition: "background 0.15s ease, border-color 0.35s ease, color 0.25s ease",
   borderRadius: 8,
-  border: "1px solid transparent",
+  border: "1px solid rgba(65,250,187,0.28)",
 };
 
 function makeReset(setDynamic: (v: CSSProperties) => void) {
@@ -54,7 +61,7 @@ export function useSpotlightHover() {
 // hover:bg-brand-dark habituel, qu'un style inline écraserait sinon).
 const BASE_STYLE_FILLED: CSSProperties = {
   transition: "background 0.15s ease, border-color 0.35s ease",
-  border: "1px solid transparent",
+  border: "1px solid rgba(255,255,255,0.12)",
 };
 
 export function useSpotlightHoverFilled(hoverBg: string, borderRadius = 6) {
