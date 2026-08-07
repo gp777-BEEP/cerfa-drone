@@ -39,6 +39,36 @@ async function embedAny(pdfDoc: PDFDocument, bytes: Uint8Array): Promise<PDFImag
   }
 }
 
+function hexToRgbColor(hex: string) {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
+  if (!m) return rgb(0.176, 0.851, 0.675); // vert par défaut (#2dd9ac)
+  return rgb(parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255);
+}
+
+// Personnalisation du dossier (option "filigrane discret" validée par
+// l'utilisateur parmi 4 propositions) : logo + couleur d'accent affichés en
+// petit, en bas à droite de chaque page générée, jamais sur le Cerfa officiel
+// lui-même (ce fichier ne touche que les fiches de zone / page de garde).
+function drawWatermark(page: any, logoImg: PDFImage | null, color: ReturnType<typeof rgb>) {
+  const tickSize = 8;
+  const tickX = PAGE_W - MARGIN - tickSize;
+  const tickY = MARGIN - 6;
+  page.drawRectangle({ x: tickX, y: tickY, width: tickSize, height: tickSize, color, opacity: 0.55 });
+  if (logoImg) {
+    const maxDim = 26;
+    const scale = Math.min(maxDim / logoImg.width, maxDim / logoImg.height, 1);
+    const w = logoImg.width * scale;
+    const h = logoImg.height * scale;
+    page.drawImage(logoImg, {
+      x: tickX - w - 8,
+      y: tickY + tickSize / 2 - h / 2,
+      width: w,
+      height: h,
+      opacity: 0.45,
+    });
+  }
+}
+
 // Découpe un texte libre en lignes qui tiennent dans maxWidth, pour un rendu
 // PDF manuel (pas de wrapping natif avec drawText/pdf-lib).
 function wrapText(text: string, font: Awaited<ReturnType<PDFDocument["embedFont"]>>, size: number, maxWidth: number): string[] {
@@ -66,10 +96,28 @@ function wrapText(text: string, font: Awaited<ReturnType<PDFDocument["embedFont"
  * existantes de l'utilisateur : titre, adresse, distance/hauteur max, carte(s),
  * consignes, légende "Zone de vol".
  */
-export async function generateZoneCards(missionTitle: string | undefined, zones: ZoneCardInput[]) {
+export async function generateZoneCards(
+  missionTitle: string | undefined,
+  zones: ZoneCardInput[],
+  branding?: { logoBytes?: Uint8Array | null; color?: string | null } | null
+) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  // Filigrane discret : uniquement si un logo a été fourni (le profil a
+  // toujours une couleur en base dès qu'il est enregistré une fois, donc on
+  // se cale sur la présence du logo pour ne rien afficher tant que
+  // l'utilisateur n'a pas explicitement personnalisé son dossier).
+  let logoImg: PDFImage | null = null;
+  if (branding?.logoBytes) {
+    try {
+      logoImg = await embedAny(pdfDoc, branding.logoBytes);
+    } catch {
+      logoImg = null;
+    }
+  }
+  const watermarkColor = branding?.logoBytes ? hexToRgbColor(branding.color || "#2dd9ac") : null;
 
   if (missionTitle) {
     const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
@@ -79,10 +127,12 @@ export async function generateZoneCards(missionTitle: string | undefined, zones:
       size: 26,
       font,
     });
+    if (watermarkColor) drawWatermark(page, logoImg, watermarkColor);
   }
 
   for (const zone of zones) {
     const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
+    if (watermarkColor) drawWatermark(page, logoImg, watermarkColor);
     let y = PAGE_H - MARGIN;
 
     if (missionTitle) {

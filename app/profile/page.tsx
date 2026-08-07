@@ -12,6 +12,14 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
+  // Aperçu du logo déjà enregistré (bucket privé "logos" -> URL signée,
+  // comme pour les dossiers déjà générés dans DocumentsList).
+  let logoSignedUrl: string | null = null;
+  if (profile?.logo_path) {
+    const { data } = await supabase.storage.from("logos").createSignedUrl(profile.logo_path, 3600);
+    logoSignedUrl = data?.signedUrl || null;
+  }
+
   return (
     <>
       <AppHeader />
@@ -21,7 +29,7 @@ export default async function ProfilePage() {
           Ces informations (vous + vos drones) sont réutilisées automatiquement dans chaque
           dossier que vous générez.
         </p>
-        <ProfileForm initialProfile={profile} />
+        <ProfileForm initialProfile={{ ...profile, logo_signed_url: logoSignedUrl }} />
       </main>
     </>
   );

@@ -56,6 +56,36 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  // Personnalisation du dossier généré (filigrane discret sur les fiches de
+  // zone et la page de garde -- jamais sur le Cerfa officiel lui-même,
+  // option "C" validée par l'utilisateur parmi 4 propositions).
+  const [logoPath, setLogoPath] = useState<string | null>(initialProfile?.logo_path || null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(initialProfile?.logo_signed_url || null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoError, setLogoError] = useState("");
+  const BRAND_PRESETS = ["#2dd9ac", "#378ADD", "#D85A30", "#7F77DD", "#BA7517"];
+  const [brandColor, setBrandColor] = useState<string>(initialProfile?.brand_color || BRAND_PRESETS[0]);
+
+  function handleLogoFile(file: File) {
+    setLogoError("");
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Le logo doit être une image (PNG ou JPG).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError("Image trop lourde (2 Mo maximum).");
+      return;
+    }
+    setLogoFile(file);
+    setLogoPreviewUrl(URL.createObjectURL(file));
+  }
+
+  function removeLogo() {
+    setLogoFile(null);
+    setLogoPreviewUrl(null);
+    setLogoPath(null);
+  }
+
   const [importingReleve, setImportingReleve] = useState(false);
   const [importingAeronefs, setImportingAeronefs] = useState(false);
   const [importMsgInfos, setImportMsgInfos] = useState("");
@@ -131,6 +161,21 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       return;
     }
 
+    // Upload du logo si un nouveau fichier a été choisi (chemin scopé au
+    // dossier de l'utilisateur, même schéma que zone-images/dossiers pour
+    // que les policies RLS du bucket "logos" s'appliquent).
+    let finalLogoPath = logoPath;
+    if (logoFile) {
+      const path = `${user.id}/logo_${Date.now()}_${logoFile.name}`;
+      const { error: uploadErr } = await supabase.storage.from("logos").upload(path, logoFile, { upsert: true });
+      if (uploadErr) {
+        setSaving(false);
+        setSaveError("Erreur lors de l'envoi du logo : " + uploadErr.message);
+        return;
+      }
+      finalLogoPath = path;
+    }
+
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -146,6 +191,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         siren_siret: exploitantType === "morale" ? sirenSiret : null,
         mandataire_qualite: exploitantType === "morale" ? mandataireQualite : null,
         drones: drones.filter((d) => d.constructeur || d.modele),
+        logo_path: finalLogoPath,
+        brand_color: brandColor,
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id);
@@ -155,6 +202,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       setSaveError("Erreur lors de l'enregistrement : " + error.message);
       return;
     }
+    setLogoPath(finalLogoPath);
+    setLogoFile(null);
     setSaved(true);
     router.refresh();
   }
@@ -281,6 +330,68 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               </p>
             </div>
           )}
+        </div>
+
+        <div className="bg-glass p-5">
+          <h2 className="mb-1 font-medium text-ink">Personnalisation du dossier</h2>
+          <p className="mb-4 text-xs text-slate-500">
+            Un petit logo et une couleur d'accent, affichés en filigrane discret sur la page de garde et les
+            fiches de zone que l'app génère. Le Cerfa officiel, lui, reste toujours le formulaire standard,
+            inchangé.
+          </p>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <span className="mb-2 block text-sm font-medium text-ink">Logo</span>
+              {logoPreviewUrl ? (
+                <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+                  <img src={logoPreviewUrl} alt="Logo" className="h-12 w-12 rounded-md object-contain bg-white/5" />
+                  <button
+                    type="button"
+                    onClick={removeLogo}
+                    className="text-sm text-red-500 hover:underline"
+                  >
+                    Retirer
+                  </button>
+                </div>
+              ) : (
+                <FileDropzone
+                  label="Glisser un logo ici, ou cliquer pour parcourir"
+                  hint="PNG ou JPG · 2 Mo maximum"
+                  accept="image/*"
+                  onFiles={(files) => handleLogoFile(files[0])}
+                />
+              )}
+              {logoError && <p className="mt-2 text-sm text-red-500">{logoError}</p>}
+            </div>
+            <div>
+              <span className="mb-2 block text-sm font-medium text-ink">Couleur d'accent</span>
+              <div className="flex flex-wrap items-center gap-2">
+                {BRAND_PRESETS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setBrandColor(c)}
+                    aria-label={`Couleur ${c}`}
+                    className="h-7 w-7 rounded-full"
+                    style={{
+                      backgroundColor: c,
+                      outline: brandColor.toLowerCase() === c.toLowerCase() ? "2px solid #f2f4f7" : "none",
+                      outlineOffset: "2px",
+                    }}
+                  />
+                ))}
+                <label className="relative flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-dashed border-slate-400 text-xs text-slate-400">
+                  +
+                  <input
+                    type="color"
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

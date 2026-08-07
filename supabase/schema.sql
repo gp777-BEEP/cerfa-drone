@@ -18,6 +18,8 @@ create table if not exists profiles (
   siege_social text,
   mandataire_qualite text, -- ex: "Gérant", "Président" (si exploitant_type = 'morale')
   drones jsonb default '[]',
+  logo_path text, -- chemin dans le bucket "logos", pour le filigrane des fiches de zone générées
+  brand_color text, -- couleur d'accent hex, même usage
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

@@ -60,6 +60,16 @@ async function handle(req: NextRequest) {
 
   const admin = createAdminClient();
 
+  // Filigrane discret (logo + couleur) sur les fiches de zone / page de
+  // garde générées -- jamais sur le Cerfa officiel. N'est appliqué que si
+  // l'utilisateur a effectivement importé un logo dans son profil.
+  let logoBytes: Uint8Array | null = null;
+  if (profile?.logo_path) {
+    const { data: logoData } = await admin.storage.from("logos").download(profile.logo_path);
+    if (logoData) logoBytes = new Uint8Array(await logoData.arrayBuffer());
+  }
+  const branding = logoBytes ? { logoBytes, color: profile?.brand_color || "#2dd9ac" } : null;
+
   // Télécharge les images de zones (stockage privé -> il faut la clé service)
   const zoneCardInputs = [] as Array<{
     title: string;
@@ -120,7 +130,7 @@ async function handle(req: NextRequest) {
     const cerfaDoc = await PDFDocument.load(cerfaBytes);
 
     if (hasImages || zoneCardInputs.length > 0) {
-      const zoneBytes = await generateZoneCards(mission.title, zoneCardInputs);
+      const zoneBytes = await generateZoneCards(mission.title, zoneCardInputs, branding);
       const zonesDoc = await PDFDocument.load(zoneBytes);
       const zonePages = await cerfaDoc.copyPages(zonesDoc, zonesDoc.getPageIndices());
       zonePages.forEach((p) => cerfaDoc.addPage(p));
