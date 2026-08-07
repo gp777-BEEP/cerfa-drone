@@ -11,9 +11,8 @@ import MissionDatesFields from "./MissionDatesFields";
 import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
 import MissionDrones from "./MissionDrones";
-import MissionProgressBar from "./MissionProgressBar";
+import MissionSectionsLayout from "./MissionSectionsLayout";
 import AppHeader from "../../components/AppHeader";
-import { WarningBanner } from "../../components/Banner";
 
 export default async function MissionPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -45,7 +44,7 @@ export default async function MissionPage({ params }: { params: { id: string } }
     .eq("slug", mission.mission_type)
     .single();
 
-  const missingItems: { label: string; href: string }[] = [];
+  const missingItems: { label: string; href: string; sectionId?: string }[] = [];
   if (!profile?.full_name) missingItems.push({ label: "Votre nom", href: "/profile" });
   if (!profile?.address) missingItems.push({ label: "Votre adresse", href: "/profile" });
   const hasProfileDrones = (profile?.drones || []).filter((d: any) => d?.constructeur).length > 0;
@@ -55,16 +54,16 @@ export default async function MissionPage({ params }: { params: { id: string } }
   }
   const zonesList = zones || [];
   if (zonesList.length === 0) {
-    missingItems.push({ label: "Au moins une zone de vol", href: "#zones-de-vol" });
+    missingItems.push({ label: "Au moins une zone de vol", href: "#zones-de-vol", sectionId: "zones" });
   } else {
     zonesList.forEach((z, i) => {
       const label = z.title || z.adresse || `Zone ${i + 1}`;
       const href = `#zone-${z.id}`;
-      if (!z.adresse) missingItems.push({ label: `Adresse de la zone "${label}"`, href });
+      if (!z.adresse) missingItems.push({ label: `Adresse de la zone "${label}"`, href, sectionId: "zones" });
       if (z.hauteur_max_m === null || z.hauteur_max_m === undefined)
-        missingItems.push({ label: `Hauteur max de la zone "${label}"`, href });
+        missingItems.push({ label: `Hauteur max de la zone "${label}"`, href, sectionId: "zones" });
       if (z.distance_max_m === null || z.distance_max_m === undefined)
-        missingItems.push({ label: `Éloignement max de la zone "${label}"`, href });
+        missingItems.push({ label: `Éloignement max de la zone "${label}"`, href, sectionId: "zones" });
     });
   }
 
@@ -75,26 +74,13 @@ export default async function MissionPage({ params }: { params: { id: string } }
   const dronesOk = hasProfileDrones || hasMissionDrones;
   const generationOk = (documents || []).length > 0;
 
-  const progressSteps = [
-    { id: "infos-dates", label: "Infos", done: datesOk },
-    { id: "zones-de-vol", label: "Zones", done: zonesOk },
-    { id: "drones", label: "Drones", done: dronesOk },
-    { id: "generation", label: "Génération", done: generationOk },
-  ];
-
-  return (
-    <>
-      <AppHeader />
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-brand">
-          ← Retour aux missions
-        </Link>
-        <MissionTitle missionId={mission.id} initialTitle={mission.title} />
-        <MissionActions missionId={mission.id} title={mission.title} initialArchived={!!mission.archived} />
-
-        <MissionProgressBar steps={progressSteps} />
-
-        <div id="infos-dates" className="scroll-mt-32">
+  const sections = [
+    {
+      id: "infos",
+      label: "Infos",
+      done: datesOk,
+      content: (
+        <div className="space-y-4">
           <MissionDatesFields
             missionId={mission.id}
             initialDateDebut={mission.date_debut}
@@ -115,37 +101,35 @@ export default async function MissionPage({ params }: { params: { id: string } }
             initialAnswers={mission.answers}
           />
         </div>
-
-        <ZoneManager missionId={mission.id} initialZones={zones || []} />
-
-        <div id="drones" className="mt-6 scroll-mt-32 bg-glass p-5">
+      ),
+    },
+    {
+      id: "zones",
+      label: "Zones",
+      done: zonesOk,
+      content: <ZoneManager missionId={mission.id} initialZones={zones || []} />,
+    },
+    {
+      id: "drones",
+      label: "Drones",
+      done: dronesOk,
+      content: (
+        <div className="bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Drones utilisés</h2>
           <p className="mb-3 text-xs text-slate-400">
             Réutilisés depuis votre profil, ou détectés à l'import d'un Cerfa pour cette mission.
           </p>
           <MissionDrones missionId={mission.id} profileDrones={profile?.drones || []} initialSelected={mission.drones} />
         </div>
-
-        <div id="generation" className="mt-6 scroll-mt-32 bg-glass p-5">
+      ),
+    },
+    {
+      id: "generation",
+      label: "Génération",
+      done: generationOk,
+      content: (
+        <div className="bg-glass p-5">
           <h2 className="mb-3 font-medium text-ink">Générer le dossier</h2>
-
-          {missingItems.length > 0 && (
-            <WarningBanner className="mb-4">
-              <p className="mb-1 font-medium">Il manque des informations pour un dossier complet :</p>
-              <ul className="ml-4 list-disc">
-                {missingItems.map((item, i) => (
-                  <li key={i}>
-                    <a href={item.href} className="underline hover:text-warning-text">
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs opacity-80">
-                Vous pouvez quand même générer maintenant, mais la préfecture risque de vous demander de compléter.
-              </p>
-            </WarningBanner>
-          )}
 
           <GenerateButton missionId={mission.id} />
           <DocumentsList documents={documents || []} />
@@ -163,6 +147,21 @@ export default async function MissionPage({ params }: { params: { id: string } }
             />
           </div>
         </div>
+      ),
+    },
+  ];
+
+  return (
+    <>
+      <AppHeader />
+      <main className="mx-auto max-w-3xl px-6 py-10">
+        <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-brand">
+          ← Retour aux missions
+        </Link>
+        <MissionTitle missionId={mission.id} initialTitle={mission.title} />
+        <MissionActions missionId={mission.id} title={mission.title} initialArchived={!!mission.archived} />
+
+        <MissionSectionsLayout sections={sections} missingItems={missingItems} />
       </main>
     </>
   );
