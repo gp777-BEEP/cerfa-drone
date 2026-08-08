@@ -7,12 +7,16 @@
 create table if not exists profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
+  first_name text, -- prioritaire sur full_name pour les cases Nom/Prénom du Cerfa (nom complet peu fiable à couper)
+  last_name text,
   address text, -- composée automatiquement depuis address_street/address_postal_code/address_city
   address_street text,
   address_postal_code text,
   address_city text,
   phone text,
   email text,
+  date_naissance date, -- demandée par le Cerfa pour chaque télépilote (case n°2)
+  lieu_naissance text,
   qualite text default 'Télépilote',
   siren_siret text, -- réutilisé pour l'identifiant SIREN/SIRET/RCS/RNE si exploitant_type = 'morale'
   numero_exploitant text, -- numéro d'enregistrement AlphaTango (FRAxxxxxxxxxxxx), parfois demandé par la préfecture
@@ -24,6 +28,7 @@ create table if not exists profiles (
   logo_path text, -- chemin dans le bucket "logos", pour le filigrane des fiches de zone générées
   brand_color text, -- couleur d'accent hex, même usage
   dossier_style text default 'filigrane', -- 'bandeau' | 'garde' | 'filigrane' | 'combine'
+  personalization_enabled boolean not null default false, -- toggle explicite (page Profil), sans logo la couleur/style ne s'appliquait jamais avant
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -110,6 +115,7 @@ create table if not exists missions (
   heure_fin text,
   regime jsonb not null default '{}', -- {categorie_ouverte, sous_categorie_a1/a2/a3, sts01, s3}
   drones jsonb, -- sous-ensemble des drones du profil utilisés pour CETTE mission ; null/vide = tous les drones du profil (comportement par défaut)
+  pilots jsonb, -- télépilotes déclarés pour CETTE mission (Cerfa case n°2, jusqu'à 4) ; null/vide = seul le profil connecté (télépilote 1)
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

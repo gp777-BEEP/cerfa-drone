@@ -19,6 +19,10 @@ export interface Profile {
   address?: string | null;
   phone?: string | null;
   email?: string | null;
+  // Demandés par le Cerfa pour chaque télépilote (case n°2) ; jamais
+  // collectés avant l'ajout du multi-pilotes, donc facultatifs.
+  date_naissance?: string | null; // ISO yyyy-mm-dd
+  lieu_naissance?: string | null;
   qualite?: string | null;
   // Personne physique (par défaut) ou personne morale : détermine quelle
   // colonne de la section "1. L'exploitant" du Cerfa est remplie. Si
@@ -62,6 +66,19 @@ export interface MissionRow {
   // utilisés pour CETTE mission précise. Si absent/vide, on retombe sur
   // profile.drones en entier (comportement historique, cf. plus bas).
   drones?: Profile["drones"];
+  // Télépilotes déclarés pour CETTE mission (Cerfa case n°2, jusqu'à 4).
+  // Si absent/vide, on retombe sur le seul profil connecté comme
+  // télépilote 1 (comportement historique, cf. plus bas).
+  pilots?: Array<{
+    nom?: string;
+    prenom?: string;
+    date_naissance?: string | null;
+    lieu_naissance?: string | null;
+    adresse?: string;
+    statut?: "salarie" | "independant";
+    telephone_portable?: string;
+    courriel?: string;
+  }> | null;
   // Objet précis de la mission et commanditaire, dédiés au Cerfa : si
   // absents, on retombe sur mission.title / answers.commanditaire
   // (comportement historique).
@@ -101,6 +118,15 @@ function toDdMmYyyy(iso?: string | null): string {
   return `${d}/${m}/${y}`;
 }
 
+// Le Cerfa n'a qu'un seul champ texte "Date et lieu de naissance ville et
+// pays" par télépilote (pas deux champs séparés) : on les combine ici.
+function formatNaissance(dateIso?: string | null, lieu?: string | null): string {
+  const d = toDdMmYyyy(dateIso);
+  const l = (lieu || "").trim();
+  if (d && l) return `${d} à ${l}`;
+  return d || l;
+}
+
 export function buildMissionData(profile: Profile, mission: MissionRow, zones: ZoneRow[]) {
   const { nom, prenom } =
     profile.first_name || profile.last_name
@@ -130,13 +156,6 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
           telephone_portable: profile.phone || "",
           courriel: profile.email || "",
         },
-    telepilote1: {
-      nom,
-      prenom,
-      adresse: profile.address || "",
-      telephone_portable: profile.phone || "",
-      courriel: profile.email || "",
-    },
     contact_urgence: {
       civilite: "monsieur",
       nom,
@@ -205,6 +224,45 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
       captif: drone.captif || "non",
       numero_enregistrement: drone.numero_enregistrement || "",
       numero_signalement: drone.numero_signalement || "",
+    };
+  });
+
+  // Télépilotes déclarés pour CETTE mission (Cerfa case n°2, jusqu'à 4
+  // emplacements sur le formulaire officiel) : si l'utilisateur en a
+  // explicitement ajouté via l'onglet "Pilotes" d'une mission, on les
+  // utilise tous ; sinon, seul le profil connecté est déclaré comme
+  // télépilote 1 (comportement historique). Dans ce cas de repli, on ne
+  // devine pas le statut salarié/indépendant (jamais demandé avant l'ajout
+  // du multi-pilotes) : les cases correspondantes restent simplement
+  // décochées, comme avant.
+  const pilotsList =
+    mission.pilots && mission.pilots.length > 0
+      ? mission.pilots
+      : [
+          {
+            nom,
+            prenom,
+            date_naissance: profile.date_naissance,
+            lieu_naissance: profile.lieu_naissance,
+            adresse: profile.address || "",
+            statut: undefined,
+            telephone_portable: profile.phone || "",
+            courriel: profile.email || "",
+          },
+        ];
+
+  pilotsList.slice(0, 4).forEach((pilot, i) => {
+    data[`telepilote${i + 1}`] = {
+      nom: pilot.nom || "",
+      prenom: pilot.prenom || "",
+      naissance: formatNaissance(pilot.date_naissance, pilot.lieu_naissance),
+      adresse: pilot.adresse || "",
+      telephone_portable: pilot.telephone_portable || "",
+      courriel: pilot.courriel || "",
+      // Uniquement rempli quand le statut a été explicitement renseigné
+      // (jamais le cas pour le télépilote 1 par défaut, cf. ci-dessus) :
+      // sinon les deux cases restent décochées plutôt que de deviner.
+      ...(pilot.statut ? { employeur: pilot.statut === "salarie", independant: pilot.statut === "independant" } : {}),
     };
   });
 

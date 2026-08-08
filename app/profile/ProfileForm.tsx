@@ -66,6 +66,14 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [addressCity, setAddressCity] = useState(initialProfile?.address_city || "");
   const [phone, setPhone] = useState(initialProfile?.phone || "");
   const [email, setEmail] = useState(initialProfile?.email || "");
+  // Date/lieu de naissance : demandés par le Cerfa pour chaque télépilote
+  // déclaré (case n°2), jamais collectés jusqu'ici. Facultatifs pour ne pas
+  // bloquer un profil déjà en place, mais nécessaires pour que le
+  // télépilote 1 (vous, par défaut) soit complet sur le Cerfa généré, et
+  // pour "Exporter mes infos" (partage à un collègue, cf. onglet Pilotes
+  // d'une mission).
+  const [dateNaissance, setDateNaissance] = useState(initialProfile?.date_naissance || "");
+  const [lieuNaissance, setLieuNaissance] = useState(initialProfile?.lieu_naissance || "");
   const [qualite, setQualite] = useState(initialProfile?.qualite || "Télépilote");
   const [numeroExploitant, setNumeroExploitant] = useState(initialProfile?.numero_exploitant || "");
   const [exploitantType, setExploitantType] = useState<"physique" | "morale">(
@@ -303,6 +311,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         address_city: addressCity,
         phone,
         email,
+        date_naissance: dateNaissance || null,
+        lieu_naissance: lieuNaissance,
         qualite,
         numero_exploitant: numeroExploitant,
         exploitant_type: exploitantType,
@@ -335,6 +345,36 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await doSave();
+  }
+
+  // Partage à un collègue télépilote : un fichier JSON avec vos infos,
+  // importable depuis l'onglet "Pilotes" d'une mission (case n°2 du Cerfa)
+  // par n'importe qui, sans qu'il ait besoin de créer un compte ou de tout
+  // ressaisir à la main.
+  function exportPilotProfile() {
+    const payload = {
+      type: "cerfa-drone-pilote",
+      version: 1,
+      nom: lastName,
+      prenom: firstName,
+      date_naissance: dateNaissance,
+      lieu_naissance: lieuNaissance,
+      adresse: [addressStreet, [addressPostalCode, addressCity].filter(Boolean).join(" ")]
+        .filter(Boolean)
+        .join(", "),
+      statut: "independant",
+      telephone_portable: phone,
+      courriel: email,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pilote_${(firstName || "profil").toLowerCase().replace(/\s+/g, "_")}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   }
 
   const dronesCount = drones.filter((d) => d.constructeur || d.modele).length;
@@ -392,12 +432,27 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             <Field label="Téléphone" value={phone} onChange={setPhone} />
             <Field label="Email" value={email} onChange={setEmail} type="email" />
             <Field
+              label="Date de naissance"
+              value={dateNaissance}
+              onChange={setDateNaissance}
+              type="date"
+              hint="Demandée par le Cerfa pour chaque télépilote déclaré. Facultatif si vous ne comptez pas générer de dossier tout de suite."
+            />
+            <Field label="Lieu de naissance (ville, pays)" value={lieuNaissance} onChange={setLieuNaissance} />
+            <Field
               label="Numéro d'exploitant"
               value={numeroExploitant}
               onChange={setNumeroExploitant}
               hint="Numéro d'enregistrement AlphaTango (format FRA...). Pas de case dédiée sur le Cerfa, mais la préfecture le demande parfois en complément."
             />
           </div>
+          <button
+            type="button"
+            onClick={exportPilotProfile}
+            className="mt-4 text-sm text-brand hover:underline"
+          >
+            Exporter mes infos (fichier à partager avec un collègue télépilote)
+          </button>
           <p className="mt-3 text-xs text-slate-500">
             Numéro d'enregistrement AlphaTango (format FRA...), pas de case dédiée sur le Cerfa mais
             la préfecture le demande parfois en complément : garde-le sous la main. C'est un identifiant

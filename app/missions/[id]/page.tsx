@@ -10,8 +10,10 @@ import MissionDatesFields from "./MissionDatesFields";
 import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
 import MissionDrones from "./MissionDrones";
+import MissionPilots from "./MissionPilots";
 import MissionSectionsLayout from "./MissionSectionsLayout";
 import AppHeader from "../../components/AppHeader";
+import type { Pilot } from "@/lib/pilots";
 
 export default async function MissionPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -66,6 +68,21 @@ export default async function MissionPage({ params }: { params: { id: string } }
     });
   }
 
+  // Télépilote 1 par défaut = le profil connecté (même logique de repli que
+  // buildMissionData.ts côté génération du PDF, pour que ce qu'on voit dans
+  // l'onglet "Pilotes" corresponde à ce qui sera réellement utilisé tant
+  // qu'on n'a rien ajouté/modifié soi-même).
+  const profileAsPilot: Pilot = {
+    nom: profile?.last_name || (profile?.full_name || "").trim().split(/\s+/).slice(1).join(" ") || "",
+    prenom: profile?.first_name || (profile?.full_name || "").trim().split(/\s+/)[0] || "",
+    date_naissance: profile?.date_naissance || "",
+    lieu_naissance: profile?.lieu_naissance || "",
+    adresse: profile?.address || "",
+    statut: "independant",
+    telephone_portable: profile?.phone || "",
+    courriel: profile?.email || "",
+  };
+
   const datesOk = !!mission.date_debut && !!mission.date_fin;
   const zonesOk =
     zonesList.length > 0 &&
@@ -119,6 +136,21 @@ export default async function MissionPage({ params }: { params: { id: string } }
             Réutilisés depuis votre profil, ou détectés à l'import d'un Cerfa pour cette mission.
           </p>
           <MissionDrones missionId={mission.id} profileDrones={profile?.drones || []} initialSelected={mission.drones} />
+        </div>
+      ),
+    },
+    {
+      id: "pilotes",
+      label: "Pilotes",
+      done: true, // facultatif : le télépilote 1 (vous) suffit, ce n'est jamais bloquant
+      content: (
+        <div className="bg-glass p-5">
+          <h2 className="mb-1 font-medium text-ink">Télépilotes déclarés</h2>
+          <p className="mb-3 text-xs text-slate-400">
+            Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Vous êtes ajouté par défaut ;
+            ajoutez-en d'autres à la main ou importez le fichier partagé par un collègue.
+          </p>
+          <MissionPilots missionId={mission.id} profileAsPilot={profileAsPilot} initialPilots={mission.pilots} />
         </div>
       ),
     },
