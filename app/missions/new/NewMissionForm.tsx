@@ -498,7 +498,7 @@ export default function NewMissionForm({
           un Cerfa pré-rempli (DroneKeeper ou un autre outil), un dossier de vol FlyBy, ou un fichier KML pour la
           carte des zones. Si vous n'avez rien de tout ça, pas de problème : vous pourrez tout saisir à la main.
         </p>
-        <div className="flex flex-wrap gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <button
             type="button"
             onClick={(e) => {
@@ -506,12 +506,15 @@ export default function NewMissionForm({
               setHasCerfa("oui");
               setCerfaChecked(true);
             }}
-            className="flex max-w-xs flex-col items-start gap-1 rounded-md border border-brand px-6 py-3 text-left outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
+            className="flex flex-col items-start gap-2 rounded-xl border border-brand bg-brand/5 px-6 py-5 text-left outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
             style={spotlightHasCerfaOui.style}
             onMouseMove={spotlightHasCerfaOui.onMouseMove}
             onMouseLeave={spotlightHasCerfaOui.onMouseLeave}
           >
-            <span className="font-medium text-brand">Cerfa pré-rempli (DroneKeeper ou autre)</span>
+            <span>
+              <span className="block text-base font-medium text-brand">Cerfa pré-rempli</span>
+              <span className="mt-0.5 block text-xs text-slate-400">(DroneKeeper ou autre) + KML/screenshot</span>
+            </span>
             <span className="text-xs text-slate-500">Déposez le fichier, tout est repris automatiquement.</span>
           </button>
           <button
@@ -521,13 +524,16 @@ export default function NewMissionForm({
               setHasCerfa("non");
               setCerfaChecked(false);
             }}
-            className="flex max-w-xs flex-col items-start gap-1 rounded-md border border-brand px-6 py-3 text-left outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
+            className="flex flex-col items-start gap-2 rounded-xl border border-brand bg-brand/5 px-6 py-5 text-left outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
             style={spotlightHasCerfaNon.style}
             onMouseMove={spotlightHasCerfaNon.onMouseMove}
             onMouseLeave={spotlightHasCerfaNon.onMouseLeave}
           >
-            <span className="font-medium text-brand">Partir de zéro</span>
-            <span className="text-xs text-slate-500">Vous pourrez importer un KML ou tout saisir à la main.</span>
+            <span>
+              <span className="block text-base font-medium text-brand">Partir de zéro</span>
+              <span className="mt-0.5 block text-xs text-slate-400">KML/screenshot</span>
+            </span>
+            <span className="text-xs text-slate-500">Vous pourrez tout saisir à la main.</span>
           </button>
         </div>
       </div>
@@ -559,7 +565,7 @@ export default function NewMissionForm({
         </p>
         <Coachmark
           id="import-optionnel-mission"
-          text="Rien sous la main ? Vous pouvez tracer gratuitement votre zone de vol via DroneKeeper ou FlyBy et l'exporter en KML pour l'importer ci-dessous. Sinon, pas de problème : une simple capture d'écran de la zone suffit, et vous pourrez tout saisir à la main juste après."
+          text="Rien sous la main ? Vous pouvez tracer gratuitement votre zone de vol via DroneKeeper ou FlyBy et l'exporter en KML pour l'importer ci-dessous. Une simple capture d'écran de la zone suffit, et vous pourrez tout saisir à la main juste après."
           linkHref="/tutoriel#pas-de-carte"
           linkLabel="Comment faire"
           className="mb-3"
