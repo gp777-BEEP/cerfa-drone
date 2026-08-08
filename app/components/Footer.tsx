@@ -2,14 +2,17 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { useSpotlightHover } from "@/lib/useSpotlightHover";
+import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 function FooterLink({ href, children }: { href: string; children: ReactNode }) {
-  const spotlight = useSpotlightHover();
+  // Contour vert statique (classe CSS), même schéma que NavLink/GuideComplet
+  // -- plus de border-color piloté par le JS, plus de risque de contour qui
+  // vire au gris après un survol.
+  const spotlight = useSpotlightHoverBgOnly();
   return (
     <Link
       href={href}
-      className="px-1.5 py-1 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
+      className="rounded-md border border-brand/50 px-1.5 py-1 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}

@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useSpotlightHover } from "@/lib/useSpotlightHover";
+import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 export default function SignOutButton() {
   const supabase = createClient();
   const router = useRouter();
-  const spotlight = useSpotlightHover();
+  // Contour vert statique (classe CSS), même schéma que NavLink/GuideComplet.
+  const spotlight = useSpotlightHoverBgOnly();
 
   return (
     <button
@@ -17,7 +18,7 @@ export default function SignOutButton() {
         router.push("/login");
         router.refresh();
       }}
-      className="px-2 py-1 text-sm text-slate-500 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
+      className="rounded-md border border-brand/50 px-2 py-1 text-sm text-slate-500 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}

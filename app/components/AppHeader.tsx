@@ -5,10 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import SignOutButton from "../dashboard/SignOutButton";
 import DroneIcon from "./DroneIcon";
-import { useSpotlightHover } from "@/lib/useSpotlightHover";
+import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
-  const spotlight = useSpotlightHover();
+  // Contour vert 100% CSS (classe Tailwind statique), jamais piloté par le
+  // JS -- même schéma que le bandeau "Guide complet" du tutoriel, qui n'a
+  // jamais eu le problème de contour qui vire au gris signalé plusieurs fois
+  // sur ces liens. Seule la lueur qui suit le curseur reste animée en JS
+  // (useSpotlightHoverBgOnly ne touche jamais border-color).
+  const spotlight = useSpotlightHoverBgOnly();
   const pathname = usePathname();
   // Surligne le lien de la page actuellement affichée (demandé par un beta
   // testeur : difficile de savoir où on se trouve dans le site sinon).
@@ -16,7 +21,7 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
   return (
     <Link
       href={href}
-      className={`px-2 py-1 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 ${
+      className={`rounded-md border border-brand/50 px-2 py-1 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand/50 ${
         isActive ? "font-medium text-brand" : "text-slate-500 hover:text-ink"
       }`}
       style={spotlight.style}
