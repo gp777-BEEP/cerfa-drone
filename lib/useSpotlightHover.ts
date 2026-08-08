@@ -23,10 +23,18 @@ import type { CSSProperties, MouseEvent } from "react";
 // discret au repos -> il n'y a plus d'état "transparent" dans lequel rester
 // coincé, juste une transition entre deux verts (fin -> plus marqué) au
 // survol, parfaitement réversible.
+// Alpha du contour au repos relevé de 0.28 à 0.5 (et le contour au survol de
+// 0.5 à 0.7 ci-dessous) : signalé à nouveau comme "vert avant / gris après
+// survol" malgré la bordure permanente. Le code ne permet plus d'état
+// réellement transparent ou différent avant/après (même style exact des deux
+// côtés), donc l'explication la plus probable est perceptuelle -- à 0.28
+// d'opacité sur un fond sombre semi-transparent, le vert peut se lire comme
+// gris terne par contraste avec l'état survolé, plus vif. On rend donc le
+// contour au repos nettement et sans ambiguïté vert.
 const BASE_STYLE: CSSProperties = {
   transition: "background 0.15s ease, border-color 0.35s ease, color 0.25s ease",
   borderRadius: 8,
-  border: "1px solid rgba(65,250,187,0.28)",
+  border: "1px solid rgba(65,250,187,0.5)",
 };
 
 function makeReset(setDynamic: (v: CSSProperties) => void) {
@@ -45,7 +53,7 @@ export function useSpotlightHover() {
     const y = e.clientY - r.top;
     setDynamic({
       background: `radial-gradient(60px circle at ${x}px ${y}px, rgba(65,250,187,0.28), transparent 70%)`,
-      borderColor: "rgba(65,250,187,0.5)",
+      borderColor: "rgba(65,250,187,0.7)",
     });
   }
 

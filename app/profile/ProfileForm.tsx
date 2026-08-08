@@ -87,7 +87,35 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
     initialProfile?.dossier_style || "filigrane"
   );
 
-  function handleLogoFile(file: File) {
+  // Le logo n'a besoin d'être affiché qu'en petit (coin de page, bandeau...) :
+  // au-delà de 800px de large ou haut, on redimensionne automatiquement via
+  // un <canvas> avant l'envoi plutôt que de rejeter l'image ou de la laisser
+  // telle quelle -- retour bêta-testeur : les très grandes images posaient
+  // problème (poids, rendu). Le PNG produit reste sous la limite de 2 Mo dans
+  // l'immense majorité des cas.
+  const LOGO_MAX_DIM = 800;
+
+  async function downscaleImage(file: File, maxDim: number): Promise<File> {
+    const bitmap = await createImageBitmap(file).catch(() => null);
+    if (!bitmap) return file;
+    if (bitmap.width <= maxDim && bitmap.height <= maxDim) return file;
+
+    const scale = maxDim / Math.max(bitmap.width, bitmap.height);
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+
+    const blob: Blob | null = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, ".png"), { type: "image/png" });
+  }
+
+  async function handleLogoFile(file: File) {
     setLogoError("");
     if (!file.type.startsWith("image/")) {
       setLogoError("Le logo doit être une image (PNG ou JPG).");
@@ -97,8 +125,13 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       setLogoError("Image trop lourde (2 Mo maximum).");
       return;
     }
-    setLogoFile(file);
-    setLogoPreviewUrl(URL.createObjectURL(file));
+    const finalFile = await downscaleImage(file, LOGO_MAX_DIM);
+    if (finalFile.size > 2 * 1024 * 1024) {
+      setLogoError("Image trop lourde (2 Mo maximum), même après redimensionnement.");
+      return;
+    }
+    setLogoFile(finalFile);
+    setLogoPreviewUrl(URL.createObjectURL(finalFile));
   }
 
   // Emplacement du logo dans l'aperçu : si aucun logo n'est encore importé,

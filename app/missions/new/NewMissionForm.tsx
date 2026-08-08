@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
@@ -74,6 +74,11 @@ export default function NewMissionForm({
   const spotlightSubmit = useSpotlightHoverBgOnly();
   const [errorMsg, setErrorMsg] = useState("");
   const [titleTouched, setTitleTouched] = useState(false);
+  // Remonte automatiquement vers le champ en cause quand la soumission
+  // échoue (titre ou dates manquants) -- retour bêta-testeur : le message
+  // d'erreur en bas de page ne disait pas où était le problème plus haut.
+  const titleRef = useRef<HTMLInputElement>(null);
+  const datesRef = useRef<HTMLDivElement>(null);
   const [redirecting, setRedirecting] = useState(false);
   const [raisonsHoraires, setRaisonsHoraires] = useState("");
   const [prescriptionsRestrictives, setPrescriptionsRestrictives] = useState("");
@@ -213,10 +218,15 @@ export default function NewMissionForm({
     setErrorMsg("");
     setTitleTouched(true);
 
-    if (!title.trim()) return;
+    if (!title.trim()) {
+      titleRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      titleRef.current?.focus();
+      return;
+    }
 
     if (!dateDebut || !dateFin) {
       setErrorMsg("Renseignez une date de début et une date de fin.");
+      datesRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
 
@@ -451,43 +461,77 @@ export default function NewMissionForm({
         ← Revenir en arrière
       </button>
       <div className="bg-glass p-5">
-        <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
-        <p className="mb-3 text-xs text-slate-500">
-          Les deux sont indépendants, déposez ce que vous avez : le KML apporte la carte des zones (avec
-          échelle) et calcule hauteur/éloignement, le Cerfa préremplit vos infos, vos drones et les dates.
-        </p>
-        <Coachmark
-          id="import-optionnel-mission"
-          text="Ni Cerfa ni KML sous la main ? Pas de problème : vous pourrez décrire votre zone de vol manuellement, avec juste une capture d'écran, une fois la mission créée."
-          className="mb-3"
-        />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <span className="mb-2 block text-sm font-medium text-ink">Zones de vol (fichier KML)</span>
-            <FileDropzone
-              label={kmlFile ? kmlFile.name : "Glisser le fichier KML ici, ou cliquer pour parcourir"}
-              hint="Export de carte (DroneKeeper, Google My Maps...)"
-              accept=".kml"
-              onFiles={(files) => handleSelectKml(files[0])}
+        {hasCerfa === "oui" ? (
+          <>
+            <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Les deux sont indépendants, déposez ce que vous avez : le KML apporte la carte des zones (avec
+              échelle) et calcule hauteur/éloignement, le Cerfa préremplit vos infos, vos drones et les dates.
+            </p>
+            <Coachmark
+              id="import-optionnel-mission"
+              text="Le Cerfa préremplit le formulaire, mais n'apporte pas de carte : ajoutez aussi un KML (ou une simple capture d'écran plus tard) pour la zone de vol."
+              className="mb-3"
             />
-            <StatusMessage text={kmlMsg} />
-            <a href="/tutoriel#pas-de-carte" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
-              Pas de fichier KML ? Une carte ou capture d'écran (JPEG/PNG) suffit aussi, une fois la mission créée
-            </a>
-          </div>
-          <div>
-            <span className="mb-2 block text-sm font-medium text-ink">Cerfa pré-rempli</span>
-            <FileDropzone
-              label="Glisser le Cerfa ici, ou cliquer pour parcourir"
-              hint="Fichier PDF rempli (DroneKeeper ou autre)"
-              accept="application/pdf"
-              disabled={importing}
-              onFiles={(files) => handleImportCerfa(files[0])}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <span className="mb-2 block text-sm font-medium text-ink">Cerfa pré-rempli</span>
+                <FileDropzone
+                  label="Glisser le Cerfa ici, ou cliquer pour parcourir"
+                  hint="Fichier PDF rempli (DroneKeeper ou autre)"
+                  accept="application/pdf"
+                  disabled={importing}
+                  onFiles={(files) => handleImportCerfa(files[0])}
+                />
+                {importing && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
+                <StatusMessage text={importMsg} />
+              </div>
+              <div>
+                <span className="mb-2 block text-sm font-medium text-ink">Zones de vol (fichier KML)</span>
+                <FileDropzone
+                  label={kmlFile ? kmlFile.name : "Glisser le fichier KML ici, ou cliquer pour parcourir"}
+                  hint="Export de carte (DroneKeeper, Google My Maps...)"
+                  accept=".kml"
+                  onFiles={(files) => handleSelectKml(files[0])}
+                />
+                <StatusMessage text={kmlMsg} />
+                <a href="/tutoriel#pas-de-carte" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
+                  Pas de fichier KML ? Une carte ou capture d'écran (JPEG/PNG) suffit aussi, une fois la mission créée
+                </a>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Pas de Cerfa à importer (choix "Non, je pars de zéro" à l'étape
+                précédente) : le dropzone Cerfa n'a pas lieu d'être ici, seul
+                le KML reste pertinent -- retour bêta-testeur : il fallait une
+                page adaptée à ce choix, pas le même écran que pour "Oui". */}
+            <h2 className="mb-1 font-medium text-ink">Zones de vol (optionnel)</h2>
+            <p className="mb-3 text-xs text-slate-500">
+              Un fichier KML apporte automatiquement la carte de vos zones (avec échelle) et calcule
+              hauteur/éloignement. Les informations manquantes (infos, drones...) se saisissent juste après.
+            </p>
+            <Coachmark
+              id="import-optionnel-mission-non"
+              text="Pas de fichier KML sous la main ? Pas de problème : vous pourrez décrire votre zone de vol manuellement, avec juste une capture d'écran, une fois la mission créée."
+              className="mb-3"
             />
-            {importing && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
-            <StatusMessage text={importMsg} />
-          </div>
-        </div>
+            <div className="max-w-sm">
+              <span className="mb-2 block text-sm font-medium text-ink">Zones de vol (fichier KML)</span>
+              <FileDropzone
+                label={kmlFile ? kmlFile.name : "Glisser le fichier KML ici, ou cliquer pour parcourir"}
+                hint="Export de carte (DroneKeeper, Google My Maps...)"
+                accept=".kml"
+                onFiles={(files) => handleSelectKml(files[0])}
+              />
+              <StatusMessage text={kmlMsg} />
+              <a href="/tutoriel#pas-de-carte" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
+                Pas de fichier KML ? Une carte ou capture d'écran (JPEG/PNG) suffit aussi, une fois la mission créée
+              </a>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="bg-glass p-5">
@@ -529,6 +573,7 @@ export default function NewMissionForm({
         <label className="mb-4 block text-sm">
           <span className="mb-1 block text-slate-600">Titre de la mission</span>
           <input
+            ref={titleRef}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="ex : Inspection toiture, Cabourg"
@@ -583,6 +628,7 @@ export default function NewMissionForm({
           </select>
         </label>
 
+        <div ref={datesRef}>
         <label className="mb-1 block text-sm">
           <span className="mb-1 block text-slate-600">Dates et horaires de vol</span>
         </label>
@@ -607,6 +653,7 @@ export default function NewMissionForm({
               </WarningBanner>
             ) : null;
           })()}
+        </div>
       </div>
 
       <div className="bg-glass p-5">
