@@ -55,9 +55,9 @@ export default function TutorielFlyByPage() {
                 Nouvelle mission
               </Link>{" "}
               (rubrique "Dossier de vol FlyBy"), ou depuis une mission existante : zone, dates, régime de vol
-              et drone sont préremplis automatiquement. Vérifiez les champs prérempli et complétez ce qui
-              manque (comme le fichier ne contient pas de carte, pensez à ajouter un KML ou une capture
-              d'écran pour la zone).
+              et drone sont préremplis automatiquement. Vérifiez les champs préremplis et complétez ce qui
+              manque (le fichier ne contenant pas de carte, pensez à ajouter un KML ou une capture d'écran
+              pour la zone).
             </p>
           </div>
         </div>
