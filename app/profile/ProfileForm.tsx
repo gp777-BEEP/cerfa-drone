@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../components/FileDropzone";
@@ -99,6 +99,33 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   // un profil tout neuf s'ouvre directement en édition (rien à consulter).
   const hasExistingProfile = !!(initialProfile?.first_name || initialProfile?.last_name || initialProfile?.full_name);
   const [mode, setMode] = useState<"view" | "edit">(hasExistingProfile ? "view" : "edit");
+  // Retour bêta-testeur : depuis la consultation, cliquer sur "Modifier" sur
+  // la carte Personnalisation ou Drones doit amener directement à cette
+  // section-là plutôt que de rouvrir tout le formulaire depuis le haut de
+  // page. Pour "Drones", c'est déjà un onglet séparé (setTab suffit) ; pour
+  // "Personnalisation" (dans l'onglet Informations), on scrolle et on
+  // déplie la carte automatiquement une fois le formulaire affiché.
+  const personalizationSectionRef = useRef<HTMLDivElement>(null);
+  const [scrollToPersonalization, setScrollToPersonalization] = useState(false);
+
+  useEffect(() => {
+    if (mode === "edit" && scrollToPersonalization && personalizationSectionRef.current) {
+      personalizationSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      setScrollToPersonalization(false);
+    }
+  }, [mode, scrollToPersonalization]);
+
+  function startEditPersonalisation() {
+    setTab("infos");
+    setPersonalizationOpen(true);
+    setMode("edit");
+    setScrollToPersonalization(true);
+  }
+
+  function startEditDrones() {
+    setTab("drones");
+    setMode("edit");
+  }
 
   // Personnalisation du dossier généré (filigrane discret sur les fiches de
   // zone et la page de garde -- jamais sur le Cerfa officiel lui-même,
@@ -434,7 +461,16 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         </div>
 
         <div className="bg-glass p-5">
-          <h2 className="mb-3 font-medium text-ink">Personnalisation du dossier</h2>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-medium text-ink">Personnalisation du dossier</h2>
+            <button
+              type="button"
+              onClick={startEditPersonalisation}
+              className="shrink-0 rounded-md border border-brand px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light"
+            >
+              Modifier
+            </button>
+          </div>
           {personalizationOpen ? (
             <div className="flex items-center gap-3 text-sm">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-light px-2.5 py-1 text-xs font-medium text-brand">
@@ -452,7 +488,16 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         </div>
 
         <div className="bg-glass p-5">
-          <h2 className="mb-3 font-medium text-ink">Mes drones{dronesCount > 0 ? ` (${dronesCount})` : ""}</h2>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-medium text-ink">Mes drones{dronesCount > 0 ? ` (${dronesCount})` : ""}</h2>
+            <button
+              type="button"
+              onClick={startEditDrones}
+              className="shrink-0 rounded-md border border-brand px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light"
+            >
+              Modifier
+            </button>
+          </div>
           {dronesCount === 0 ? (
             <p className="text-sm text-slate-500">Aucun drone renseigné.</p>
           ) : (
@@ -619,7 +664,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
           )}
         </div>
 
-        <div className="bg-glass p-5">
+        <div className="bg-glass p-5" ref={personalizationSectionRef}>
           <button
             type="button"
             onClick={() => setPersonalizationOpen((v) => !v)}

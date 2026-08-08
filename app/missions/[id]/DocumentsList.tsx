@@ -18,12 +18,33 @@ export default function DocumentsList({ documents }: { documents: Doc[] }) {
     // Les URL signées expirent au bout d'1h : on en régénère une à chaque
     // clic plutôt que de garder celle du moment de la génération.
     const { data, error } = await supabase.storage.from("dossiers").createSignedUrl(doc.file_path, 3600);
-    setLoadingId(null);
     if (error || !data) {
+      setLoadingId(null);
       setErrorId(doc.id);
       return;
     }
-    window.open(data.signedUrl, "_blank");
+    // Même correctif que le bouton de téléchargement principal
+    // (GenerateButton.tsx) : un <a href target="_blank"> vers une URL
+    // signée Supabase Storage ouvre le PDF dans un onglet/visionneuse au
+    // lieu de le télécharger (l'attribut download est ignoré cross-origin).
+    // On force le téléchargement en récupérant le fichier en mémoire puis
+    // en simulant un clic sur un lien local (même origine).
+    try {
+      const res = await fetch(data.signedUrl);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `dossier-cerfa-drone_${new Date(doc.created_at).toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch {
+      window.open(data.signedUrl, "_blank");
+    } finally {
+      setLoadingId(null);
+    }
   }
 
   const latest = documents[0];
@@ -38,7 +59,7 @@ export default function DocumentsList({ documents }: { documents: Doc[] }) {
         className="font-medium text-brand hover:underline disabled:opacity-50"
       >
         {loadingId === latest.id
-          ? "Préparation du lien..."
+          ? "Téléchargement..."
           : `Télécharger (${new Date(latest.created_at).toLocaleString("fr-FR")})`}
       </button>
       {errorId === latest.id && <p className="mt-1 text-xs text-red-400">Lien indisponible, réessayez.</p>}
@@ -57,7 +78,7 @@ export default function DocumentsList({ documents }: { documents: Doc[] }) {
                   disabled={loadingId === d.id}
                   className="text-slate-500 hover:text-brand hover:underline disabled:opacity-50"
                 >
-                  {loadingId === d.id ? "Préparation..." : new Date(d.created_at).toLocaleString("fr-FR")}
+                  {loadingId === d.id ? "Téléchargement..." : new Date(d.created_at).toLocaleString("fr-FR")}
                 </button>
                 {errorId === d.id && <span className="ml-2 text-xs text-red-400">Lien indisponible</span>}
               </div>
