@@ -19,7 +19,7 @@
 import sharp from "sharp";
 
 const TILE_SIZE = 256;
-const OSM_USER_AGENT = "CerfaDrone/1.0 (+https://cerfa-drone.vercel.app; contact via app)";
+const OSM_USER_AGENT = "CerfaDrone/1.0 (+https://www.cerfadrone.com; contact via app)";
 const ESRI_IMAGERY_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile";
 const ESRI_TRANSPORT_URL = "https://services.arcgisonline.com/arcgis/rest/services/Reference/World_Transportation/MapServer/tile";
 const ESRI_PLACES_URL = "https://services.arcgisonline.com/arcgis/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile";
