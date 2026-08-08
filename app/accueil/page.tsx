@@ -35,6 +35,7 @@ export default async function AccueilPage() {
             <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-slate-400">
               <li>Le formulaire officiel Cerfa 15476*04 rempli</li>
               <li>Des fiches décrivant chaque zone de vol (carte, hauteur, éloignement...)</li>
+              <li>Plusieurs télépilotes sur une même mission, pas juste un seul</li>
               <li>Prêts à envoyer à la préfecture compétente</li>
             </ul>
             <p className="mb-2 text-sm text-slate-400">
