@@ -81,6 +81,25 @@ export default async function AccueilPage() {
             Aller directement à mes missions →
           </Link>
         </p>
+
+        {/* Don libre : n'apparaît que si NEXT_PUBLIC_DONATION_URL est
+            configuré (Vercel > Settings > Environment Variables) -- reste
+            invisible tant qu'aucun lien de don réel n'a été fourni, plutôt
+            qu'un bouton mort. Cerfa Drone reste gratuit, ce bandeau est
+            volontairement discret (pas de pop-up, pas de relance). */}
+        {process.env.NEXT_PUBLIC_DONATION_URL && (
+          <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-center text-xs text-slate-500">
+            Cerfa Drone est et restera gratuit.{" "}
+            <a
+              href={process.env.NEXT_PUBLIC_DONATION_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-brand hover:underline"
+            >
+              Si l'outil vous fait gagner du temps, un petit don est toujours apprécié →
+            </a>
+          </div>
+        )}
       </main>
     </>
   );

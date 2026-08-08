@@ -2,13 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { ErrorBanner } from "../components/Banner";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 export default function SuggestionForm() {
   const router = useRouter();
-  const supabase = createClient();
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,22 +18,19 @@ export default function SuggestionForm() {
     setSaving(true);
     setError(null);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setError("Vous devez être connecté(e).");
-      setSaving(false);
-      return;
-    }
-
-    const { error: insertError } = await supabase
-      .from("suggestions")
-      .insert({ user_id: user.id, message: message.trim() });
+    // Passe par une route API (plutôt qu'un insert direct) pour pouvoir
+    // déclencher une notification email côté serveur (clé Resend jamais
+    // exposée au navigateur) en plus de l'enregistrement en base.
+    const res = await fetch("/api/suggestions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: message.trim() }),
+    });
+    const data = await res.json().catch(() => ({}));
 
     setSaving(false);
-    if (insertError) {
-      setError("Erreur lors de l'envoi : " + insertError.message);
+    if (!res.ok) {
+      setError("Erreur lors de l'envoi : " + (data.error || "erreur inconnue"));
       return;
     }
 
