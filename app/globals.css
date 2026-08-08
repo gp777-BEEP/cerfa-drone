@@ -173,3 +173,45 @@ a {
     border-color: rgba(255, 255, 255, 0.35);
   }
 }
+
+/* Loader de marque (DroneLoader.tsx) : chaque bras se trace du centre vers
+   le point qui représente le moteur (comme le logo), puis s'efface en
+   douceur avant de recommencer -- rythme volontairement lent (2,2s) pour
+   rester discret, après un premier essai jugé "agressif" par le
+   bêta-testeur. Toutes les barres animent en même temps (pas de décalage
+   séquentiel) pour un rendu plus calme, façon respiration. */
+@keyframes drone-loader-draw {
+  0% {
+    stroke-dashoffset: 16;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  55%,
+  75% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes drone-loader-motor {
+  0%,
+  45% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  55%,
+  75% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}

@@ -15,6 +15,7 @@ import { Drone, droneKey, mergeDroneLists } from "@/lib/drones";
 import { Question, QUESTION_HINTS } from "@/lib/missionQuestions";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 import UnsavedChangesGuard from "../../components/UnsavedChangesGuard";
+import DroneLoader from "../../components/DroneLoader";
 
 type MissionType = { slug: string; label: string; description: string; question_schema: Question[] };
 
@@ -679,6 +680,12 @@ export default function NewMissionForm({
         </div>
       </div>
 
+      <Coachmark
+        id="multi-pilotes-creation-mission"
+        text="Vous n'êtes pas le seul télépilote sur ce vol ? Vous pourrez ajouter jusqu'à 3 autres pilotes juste après, depuis la page de la mission."
+        className="mb-1"
+      />
+
       {errorMsg && <ErrorBanner>{errorMsg}</ErrorBanner>}
 
       <button
@@ -694,16 +701,7 @@ export default function NewMissionForm({
 
       {redirecting && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#05100c]/90 backdrop-blur-sm">
-          <svg
-            className="h-8 w-8 animate-spin text-brand"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-          >
-            <circle cx="12" cy="12" r="9" strokeOpacity="0.25" />
-            <path d="M21 12a9 9 0 0 0-9-9" strokeLinecap="round" />
-          </svg>
+          <DroneLoader size={40} className="text-brand" />
           <p className="text-sm text-slate-300">Mission créée, ouverture en cours...</p>
         </div>
       )}

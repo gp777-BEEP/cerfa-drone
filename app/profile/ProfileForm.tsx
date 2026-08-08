@@ -477,33 +477,6 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
 
         <div className="bg-glass p-5">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <h2 className="font-medium text-ink">Personnalisation du dossier</h2>
-            <button
-              type="button"
-              onClick={startEditPersonalisation}
-              className="shrink-0 rounded-md border border-brand px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light"
-            >
-              Modifier
-            </button>
-          </div>
-          {personalizationOpen ? (
-            <div className="flex items-center gap-3 text-sm">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-light px-2.5 py-1 text-xs font-medium text-brand">
-                Activée
-              </span>
-              <span className="text-slate-500">
-                Style « {dossierStyleLabel} »
-                {logoPreviewUrl && " · avec logo"}
-              </span>
-              <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: brandColor }} />
-            </div>
-          ) : (
-            <span className="text-sm text-slate-500">Désactivée</span>
-          )}
-        </div>
-
-        <div className="bg-glass p-5">
-          <div className="mb-3 flex items-center justify-between gap-3">
             <h2 className="font-medium text-ink">Mes drones{dronesCount > 0 ? ` (${dronesCount})` : ""}</h2>
             <button
               type="button"
@@ -526,6 +499,33 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                   </li>
                 ))}
             </ul>
+          )}
+        </div>
+
+        <div className="bg-glass p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-medium text-ink">Personnalisation du dossier</h2>
+            <button
+              type="button"
+              onClick={startEditPersonalisation}
+              className="shrink-0 rounded-md border border-brand px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light"
+            >
+              Modifier
+            </button>
+          </div>
+          {personalizationOpen ? (
+            <div className="flex items-center gap-3 text-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-light px-2.5 py-1 text-xs font-medium text-brand">
+                Activée
+              </span>
+              <span className="text-slate-500">
+                Style « {dossierStyleLabel} »
+                {logoPreviewUrl && " · avec logo"}
+              </span>
+              <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: brandColor }} />
+            </div>
+          ) : (
+            <span className="text-sm text-slate-500">Désactivée</span>
           )}
         </div>
       </div>
@@ -609,10 +609,16 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
           <button
             type="button"
             onClick={exportPilotProfile}
-            className="mt-4 text-sm text-brand hover:underline"
+            className="mt-4 flex items-center gap-2 rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light"
           >
-            Exporter mes infos (fichier à partager avec un collègue télépilote)
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3v12" />
+              <path d="m7 11 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+            Exporter mes infos
           </button>
+          <p className="mt-1.5 text-xs text-slate-500">Fichier à partager avec un collègue télépilote.</p>
           <p className="mt-3 text-xs text-slate-500">
             Numéro d'enregistrement AlphaTango (format FRA...), pas de case dédiée sur le Cerfa mais
             la préfecture le demande parfois en complément : garde-le sous la main. C'est un identifiant
