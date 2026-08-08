@@ -554,10 +554,8 @@ export default function NewMissionForm({
       <div className="bg-glass p-5">
         <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
         <p className="mb-3 text-xs text-slate-500">
-          Déposez ce que vous avez, ce n'est jamais obligatoire : un fichier KML apporte la carte des zones (avec
-          échelle) et calcule hauteur/éloignement ; à défaut, une simple capture d'écran de la zone fonctionne
-          aussi. Cochez en plus si vous avez un Cerfa ou un dossier FlyBy pré-rempli, pour reprendre vos infos,
-          vos drones et les dates automatiquement.
+          Déposez ce que vous avez : un fichier KML apporte la carte des zones (avec échelle) et calcule
+          hauteur/éloignement ; une capture d'écran fonctionne également.
         </p>
         <Coachmark
           id="import-optionnel-mission"
