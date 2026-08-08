@@ -179,7 +179,8 @@ a {
    douceur avant de recommencer -- rythme volontairement lent (2,2s) pour
    rester discret, après un premier essai jugé "agressif" par le
    bêta-testeur. Toutes les barres animent en même temps (pas de décalage
-   séquentiel) pour un rendu plus calme, façon respiration. */
+   séquentiel) pour un rendu plus calme, façon respiration. Cycle à 1,5s
+   (retour bêta-testeur : la version 2,2s était perçue comme trop lente). */
 @keyframes drone-loader-draw {
   0% {
     stroke-dashoffset: 16;

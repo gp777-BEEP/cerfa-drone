@@ -11,6 +11,7 @@ import FieldHint from "../components/FieldHint";
 import DroneIcon from "../components/DroneIcon";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 import UnsavedChangesGuard from "../components/UnsavedChangesGuard";
+import DroneLoader from "../components/DroneLoader";
 
 type Drone = {
   constructeur: string;
@@ -473,6 +474,19 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               value={exploitantType === "morale" ? `Personne morale (${raisonSociale || "raison sociale non renseignée"})` : "Personne physique"}
             />
           </dl>
+          <button
+            type="button"
+            onClick={exportPilotProfile}
+            className="mt-4 flex items-center gap-2 rounded-md border border-brand px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3v12" />
+              <path d="m7 11 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+            Exporter mes infos
+          </button>
+          <p className="mt-1.5 text-xs text-slate-500">Fichier à partager avec un collègue télépilote.</p>
         </div>
 
         <div className="bg-glass p-5">
@@ -945,11 +959,12 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md border border-brand px-6 py-2.5 font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
           style={spotlightSave.style}
           onMouseMove={spotlightSave.onMouseMove}
           onMouseLeave={spotlightSave.onMouseLeave}
         >
+          {saving && <DroneLoader size={16} className="text-brand" />}
           {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
         {hasExistingProfile && (

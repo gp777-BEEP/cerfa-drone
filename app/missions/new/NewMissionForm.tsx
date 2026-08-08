@@ -700,9 +700,11 @@ export default function NewMissionForm({
       </button>
 
       {redirecting && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#05100c]/90 backdrop-blur-sm">
-          <DroneLoader size={40} className="text-brand" />
-          <p className="text-sm text-slate-300">Mission créée, ouverture en cours...</p>
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+          <div className="bg-glass flex items-center gap-3 px-5 py-3">
+            <DroneLoader size={28} className="text-brand" />
+            <p className="text-sm text-slate-300">Mission créée, ouverture en cours...</p>
+          </div>
         </div>
       )}
       </form>

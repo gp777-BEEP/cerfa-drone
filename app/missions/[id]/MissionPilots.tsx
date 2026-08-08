@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 import StatusMessage from "../../components/StatusMessage";
 import { Pilot, EMPTY_PILOT, MAX_PILOTS, parsePilotFile } from "@/lib/pilots";
+import DroneLoader from "../../components/DroneLoader";
 
 // Case n°2 du Cerfa ("Télépilote(s)") : jusqu'à 4 télépilotes déclarés sur
 // une même mission. Par défaut, seul le profil connecté est proposé (repris
@@ -169,8 +170,9 @@ export default function MissionPilots({
           type="button"
           onClick={save}
           disabled={saving}
-          className="rounded-md border border-brand px-4 py-1.5 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md border border-brand px-4 py-1.5 text-sm font-medium text-brand hover:bg-brand-light disabled:opacity-50"
         >
+          {saving && <DroneLoader size={14} className="text-brand" />}
           {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
         {saved && <span className="text-sm text-brand">Enregistré ✓</span>}

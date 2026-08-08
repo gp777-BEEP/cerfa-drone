@@ -18,12 +18,18 @@ export default function SignOutButton() {
         router.push("/login");
         router.refresh();
       }}
-      className="rounded-md border border-brand/50 px-2 py-1 text-sm text-slate-500 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
+      aria-label="Se déconnecter"
+      title="Se déconnecter"
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-brand/50 text-slate-500 outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-brand/50"
       style={spotlight.style}
       onMouseMove={spotlight.onMouseMove}
       onMouseLeave={spotlight.onMouseLeave}
     >
-      Se déconnecter
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h2" />
+        <polyline points="16 17 21 12 16 7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+      </svg>
     </button>
   );
 }

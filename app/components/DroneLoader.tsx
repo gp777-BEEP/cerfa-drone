@@ -17,11 +17,11 @@ export default function DroneLoader({
 }) {
   const armStyle: CSSProperties = {
     strokeDasharray: 16,
-    animation: "drone-loader-draw 2.2s ease-in-out infinite",
+    animation: "drone-loader-draw 1.5s ease-in-out infinite",
   };
   const motorStyle = (originX: number, originY: number): CSSProperties => ({
     transformOrigin: `${originX}px ${originY}px`,
-    animation: "drone-loader-motor 2.2s ease-in-out infinite",
+    animation: "drone-loader-motor 1.5s ease-in-out infinite",
   });
 
   return (

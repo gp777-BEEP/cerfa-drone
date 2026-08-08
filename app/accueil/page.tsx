@@ -23,7 +23,7 @@ export default async function AccueilPage() {
         <h1 className="mb-1 text-2xl font-medium text-ink">
           Bienvenue{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
         </h1>
-        <p className="mb-8 text-sm text-slate-500">Trois choses à savoir avant de commencer.</p>
+        <p className="mb-8 text-sm text-slate-500">Quatre choses à savoir avant de commencer.</p>
 
         <div className="space-y-5">
           <section className="bg-glass p-6">
@@ -88,7 +88,7 @@ export default async function AccueilPage() {
             </div>
             <p className="mb-4 text-sm text-slate-400">
               Cerfa Drone est et restera 100 % gratuit. Si l'outil vous fait gagner du temps, un don est toujours
-              apprécié, mais reste entièrement optionnel.
+              apprécié.
             </p>
             <Link href="/don" className="text-sm font-medium text-brand hover:underline">
               Faire un don →

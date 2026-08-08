@@ -6,6 +6,7 @@ import { ErrorBanner, WarningBanner } from "../../components/Banner";
 import Coachmark from "../../components/Coachmark";
 import { useSpotlightHoverFilled } from "@/lib/useSpotlightHover";
 import SendToPrefectureButton from "./SendToPrefectureButton";
+import DroneLoader from "../../components/DroneLoader";
 
 type Zone = {
   id: string;
@@ -135,11 +136,12 @@ export default function GenerateAndSendFlow({
               handleClick();
             }}
             disabled={loading}
-            className="rounded-md bg-brand px-6 py-2.5 font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-md bg-brand px-6 py-2.5 font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
             style={spotlightMain.style}
             onMouseMove={spotlightMain.onMouseMove}
             onMouseLeave={spotlightMain.onMouseLeave}
           >
+            {loading && <DroneLoader size={16} className="text-brand-ink" />}
             {loading ? "Génération en cours..." : generated ? "Régénérer le dossier PDF" : "Générer le dossier PDF"}
           </button>
           {error && <ErrorBanner className="mt-2">{error}</ErrorBanner>}
