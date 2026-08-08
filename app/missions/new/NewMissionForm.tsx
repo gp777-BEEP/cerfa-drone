@@ -99,6 +99,18 @@ export default function NewMissionForm({
   const [kmlFile, setKmlFile] = useState<File | null>(null);
   const [kmlMsg, setKmlMsg] = useState("");
 
+  // Capture d'écran de la zone, alternative au KML quand l'utilisateur n'en
+  // a pas (retour bêta-testeur) : sert à créer/compléter la 1ère zone avec
+  // une image plutôt que rien, plutôt que d'exiger un KML pour avancer.
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotMsg, setScreenshotMsg] = useState("");
+
+  // La dropzone Cerfa n'apparaît que si cette case est cochée (retour
+  // bêta-testeur : le KML/capture est désormais la seule chose toujours
+  // affichée, le Cerfa est un vrai plus optionnel) -- pré-cochée selon la
+  // réponse donnée à l'écran précédent, pour ne pas faire perdre ce choix.
+  const [cerfaChecked, setCerfaChecked] = useState(false);
+
   // Drones pour CETTE mission : tous les drones du profil sont cochés par
   // défaut (comportement historique), mais si un Cerfa est importé et en
   // détecte un sous-ensemble précis (ex: seulement le Mavic 3 Pro), la
@@ -126,7 +138,28 @@ export default function NewMissionForm({
 
   function handleSelectKml(file: File) {
     setKmlFile(file);
+    setScreenshotFile(null);
+    setScreenshotMsg("");
     setKmlMsg(`"${file.name}" prêt. Les zones seront importées (avec carte) une fois la mission créée.`);
+  }
+
+  function handleSelectScreenshot(file: File) {
+    setScreenshotFile(file);
+    setScreenshotMsg(`"${file.name}" prêt. Une zone sera créée avec cette image une fois la mission créée.`);
+  }
+
+  // Dropzone "Zone de vol" (toujours affichée) : un fichier KML donne la
+  // carte avec échelle, une capture d'écran fonctionne aussi si l'utilisateur
+  // n'a pas de KML sous la main -- l'un ou l'autre, jamais les deux à la fois
+  // (cf. handleSelectKml qui efface la capture si un KML est déposé après).
+  function handleZoneFiles(files: File[]) {
+    for (const file of files) {
+      if (file.name.toLowerCase().endsWith(".kml")) {
+        handleSelectKml(file);
+      } else {
+        handleSelectScreenshot(file);
+      }
+    }
   }
 
   // Logique commune de préremplissage : partagée entre l'import Cerfa et
@@ -190,11 +223,9 @@ export default function NewMissionForm({
     return { nbZones, nbDrones };
   }
 
-  // Import unifié (retour bêta-testeur : 2-3 zones de dépôt séparées
-  // donnaient l'impression que tous les documents étaient obligatoires) :
-  // une seule dropzone accepte PDF (Cerfa ou dossier FlyBy, détecté
-  // automatiquement côté serveur) et KML, chaque fichier déposé est routé
-  // vers le bon traitement selon son extension.
+  // Dropzone Cerfa (visible seulement si "cerfaChecked") : PDF pré-rempli
+  // (Cerfa ou dossier FlyBy, détecté automatiquement côté serveur). Le KML
+  // et la capture d'écran ne passent plus par ici, cf. handleZoneFiles.
   async function handleImportPdf(file: File) {
     setImporting(true);
     setImportMsg("");
@@ -224,11 +255,7 @@ export default function NewMissionForm({
 
   function handleImportFiles(files: File[]) {
     for (const file of files) {
-      if (file.name.toLowerCase().endsWith(".kml")) {
-        handleSelectKml(file);
-      } else {
-        handleImportPdf(file);
-      }
+      handleImportPdf(file);
     }
   }
 
@@ -305,6 +332,21 @@ export default function NewMissionForm({
     // handleImportCerfa, prérempli en direct pendant la saisie).
     let firstZoneHeights: { hauteur_max_m?: number | null; distance_max_m?: number | null } | null = null;
 
+    // Capture d'écran déposée à la place d'un KML : uploadée tout de suite
+    // (le bucket a besoin de l'id de mission), rattachée ensuite à la 1ère
+    // zone -- celle du Cerfa importé si elle existe, sinon une zone créée
+    // rien que pour ça, à compléter à la main juste après.
+    let screenshotPath: string | null = null;
+    if (screenshotFile && !kmlFile) {
+      const path = `${user.id}/${mission.id}/${Date.now()}_${screenshotFile.name}`;
+      const { error: uploadErr } = await supabase.storage.from("zone-images").upload(path, screenshotFile);
+      if (!uploadErr) {
+        screenshotPath = path;
+      } else {
+        setScreenshotMsg(`Erreur en envoyant l'image : ${uploadErr.message} (la mission a quand même été créée)`);
+      }
+    }
+
     if (kmlFile) {
       try {
         const body = new FormData();
@@ -361,9 +403,11 @@ export default function NewMissionForm({
           distance_max_m: s.eloignement_max_m ? Number(s.eloignement_max_m) : null,
           hauteur_max_m: s.hauteur_max_m ? Number(s.hauteur_max_m) : null,
           notes: s.autres_infos || null,
-          image_paths: [],
+          image_paths: i === 0 && slotsUsed === 0 && screenshotPath ? [screenshotPath] : [],
         }));
       if (zonesToInsert.length > 0) {
+        if (screenshotPath && slotsUsed === 0) screenshotPath = null; // rattachée ci-dessus, ne pas la remettre en zone à part
+
         const { error: insertErr } = await supabase.from("zones").insert(zonesToInsert);
         if (insertErr) {
           setImportMsg(`Erreur en enregistrant les zones du Cerfa : ${insertErr.message} (la mission a quand même été créée)`);
@@ -402,6 +446,21 @@ export default function NewMissionForm({
             drones: profile.drones?.length ? profile.drones : drones,
           })
           .eq("id", user.id);
+      }
+    }
+
+    // Capture d'écran restée orpheline (pas de KML, pas de zone créée par un
+    // Cerfa importé) : on crée une zone rien que pour elle, à compléter à la
+    // main juste après -- plutôt que de perdre l'image déposée.
+    if (screenshotPath && slotsUsed === 0) {
+      const { error: insertErr } = await supabase.from("zones").insert({
+        mission_id: mission.id,
+        order_index: 0,
+        title: title || "Zone 1",
+        image_paths: [screenshotPath],
+      });
+      if (insertErr) {
+        setScreenshotMsg(`Erreur en enregistrant la zone : ${insertErr.message} (la mission a quand même été créée)`);
       }
     }
 
@@ -445,6 +504,7 @@ export default function NewMissionForm({
             onClick={(e) => {
               spotlightHasCerfaOui.onClick(e);
               setHasCerfa("oui");
+              setCerfaChecked(true);
             }}
             className="flex max-w-xs flex-col items-start gap-1 rounded-md border border-brand px-6 py-3 text-left outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
             style={spotlightHasCerfaOui.style}
@@ -493,37 +553,55 @@ export default function NewMissionForm({
       <div className="bg-glass p-5">
         <h2 className="mb-1 font-medium text-ink">Imports optionnels</h2>
         <p className="mb-3 text-xs text-slate-500">
-          Déposez ce que vous avez, ce n'est jamais obligatoire : un Cerfa pré-rempli ou un dossier de vol FlyBy
-          préremplissent vos infos, vos drones et les dates ; un fichier KML apporte en plus la carte des zones
-          (avec échelle) et calcule hauteur/éloignement.
+          Déposez ce que vous avez, ce n'est jamais obligatoire : un fichier KML apporte la carte des zones (avec
+          échelle) et calcule hauteur/éloignement ; à défaut, une simple capture d'écran de la zone fonctionne
+          aussi. Cochez en plus si vous avez un Cerfa ou un dossier FlyBy pré-rempli, pour reprendre vos infos,
+          vos drones et les dates automatiquement.
         </p>
         <Coachmark
           id="import-optionnel-mission"
-          text="Rien sous la main ? Vous pouvez tracer gratuitement votre zone de vol via DroneKeeper ou FlyBy et l'exporter en KML pour l'importer ci-dessous. Sinon, pas de problème : vous pourrez tout saisir à la main juste après (et ajouter une simple capture d'écran pour la zone, une fois la mission créée)."
+          text="Rien sous la main ? Vous pouvez tracer gratuitement votre zone de vol via DroneKeeper ou FlyBy et l'exporter en KML pour l'importer ci-dessous. Sinon, pas de problème : une simple capture d'écran de la zone suffit, et vous pourrez tout saisir à la main juste après."
           linkHref="/tutoriel#pas-de-carte"
           linkLabel="Comment faire"
           className="mb-3"
         />
         <FileDropzone
-          label="Glisser un Cerfa, un dossier FlyBy ou un fichier KML ici, ou cliquer pour parcourir"
-          hint="PDF pré-rempli (DroneKeeper, FlyBy...) ou export KML (carte des zones) -- le type est détecté automatiquement"
-          accept="application/pdf,.kml"
-          multiple
+          label="Glisser un fichier KML ici, ou une capture d'écran de la zone si vous n'avez pas de KML"
+          hint="KML : carte avec échelle et calculs automatiques (recommandé). Capture d'écran : une zone est créée avec l'image, à compléter ensuite."
+          accept="image/*,.kml"
           disabled={importing}
-          onFiles={handleImportFiles}
+          onFiles={handleZoneFiles}
         />
-        {importing && <p className="mt-2 text-sm text-slate-500">Lecture du fichier...</p>}
-        <StatusMessage text={importMsg} />
         <StatusMessage text={kmlMsg} />
-        <p className="mt-2 text-xs text-slate-500">
-          <a href="/tutoriel/flyby" target="_blank" className="text-brand hover:underline">
-            Comment récupérer un dossier de vol FlyBy ?
-          </a>{" "}
-          ·{" "}
-          <a href="/tutoriel#pas-de-carte" target="_blank" className="text-brand hover:underline">
-            Pas de fichier sous la main ?
-          </a>
-        </p>
+        <StatusMessage text={screenshotMsg} />
+
+        <label className="mt-4 flex cursor-pointer items-center gap-2 border-t border-slate-100 pt-4 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={cerfaChecked}
+            onChange={(e) => setCerfaChecked(e.target.checked)}
+          />
+          J'ai aussi un Cerfa pré-rempli (DroneKeeper, FlyBy...)
+        </label>
+        {cerfaChecked && (
+          <div className="mt-3">
+            <FileDropzone
+              label="Glisser le Cerfa ou dossier FlyBy pré-rempli ici, ou cliquer pour parcourir"
+              hint="Reprend vos infos, vos drones et vos dates automatiquement -- le type (Cerfa ou FlyBy) est détecté automatiquement"
+              accept="application/pdf"
+              multiple
+              disabled={importing}
+              onFiles={handleImportFiles}
+            />
+            {importing && <p className="mt-2 text-sm text-slate-500">Lecture du fichier...</p>}
+            <StatusMessage text={importMsg} />
+            <p className="mt-2 text-xs text-slate-500">
+              <a href="/tutoriel/flyby" target="_blank" className="text-brand hover:underline">
+                Comment récupérer un dossier de vol FlyBy ?
+              </a>
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="bg-glass p-5">
