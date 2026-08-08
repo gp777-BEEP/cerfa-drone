@@ -21,7 +21,7 @@ export default async function Home() {
         href="/login"
         className="rounded-md border border-brand px-6 py-3 font-medium text-brand hover:bg-brand-light"
       >
-        Commencer gratuitement
+        Commencer
       </Link>
     </main>
   );
