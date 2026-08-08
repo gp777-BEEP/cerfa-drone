@@ -1,9 +1,7 @@
-import AppHeader from "../components/AppHeader";
 
 export default function ContactPage() {
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-12">
         <h1 className="mb-4 text-2xl font-medium text-ink">Contact</h1>
         <p className="mb-6 text-slate-600">

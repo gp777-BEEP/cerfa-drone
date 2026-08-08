@@ -46,8 +46,8 @@ export default function MissionDetailsFields({
     <div className="mt-6 bg-glass p-5">
       <h2 className="mb-1 font-medium text-ink">Objet et commanditaire</h2>
       <p className="mb-3 text-xs text-slate-400">
-        Renseignés sur le Cerfa pour chaque zone de vol. Laissez "Objet précis" vide pour reprendre le
-        titre de la mission.
+        Ces deux informations apparaissent sur le Cerfa, pour chaque zone de vol de cette mission. Si vous
+        laissez "Objet précis" vide, le titre de la mission sera utilisé à sa place.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm">

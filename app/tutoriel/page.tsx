@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import AppHeader from "../components/AppHeader";
 import GuideCompletLink from "./GuideCompletLink";
 
 // Version "digest" du tutoriel (l'ancienne page, très complète, avait été
@@ -66,7 +65,6 @@ function Step({ icon, title, children }: { icon: ReactNode; title: string; child
 export default function TutorielPage() {
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <h1 className="mb-2 text-2xl font-medium text-ink">Tutoriel</h1>
         <p className="mb-6 text-sm text-slate-500">L'essentiel pour générer un dossier, en 5 étapes.</p>

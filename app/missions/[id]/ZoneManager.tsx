@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 import StatusMessage from "../../components/StatusMessage";
 import FieldHint from "../../components/FieldHint";
+import AutoTextarea from "../../components/AutoTextarea";
 import Coachmark from "../../components/Coachmark";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
@@ -527,34 +528,45 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   // champs vides avec ceux de la 2nde, on prend le maximum des hauteurs et
   // éloignements (jamais sous-estimer dans une déclaration), et l'image/la
   // carte de l'une ou l'autre si l'une des deux n'en a pas.
-  async function mergeZones(idKeep: string, idDrop: string) {
+  // Fusionne un nombre quelconque de zones (au moins deux) dans une seule :
+  // généralisé depuis une fusion strictement paire à paire (retour
+  // bêta-testeur : parfois plus de 2 zones décrivent le même endroit, par
+  // exemple une importée par KML, une par Cerfa, une par capture d'écran).
+  async function mergeZones(idKeep: string, dropIds: string[]) {
     const zKeep = zones.find((z) => z.id === idKeep);
-    const zDrop = zones.find((z) => z.id === idDrop);
-    if (!zKeep || !zDrop) return;
+    const dropZones = dropIds.map((id) => zones.find((z) => z.id === id)).filter((z): z is Zone => !!z);
+    if (!zKeep || dropZones.length === 0) return;
 
-    const maxOrNull = (a: number | null, b: number | null) =>
-      a == null && b == null ? null : Math.max(a ?? -Infinity, b ?? -Infinity);
+    const all = [zKeep, ...dropZones];
+    const maxOrNull = (vals: (number | null | undefined)[]) => {
+      const nums = vals.filter((v): v is number => v != null);
+      return nums.length ? Math.max(...nums) : null;
+    };
+    const firstTruthy = <T,>(vals: (T | null | undefined)[]): T | null =>
+      vals.find((v) => v !== null && v !== undefined && v !== "") ?? null;
 
     setMerging(true);
     const merged = {
-      title: zKeep.title || zDrop.title,
-      adresse: zKeep.adresse || zDrop.adresse,
-      code_postal: zKeep.code_postal || zDrop.code_postal,
-      localite: zKeep.localite || zDrop.localite,
-      en_agglomeration: !!zKeep.en_agglomeration || !!zDrop.en_agglomeration,
-      rassemblement: !!zKeep.rassemblement || !!zDrop.rassemblement,
-      distance_max_m: maxOrNull(zKeep.distance_max_m, zDrop.distance_max_m),
-      hauteur_max_m: maxOrNull(zKeep.hauteur_max_m, zDrop.hauteur_max_m),
-      notes: [zKeep.notes, zDrop.notes].filter(Boolean).join(" / ") || null,
-      description_site: [zKeep.description_site, zDrop.description_site].filter(Boolean).join(" / ") || null,
-      image_paths: zKeep.image_paths?.length ? zKeep.image_paths : zDrop.image_paths || [],
-      map_meta: zKeep.map_meta || zDrop.map_meta || null,
+      title: firstTruthy(all.map((z) => z.title)),
+      adresse: firstTruthy(all.map((z) => z.adresse)),
+      code_postal: firstTruthy(all.map((z) => z.code_postal)),
+      localite: firstTruthy(all.map((z) => z.localite)),
+      en_agglomeration: all.some((z) => !!z.en_agglomeration),
+      rassemblement: all.some((z) => !!z.rassemblement),
+      distance_max_m: maxOrNull(all.map((z) => z.distance_max_m)),
+      hauteur_max_m: maxOrNull(all.map((z) => z.hauteur_max_m)),
+      notes: all.map((z) => z.notes).filter(Boolean).join(" / ") || null,
+      description_site: all.map((z) => z.description_site).filter(Boolean).join(" / ") || null,
+      image_paths: firstTruthy(all.map((z) => (z.image_paths?.length ? z.image_paths : null))) || [],
+      map_meta: firstTruthy(all.map((z) => z.map_meta)),
     };
 
     const { data, error } = await supabase.from("zones").update(merged).eq("id", idKeep).select().single();
     if (!error && data) {
-      await supabase.from("zones").delete().eq("id", idDrop);
-      setZones((prev) => prev.filter((z) => z.id !== idDrop).map((z) => (z.id === idKeep ? data : z)));
+      for (const idDrop of dropIds) {
+        await supabase.from("zones").delete().eq("id", idDrop);
+      }
+      setZones((prev) => prev.filter((z) => !dropIds.includes(z.id)).map((z) => (z.id === idKeep ? data : z)));
       setEditingId(null);
       setSelectedForMerge(new Set());
       router.refresh();
@@ -572,12 +584,16 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   }
 
   function confirmMerge() {
-    const [a, b] = Array.from(selectedForMerge);
-    if (!a || !b) return;
+    const selected = Array.from(selectedForMerge);
+    if (selected.length < 2) return;
     // On garde la zone apparue en premier dans la liste (généralement la
-    // plus ancienne / la plus complète) et on fusionne l'autre dedans.
-    const [idKeep, idDrop] = zones.findIndex((z) => z.id === a) <= zones.findIndex((z) => z.id === b) ? [a, b] : [b, a];
-    mergeZones(idKeep, idDrop);
+    // plus ancienne / la plus complète) et on fusionne toutes les autres
+    // sélectionnées dedans.
+    const sorted = [...selected].sort(
+      (a, b) => zones.findIndex((z) => z.id === a) - zones.findIndex((z) => z.id === b)
+    );
+    const [idKeep, ...dropIds] = sorted;
+    mergeZones(idKeep, dropIds);
   }
 
   return (
@@ -591,7 +607,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       {zones.length >= 2 && (
         <Coachmark
           id="fusion-zones"
-          text="Deux zones qui décrivent en fait le même endroit (une importée par KML, l'autre par Cerfa, par exemple) ? Cliquez sur leurs cases à cocher puis sur « Fusionner »."
+          text="Deux zones qui décrivent le même endroit (une importée par KML, l'autre par Cerfa, par exemple) ? Cliquez sur leurs cases à cocher puis sur « Fusionner »."
           className="mb-3"
         />
       )}
@@ -662,7 +678,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 Description du site
                 <FieldHint text="Décrit le lieu de vol (nature du site, environnement, obstacles, accès...). Le Cerfa n'a qu'une case à cocher « descriptif joint séparément », sans champ de texte : ce descriptif est donc ajouté comme page dédiée dans le dossier PDF généré." />
               </span>
-              <textarea
+              <AutoTextarea
                 placeholder="Description du site"
                 value={editForm.description_site}
                 onChange={(e) => setEditForm((f) => ({ ...f, description_site: e.target.value }))}
@@ -673,7 +689,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 Autres informations utiles
                 <FieldHint text="Horaires particuliers, zone aéronautique à statut particulier, ou toute autre précision sur les opérations à proximité. Reprend le champ « Autres informations utiles » du Cerfa." />
               </span>
-              <textarea
+              <AutoTextarea
                 placeholder="Autres informations utiles"
                 value={editForm.notes}
                 onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))}
@@ -684,7 +700,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               <div className="mt-3">
                 <span className="mb-1 block text-xs text-slate-500">
                   Capture(s) de la zone
-                  <FieldHint text="Carte, capture d'écran ou export de zone de vol : utile si vous n'avez pas de KML, ou pour compléter une zone qui n'en a pas encore." />
+                  <FieldHint text="Carte, capture d'écran ou export de zone de vol. Un fichier KML donne une bien meilleure carte (avec échelle) : s'il en importe un ici, il sera ajouté comme nouvelle zone, à fusionner ensuite avec celle-ci si besoin (cases à cocher plus haut)." />
                 </span>
                 {editExistingImages.length > 0 && (
                   <div className="mb-2">
@@ -734,13 +750,19 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   label={
                     editNewFiles.length > 0
                       ? `${editNewFiles.length} nouvelle(s) image(s) sélectionnée(s)`
-                      : "Glisser une image ici, ou cliquer pour parcourir"
+                      : "Glisser une image ou un fichier KML ici, ou cliquer pour parcourir"
                   }
-                  hint="Ajoutée en plus des images déjà attachées"
-                  accept="image/*"
+                  hint="Image : ajoutée en plus des images déjà attachées. KML : importé comme nouvelle zone."
+                  accept="image/*,.kml"
                   multiple
-                  onFiles={(f) => setEditNewFiles(f)}
+                  onFiles={(fs) => {
+                    const kmlFiles = fs.filter((f) => f.name.toLowerCase().endsWith(".kml"));
+                    const imageFiles = fs.filter((f) => !f.name.toLowerCase().endsWith(".kml"));
+                    if (imageFiles.length > 0) setEditNewFiles(imageFiles);
+                    kmlFiles.forEach((f) => handleImportKml(f));
+                  }}
                 />
+                {importingKml && <p className="mt-2 text-xs text-slate-500">Lecture et géolocalisation en cours...</p>}
               </div>
 
               <div className="mt-3 flex gap-3">
@@ -833,14 +855,14 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           <span className="text-ink">
             {selectedForMerge.size} zone{selectedForMerge.size > 1 ? "s" : ""} sélectionnée
             {selectedForMerge.size > 1 ? "s" : ""}
-            {selectedForMerge.size !== 2 && (
-              <span className="ml-2 text-xs text-slate-400">— sélectionnez exactement 2 zones pour fusionner</span>
+            {selectedForMerge.size < 2 && (
+              <span className="ml-2 text-xs text-slate-400">sélectionnez au moins deux zones pour fusionner</span>
             )}
           </span>
           <div className="flex items-center gap-3">
             <button
               onClick={confirmMerge}
-              disabled={merging || selectedForMerge.size !== 2}
+              disabled={merging || selectedForMerge.size < 2}
               className="rounded-md border border-brand px-3 py-1.5 text-sm font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-40"
               style={spotlightMerge.style}
               onMouseMove={spotlightMerge.onMouseMove}
@@ -867,8 +889,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               )}
             </div>
             <FileDropzone
-              label="Glisser un Cerfa, un dossier FlyBy ou un fichier KML ici, ou cliquer pour parcourir"
-              hint="PDF pré-rempli (DroneKeeper, FlyBy...) ou export KML (carte + échelle) -- le type est détecté automatiquement"
+              label="Glisser un fichier KML ici (recommandé), ou un Cerfa/dossier FlyBy pré-rempli, ou cliquer pour parcourir"
+              hint="Le KML donne une carte avec échelle, bien plus lisible pour la préfecture. Un Cerfa ou un dossier FlyBy pré-rempli fonctionne aussi et remplit vos infos automatiquement -- le type est détecté automatiquement."
               accept="application/pdf,.kml"
               multiple
               disabled={importingCerfa || importingKml}
@@ -881,17 +903,6 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             )}
             <StatusMessage text={cerfaMsg} />
             <StatusMessage text={kmlMsg} />
-            <p className="mt-2 text-xs text-slate-400">
-              Un Cerfa ou un dossier FlyBy remplit l'adresse et la localité. Seul le KML calcule automatiquement la
-              hauteur, l'éloignement et génère une carte avec échelle.{" "}
-              <a href="/tutoriel/flyby" target="_blank" className="text-brand hover:underline">
-                Récupérer un dossier FlyBy
-              </a>{" "}
-              ·{" "}
-              <a href="/tutoriel#pas-de-carte" target="_blank" className="text-brand hover:underline">
-                Pas de carte sous la main ?
-              </a>
-            </p>
           </div>
 
           <form onSubmit={addZone} className="space-y-3 border-t border-slate-100 pt-4">
@@ -958,7 +969,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             Description du site
             <FieldHint text="Décrit le lieu de vol (nature du site, environnement, obstacles, accès...). Le Cerfa n'a qu'une case à cocher « descriptif joint séparément », sans champ de texte : ce descriptif est donc ajouté comme page dédiée dans le dossier PDF généré." />
           </span>
-          <textarea
+          <AutoTextarea
             placeholder="Description du site"
             value={form.description_site}
             onChange={(e) => setForm((f) => ({ ...f, description_site: e.target.value }))}
@@ -969,7 +980,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             Autres informations utiles
             <FieldHint text="Horaires particuliers, zone aéronautique à statut particulier, ou toute autre précision sur les opérations à proximité. Reprend le champ « Autres informations utiles » du Cerfa." />
           </span>
-          <textarea
+          <AutoTextarea
             placeholder="Autres informations utiles"
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
@@ -978,15 +989,22 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           />
           <div>
             <span className="mb-1 block text-sm text-slate-600">
-              Capture(s) de la zone, si vous n'avez pas de KML (carte, Google Maps, DroneKeeper...)
+              Capture(s) de la zone
+              <FieldHint text="Un fichier KML donne une bien meilleure carte (avec échelle) qu'une simple capture d'écran -- préférez-le si vous l'avez. Sinon, une carte, une capture d'écran ou un export DroneKeeper fonctionne aussi, en complément ou à la place." />
             </span>
             <FileDropzone
-              label={files.length > 0 ? `${files.length} image(s) sélectionnée(s)` : "Glisser les images ici, ou cliquer pour parcourir"}
-              hint="Carte, capture d'écran ou export de zone de vol"
-              accept="image/*"
+              label={files.length > 0 ? `${files.length} image(s) sélectionnée(s)` : "Glisser des images ou un fichier KML ici, ou cliquer pour parcourir"}
+              hint="Un KML est directement importé comme carte de la zone (recommandé) ; une image est simplement jointe."
+              accept="image/*,.kml"
               multiple
-              onFiles={(f) => setFiles(f)}
+              onFiles={(fs) => {
+                const kmlFiles = fs.filter((f) => f.name.toLowerCase().endsWith(".kml"));
+                const imageFiles = fs.filter((f) => !f.name.toLowerCase().endsWith(".kml"));
+                if (imageFiles.length > 0) setFiles(imageFiles);
+                kmlFiles.forEach((f) => handleImportKml(f));
+              }}
             />
+            {importingKml && <p className="mt-2 text-sm text-slate-500">Lecture et géolocalisation en cours...</p>}
           </div>
           <button
             type="submit"

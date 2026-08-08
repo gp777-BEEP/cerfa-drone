@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import NewMissionForm from "./NewMissionForm";
-import AppHeader from "../../components/AppHeader";
 
 export default async function NewMissionPage() {
   const supabase = createClient();
@@ -19,7 +18,6 @@ export default async function NewMissionPage() {
 
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <h1 className="mb-6 text-2xl font-medium text-ink">Nouvelle mission</h1>
         <NewMissionForm missionTypes={missionTypes || []} initialProfileDrones={profile?.drones || []} />

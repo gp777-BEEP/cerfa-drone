@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import AppHeader from "../components/AppHeader";
 import SuggestionForm from "./SuggestionForm";
 import TutorielReminderLink from "./TutorielReminderLink";
 
@@ -18,7 +17,6 @@ export default async function SuggestionsPage() {
 
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <h1 className="mb-2 text-2xl font-medium text-ink">Suggestions</h1>
         <p className="mb-6 text-sm text-slate-600">

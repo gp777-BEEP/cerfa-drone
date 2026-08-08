@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import AppHeader from "../components/AppHeader";
 
 // Nouvelle page d'accueil post-connexion (demandée par le fondateur) : un
 // vrai atterrissage pédagogique en 3 points avant la liste des missions
@@ -18,7 +17,6 @@ export default async function AccueilPage() {
 
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <h1 className="mb-1 text-2xl font-medium text-ink">
           Bienvenue{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}

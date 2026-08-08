@@ -1,5 +1,4 @@
 import Link from "next/link";
-import AppHeader from "../components/AppHeader";
 
 // Page de don : entièrement optionnelle, aucune fonctionnalité du site n'y
 // est conditionnée. Le lien PayPal.me pointe directement vers le compte du
@@ -10,7 +9,6 @@ const DONATION_URL = process.env.NEXT_PUBLIC_DONATION_URL || "https://paypal.me/
 export default function DonPage() {
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <Link href="/accueil" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-brand">
           ← Retour à l'accueil

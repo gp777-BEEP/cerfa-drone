@@ -12,7 +12,6 @@ import DocumentsList from "./DocumentsList";
 import MissionDrones from "./MissionDrones";
 import MissionPilots from "./MissionPilots";
 import MissionSectionsLayout from "./MissionSectionsLayout";
-import AppHeader from "../../components/AppHeader";
 import type { Pilot } from "@/lib/pilots";
 import { EMPTY_PILOT } from "@/lib/pilots";
 
@@ -192,7 +191,6 @@ export default async function MissionPage({ params }: { params: { id: string } }
 
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <Link href="/dashboard" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-brand">
           ← Retour aux missions

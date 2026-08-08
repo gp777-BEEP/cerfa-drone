@@ -16,6 +16,7 @@ import { Question, QUESTION_HINTS } from "@/lib/missionQuestions";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 import UnsavedChangesGuard from "../../components/UnsavedChangesGuard";
 import DroneLoader from "../../components/DroneLoader";
+import AutoTextarea from "../../components/AutoTextarea";
 
 type MissionType = { slug: string; label: string; description: string; question_schema: Question[] };
 
@@ -496,7 +497,9 @@ export default function NewMissionForm({
         </p>
         <Coachmark
           id="import-optionnel-mission"
-          text="Rien sous la main ? Pas de problème, vous pourrez tout saisir à la main juste après (et ajouter une simple capture d'écran pour la zone, une fois la mission créée)."
+          text="Rien sous la main ? Vous pouvez tracer gratuitement votre zone de vol via DroneKeeper ou FlyBy et l'exporter en KML pour l'importer ci-dessous. Sinon, pas de problème : vous pourrez tout saisir à la main juste après (et ajouter une simple capture d'écran pour la zone, une fois la mission créée)."
+          linkHref="/tutoriel#pas-de-carte"
+          linkLabel="Comment faire"
           className="mb-3"
         />
         <FileDropzone
@@ -658,7 +661,7 @@ export default function NewMissionForm({
               Raisons qui ont présidé à la détermination des horaires de survol déclarés
               <FieldHint text="Pourquoi ces horaires précisément (luminosité, activité du site, disponibilité...). Champ général du Cerfa, pas propre à une zone en particulier." />
             </span>
-            <textarea
+            <AutoTextarea
               value={raisonsHoraires}
               onChange={(e) => setRaisonsHoraires(e.target.value)}
               rows={2}
@@ -670,7 +673,7 @@ export default function NewMissionForm({
               Prescriptions restrictives de survol imposées par les gestionnaires des sites concernés
               <FieldHint text="Contraintes fixées par le(s) gestionnaire(s) du ou des sites survolés (mairie, propriétaire, exploitant...), s'il y en a. Laissez vide si aucune." />
             </span>
-            <textarea
+            <AutoTextarea
               value={prescriptionsRestrictives}
               onChange={(e) => setPrescriptionsRestrictives(e.target.value)}
               rows={2}
@@ -739,7 +742,7 @@ function QuestionField({
           {question.label}
           {hint && <FieldHint text={hint} />}
         </span>
-        <textarea
+        <AutoTextarea
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           rows={3}

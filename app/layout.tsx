@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Footer from "./components/Footer";
+import ConditionalHeader from "./components/ConditionalHeader";
 
 export const metadata: Metadata = {
   title: "Cerfa Drone : déclarations de vol simplifiées",
@@ -11,6 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr">
       <body className="flex min-h-screen flex-col">
+        <ConditionalHeader />
         <div className="flex-1">{children}</div>
         <Footer />
       </body>

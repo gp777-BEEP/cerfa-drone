@@ -1,5 +1,4 @@
 import Link from "next/link";
-import AppHeader from "../../components/AppHeader";
 
 // Sous-page dédiée : comment récupérer le "Dossier de vol" depuis FlyBy (by
 // ASD), pour les pilotes qui utilisent cette app pour leurs demandes
@@ -9,7 +8,6 @@ import AppHeader from "../../components/AppHeader";
 export default function TutorielFlyByPage() {
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <Link href="/tutoriel" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-brand">
           ← Retour au tutoriel

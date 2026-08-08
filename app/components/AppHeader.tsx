@@ -61,7 +61,6 @@ export default function AppHeader() {
           Cerfa Drone
         </Link>
         <nav className="flex items-center gap-2 text-sm text-slate-500">
-          <NavLink href="/accueil">Accueil</NavLink>
           <NavLink href="/dashboard">Missions</NavLink>
           <NavLink href="/profile">Profil</NavLink>
           {isAdmin && <NavLink href="/admin">Admin</NavLink>}

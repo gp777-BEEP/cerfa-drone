@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import AppHeader from "../../components/AppHeader";
 
 // Icônes minimales (trait, currentColor) pour identifier chaque étape en un
 // coup d'œil sur les cartes ci-dessous.
@@ -78,7 +77,6 @@ function Section({
 export default function TutorielDetailPage() {
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-10">
         <Link href="/tutoriel" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-400 hover:text-brand">
           ← Retour au résumé
@@ -161,7 +159,13 @@ export default function TutorielDetailPage() {
           <Section id="pas-de-carte" title="Pas de carte sous la main ?" icon={<IconCompass />}>
             <p>
               L'app ne propose pas d'éditeur de carte intégré (dessiner un polygone précis demande un vrai
-              outil de cartographie). La solution la plus simple et gratuite :
+              outil de cartographie). Deux solutions simples et gratuites :
+            </p>
+            <p>
+              <strong className="text-ink">DroneKeeper</strong> ou{" "}
+              <strong className="text-ink">FlyBy</strong> (gratuit) : ces apps de gestion de vol proposent
+              un éditeur de zone intégré. Tracez votre zone de vol, puis exportez-la au format KML depuis
+              l'app. Déposez le fichier obtenu dans "Importer un KML" ci-dessus.
             </p>
             <p>
               <strong className="text-ink">Google My Maps</strong> (mymaps.google.com, gratuit, aucun

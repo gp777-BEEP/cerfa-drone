@@ -1,9 +1,7 @@
-import AppHeader from "../components/AppHeader";
 
 export default function ConfidentialitePage() {
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-2xl px-6 py-12 text-sm leading-relaxed text-slate-700">
       <h1 className="mb-6 text-2xl font-medium text-ink">Politique de confidentialité</h1>
 

@@ -1,6 +1,5 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import AppHeader from "../components/AppHeader";
 import { ADMIN_EMAILS } from "@/lib/adminEmails";
 
 function daysAgo(iso: string | null | undefined, days: number): boolean {
@@ -55,7 +54,6 @@ export default async function AdminPage() {
 
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-3xl px-6 py-10">
         <h1 className="mb-1 text-2xl font-medium text-ink">Suivi bêta</h1>
         <p className="mb-8 text-sm text-slate-500">Visible uniquement par vous ({user.email}).</p>

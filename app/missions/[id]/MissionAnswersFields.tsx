@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FieldHint from "../../components/FieldHint";
+import AutoTextarea from "../../components/AutoTextarea";
 import { Question, QUESTION_HINTS } from "@/lib/missionQuestions";
 
 // Avant, ces questions n'étaient posées qu'à la création de la mission
@@ -103,7 +104,7 @@ function QuestionField({
           {question.label}
           {hint && <FieldHint text={hint} />}
         </span>
-        <textarea
+        <AutoTextarea
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
           onBlur={onCommit}

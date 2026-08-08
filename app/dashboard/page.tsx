@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import AppHeader from "../components/AppHeader";
 import MissionList from "./MissionList";
 import Coachmark from "../components/Coachmark";
 import { WarningBanner } from "../components/Banner";
@@ -48,7 +47,6 @@ export default async function Dashboard() {
 
   return (
     <>
-      <AppHeader />
       <main className="mx-auto max-w-3xl px-6 py-10">
         {/* 1. Résumé rapide : vue d'ensemble en un coup d'œil, avant même la
             liste détaillée -- retour bêta-testeur : une page d'accueil plutôt
