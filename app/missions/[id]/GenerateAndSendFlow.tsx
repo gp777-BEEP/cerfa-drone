@@ -46,6 +46,7 @@ export default function GenerateAndSendFlow({
   const spotlightDownload = useSpotlightHoverFilled("#005333");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
@@ -58,6 +59,32 @@ export default function GenerateAndSendFlow({
   }, [previewOpen]);
 
   const generated = hasExistingDocument || justGenerated;
+
+  // Même correctif que DocumentsList.tsx : un <a href target="_blank"> vers
+  // l'URL signée Supabase Storage ouvre le PDF dans un onglet/visionneuse au
+  // lieu de le télécharger (l'attribut download est ignoré cross-origin).
+  // C'est LE bouton "Télécharger" que la plupart des utilisateurs
+  // rencontrent en premier (celui de l'aperçu, juste après génération) --
+  // corrigé ici en plus des deux autres endroits déjà traités.
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = "dossier-cerfa-drone.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch {
+      window.open(url, "_blank");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   async function handleClick() {
     setLoading(true);
@@ -178,18 +205,19 @@ export default function GenerateAndSendFlow({
                 <WarningBanner className="flex-1">
                   Avant de l'envoyer à la préfecture, n'oubliez pas de signer le document.
                 </WarningBanner>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50"
+                <button
+                  onClick={(e) => {
+                    spotlightDownload.onClick(e);
+                    handleDownload();
+                  }}
+                  disabled={downloading}
+                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
                   style={spotlightDownload.style}
                   onMouseMove={spotlightDownload.onMouseMove}
                   onMouseLeave={spotlightDownload.onMouseLeave}
-                  onClick={spotlightDownload.onClick}
                 >
-                  Télécharger
-                </a>
+                  {downloading ? "Téléchargement..." : "Télécharger"}
+                </button>
               </div>
             </div>
           </div>,

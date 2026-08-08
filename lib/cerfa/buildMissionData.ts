@@ -16,6 +16,11 @@ export interface Profile {
   // "Bienvenue, prénom" sur /accueil notamment).
   first_name?: string | null;
   last_name?: string | null;
+  // Prénoms secondaires (état civil), saisis séparément du prénom usuel :
+  // le Cerfa n'a qu'une seule case "Prénom", qui doit contenir tous les
+  // prénoms — on les fusionne avec first_name au moment de construire le
+  // champ "prenom" ci-dessous.
+  autres_prenoms?: string | null;
   address?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -130,7 +135,10 @@ function formatNaissance(dateIso?: string | null, lieu?: string | null): string 
 export function buildMissionData(profile: Profile, mission: MissionRow, zones: ZoneRow[]) {
   const { nom, prenom } =
     profile.first_name || profile.last_name
-      ? { nom: profile.last_name || "", prenom: profile.first_name || "" }
+      ? {
+          nom: profile.last_name || "",
+          prenom: [profile.first_name, profile.autres_prenoms].filter(Boolean).join(" "),
+        }
       : splitName(profile.full_name);
   const answers = mission.answers || {};
 

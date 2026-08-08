@@ -49,10 +49,24 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [firstName, setFirstName] = useState(
     initialProfile?.first_name || (initialProfile?.full_name || "").trim().split(/\s+/)[0] || ""
   );
+  // Retour bêta-testeur : "Nom" contenait plusieurs mots (ex. "Marie
+  // Frédéric Gonnet" pour un état civil "Paul Marie Frédéric Gonnet") --
+  // seul le dernier mot est le vrai nom de famille dans l'immense majorité
+  // des cas (les noms composés français avec espace, ex. "Le Goff", sont
+  // l'exception ; à corriger à la main si besoin, ce champ reste éditable).
+  // Les mots du milieu sont des prénoms secondaires (courants sur l'état
+  // civil français), séparés ici dans leur propre champ ; à la génération du
+  // Cerfa ils sont recollés au prénom usuel (case "Prénom" unique, qui
+  // attend tous les prénoms sur les formulaires officiels).
+  const initialLastNameRaw =
+    initialProfile?.last_name || (initialProfile?.full_name || "").trim().split(/\s+/).slice(1).join(" ") || "";
+  const lastNameWords = initialLastNameRaw.trim().split(/\s+/).filter(Boolean);
+  const smartSplitApplies = !initialProfile?.autres_prenoms && lastNameWords.length > 1;
   const [lastName, setLastName] = useState(
-    initialProfile?.last_name ||
-      (initialProfile?.full_name || "").trim().split(/\s+/).slice(1).join(" ") ||
-      ""
+    smartSplitApplies ? lastNameWords[lastNameWords.length - 1] : initialLastNameRaw
+  );
+  const [secondaryFirstNames, setSecondaryFirstNames] = useState(
+    initialProfile?.autres_prenoms || (smartSplitApplies ? lastNameWords.slice(0, -1).join(" ") : "")
   );
   // Adresse en 3 champs séparés (rue / code postal / ville) plutôt qu'un
   // seul champ texte libre, plus fiable à relire et à recopier sur le Cerfa
@@ -330,13 +344,14 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       .filter(Boolean)
       .join(", ");
 
-    const composedFullName = [firstName, lastName].filter(Boolean).join(" ");
+    const composedFullName = [firstName, secondaryFirstNames, lastName].filter(Boolean).join(" ");
 
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: composedFullName,
         first_name: firstName,
+        autres_prenoms: secondaryFirstNames,
         last_name: lastName,
         address: composedAddress,
         address_street: addressStreet,
@@ -396,7 +411,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       type: "cerfa-drone-pilote",
       version: 1,
       nom: lastName,
-      prenom: firstName,
+      prenom: [firstName, secondaryFirstNames].filter(Boolean).join(" "),
       date_naissance: dateNaissance,
       lieu_naissance: lieuNaissance,
       adresse: [addressStreet, [addressPostalCode, addressCity].filter(Boolean).join(" ")]
@@ -423,7 +438,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   // même pour juste relire ses infos). Résumé en lecture seule + bouton
   // "Modifier" qui bascule vers le formulaire complet ci-dessous.
   if (mode === "view") {
-    const fullName = [firstName, lastName].filter(Boolean).join(" ");
+    const fullName = [firstName, secondaryFirstNames, lastName].filter(Boolean).join(" ");
     const addressSummary = [addressStreet, [addressPostalCode, addressCity].filter(Boolean).join(" ")]
       .filter(Boolean)
       .join(", ");
@@ -558,6 +573,13 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Prénom" value={firstName} onChange={setFirstName} />
             <Field label="Nom" value={lastName} onChange={setLastName} />
+            <Field
+              label="Autre(s) prénom(s)"
+              value={secondaryFirstNames}
+              onChange={setSecondaryFirstNames}
+              className="sm:col-span-2"
+              hint="Prénoms secondaires (état civil), à ajouter au prénom principal dans le Cerfa. Pré-rempli automatiquement si détecté dans votre ancien champ Nom."
+            />
             <Field
               label="Qualité"
               value={qualite}

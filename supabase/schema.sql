@@ -9,6 +9,7 @@ create table if not exists profiles (
   full_name text,
   first_name text, -- prioritaire sur full_name pour les cases Nom/Prénom du Cerfa (nom complet peu fiable à couper)
   last_name text,
+  autres_prenoms text, -- prénoms secondaires (état civil), fusionnés avec first_name dans la case "Prénom" du Cerfa
   address text, -- composée automatiquement depuis address_street/address_postal_code/address_city
   address_street text,
   address_postal_code text,
