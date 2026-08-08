@@ -93,6 +93,12 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   // champ dans le formulaire (capture sur le <form> plus bas), remis à
   // false une fois l'enregistrement réussi.
   const [dirty, setDirty] = useState(false);
+  // Mode consultation / édition (retour bêta-testeur : le formulaire complet
+  // s'affichait systématiquement, même pour juste relire ses infos). Un
+  // profil déjà rempli s'ouvre en consultation, avec un bouton "Modifier" ;
+  // un profil tout neuf s'ouvre directement en édition (rien à consulter).
+  const hasExistingProfile = !!(initialProfile?.first_name || initialProfile?.last_name || initialProfile?.full_name);
+  const [mode, setMode] = useState<"view" | "edit">(hasExistingProfile ? "view" : "edit");
 
   // Personnalisation du dossier généré (filigrane discret sur les fiches de
   // zone et la page de garde -- jamais sur le Cerfa officiel lui-même,
@@ -338,6 +344,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
     setLogoFile(null);
     setSaved(true);
     setDirty(false);
+    setMode("view");
     router.refresh();
     return true;
   }
@@ -345,6 +352,12 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await doSave();
+  }
+
+  function cancelEdit() {
+    if (dirty && !window.confirm("Abandonner les modifications non enregistrées ?")) return;
+    setDirty(false);
+    setMode("view");
   }
 
   // Partage à un collègue télépilote : un fichier JSON avec vos infos,
@@ -378,6 +391,86 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   }
 
   const dronesCount = drones.filter((d) => d.constructeur || d.modele).length;
+
+  // Mode consultation (retour bêta-testeur : le gros formulaire s'affichait
+  // même pour juste relire ses infos). Résumé en lecture seule + bouton
+  // "Modifier" qui bascule vers le formulaire complet ci-dessous.
+  if (mode === "view") {
+    const fullName = [firstName, lastName].filter(Boolean).join(" ");
+    const addressSummary = [addressStreet, [addressPostalCode, addressCity].filter(Boolean).join(" ")]
+      .filter(Boolean)
+      .join(", ");
+    const dossierStyleLabel = DOSSIER_STYLES.find((s) => s.id === dossierStyle)?.label || dossierStyle;
+    return (
+      <div className="space-y-6">
+        <div className="bg-glass p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="font-medium text-ink">{fullName || "Profil incomplet"}</h2>
+              {qualite && <p className="text-sm text-slate-500">{qualite}</p>}
+            </div>
+            <button
+              type="button"
+              onClick={() => setMode("edit")}
+              className="shrink-0 rounded-md border border-brand px-4 py-1.5 text-sm font-medium text-brand hover:bg-brand-light"
+            >
+              Modifier
+            </button>
+          </div>
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+            <SummaryRow label="Adresse" value={addressSummary} />
+            <SummaryRow label="Téléphone" value={phone} />
+            <SummaryRow label="Email" value={email} />
+            <SummaryRow
+              label="Naissance"
+              value={dateNaissance || lieuNaissance ? `${toFrDate(dateNaissance)}${lieuNaissance ? ` à ${lieuNaissance}` : ""}`.trim() : ""}
+            />
+            <SummaryRow label="Numéro d'exploitant" value={numeroExploitant} />
+            <SummaryRow
+              label="Type d'exploitant"
+              value={exploitantType === "morale" ? `Personne morale (${raisonSociale || "raison sociale non renseignée"})` : "Personne physique"}
+            />
+          </dl>
+        </div>
+
+        <div className="bg-glass p-5">
+          <h2 className="mb-3 font-medium text-ink">Personnalisation du dossier</h2>
+          {personalizationOpen ? (
+            <div className="flex items-center gap-3 text-sm">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-light px-2.5 py-1 text-xs font-medium text-brand">
+                Activée
+              </span>
+              <span className="text-slate-500">
+                Style « {dossierStyleLabel} »
+                {logoPreviewUrl && " · avec logo"}
+              </span>
+              <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: brandColor }} />
+            </div>
+          ) : (
+            <span className="text-sm text-slate-500">Désactivée</span>
+          )}
+        </div>
+
+        <div className="bg-glass p-5">
+          <h2 className="mb-3 font-medium text-ink">Mes drones{dronesCount > 0 ? ` (${dronesCount})` : ""}</h2>
+          {dronesCount === 0 ? (
+            <p className="text-sm text-slate-500">Aucun drone renseigné.</p>
+          ) : (
+            <ul className="space-y-1 text-sm text-ink">
+              {drones
+                .filter((d) => d.constructeur || d.modele)
+                .map((d, i) => (
+                  <li key={i}>
+                    {[d.constructeur, d.modele].filter(Boolean).join(" ")}
+                    {d.numero_enregistrement && <span className="text-slate-400"> · {d.numero_enregistrement}</span>}
+                  </li>
+                ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -786,12 +879,37 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         >
           {saving ? "Enregistrement..." : "Enregistrer"}
         </button>
+        {hasExistingProfile && (
+          <button
+            type="button"
+            onClick={cancelEdit}
+            className="text-sm text-slate-400 hover:text-ink"
+          >
+            Annuler
+          </button>
+        )}
         {saved && <span className="text-sm text-brand">Enregistré ✓</span>}
       </div>
       {saveError && <ErrorBanner className="mt-3">{saveError}</ErrorBanner>}
       </form>
     </>
   );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs text-slate-400">{label}</dt>
+      <dd className="text-ink">{value || <span className="text-slate-500">—</span>}</dd>
+    </div>
+  );
+}
+
+function toFrDate(iso: string): string {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
 }
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
