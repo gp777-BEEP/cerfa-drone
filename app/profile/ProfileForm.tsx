@@ -12,6 +12,7 @@ import DroneIcon from "../components/DroneIcon";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 import UnsavedChangesGuard from "../components/UnsavedChangesGuard";
 import DroneLoader from "../components/DroneLoader";
+import { RosterPilot, newRosterPilot } from "@/lib/pilots";
 
 type Drone = {
   constructeur: string;
@@ -106,6 +107,12 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   // deux à la fois, pas besoin de le demander). true par défaut (et pour
   // tous les profils existants, comportement historique inchangé).
   const [estTelepilote, setEstTelepilote] = useState<boolean>(initialProfile?.est_telepilote !== false);
+  // Roster de pilotes réutilisables (retour bêta-testeur) : quand on n'est
+  // pas seul télépilote de son exploitation, on les ajoute ici une bonne
+  // fois pour toutes, puis on les sélectionne directement depuis l'onglet
+  // "Pilotes" de chaque mission (cf. MissionPilots.tsx), sans ressaisir ni
+  // s'échanger de fichier JSON à chaque fois.
+  const [savedPilots, setSavedPilots] = useState<RosterPilot[]>(initialProfile?.saved_pilots || []);
   const [drones, setDrones] = useState<Drone[]>(initialProfile?.drones?.length ? initialProfile.drones : [EMPTY_DRONE]);
   const [saving, setSaving] = useState(false);
   const spotlightSave = useSpotlightHoverBgOnly();
@@ -130,6 +137,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   // déplie la carte automatiquement une fois le formulaire affiché.
   const personalizationSectionRef = useRef<HTMLDivElement>(null);
   const [scrollToPersonalization, setScrollToPersonalization] = useState(false);
+  const pilotsSectionRef = useRef<HTMLDivElement>(null);
+  const [scrollToPilots, setScrollToPilots] = useState(false);
 
   useEffect(() => {
     if (mode === "edit" && scrollToPersonalization && personalizationSectionRef.current) {
@@ -137,6 +146,13 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       setScrollToPersonalization(false);
     }
   }, [mode, scrollToPersonalization]);
+
+  useEffect(() => {
+    if (mode === "edit" && scrollToPilots && pilotsSectionRef.current) {
+      pilotsSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      setScrollToPilots(false);
+    }
+  }, [mode, scrollToPilots]);
 
   function startEditPersonalisation() {
     setTab("infos");
@@ -148,6 +164,24 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   function startEditDrones() {
     setTab("drones");
     setMode("edit");
+  }
+
+  function startEditPilots() {
+    setTab("infos");
+    setMode("edit");
+    setScrollToPilots(true);
+  }
+
+  function addSavedPilot() {
+    setSavedPilots((prev) => [...prev, newRosterPilot()]);
+  }
+
+  function updateSavedPilot(id: string, patch: Partial<RosterPilot>) {
+    setSavedPilots((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  }
+
+  function removeSavedPilot(id: string) {
+    setSavedPilots((prev) => prev.filter((p) => p.id !== id));
   }
 
   // Personnalisation du dossier généré (filigrane discret sur les fiches de
@@ -378,6 +412,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         siren_siret: exploitantType === "morale" ? sirenSiret : null,
         mandataire_qualite: exploitantType === "morale" ? mandataireQualite : null,
         est_telepilote: exploitantType === "morale" ? estTelepilote : true,
+        saved_pilots: savedPilots.filter((p) => p.nom || p.prenom),
         drones: drones.filter((d) => d.constructeur || d.modele),
         logo_path: finalLogoPath,
         brand_color: brandColor,
@@ -521,6 +556,31 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                     {d.numero_enregistrement && <span className="text-slate-400"> · {d.numero_enregistrement}</span>}
                   </li>
                 ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="bg-glass p-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="font-medium text-ink">Vos pilotes{savedPilots.length > 0 ? ` (${savedPilots.length})` : ""}</h2>
+            <button
+              type="button"
+              onClick={startEditPilots}
+              className="shrink-0 rounded-md border border-brand px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light"
+            >
+              Modifier
+            </button>
+          </div>
+          {savedPilots.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              Aucun pilote enregistré. Pratique si vous n'êtes pas le seul télépilote de votre exploitation :
+              ajoutez-les ici pour les sélectionner directement sur chaque mission.
+            </p>
+          ) : (
+            <ul className="space-y-1 text-sm text-ink">
+              {savedPilots.map((p) => (
+                <li key={p.id}>{[p.prenom, p.nom].filter(Boolean).join(" ") || "(sans nom)"}</li>
+              ))}
             </ul>
           )}
         </div>
@@ -740,6 +800,72 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               </div>
             </div>
           )}
+        </div>
+
+        <div className="bg-glass p-5" ref={pilotsSectionRef}>
+          <h2 className="mb-1 font-medium text-ink">Vos pilotes</h2>
+          <p className="mb-4 text-xs text-slate-500">
+            Vous n'êtes pas le seul télépilote de votre exploitation ? Ajoutez ici vos collègues ou
+            collaborateurs une bonne fois pour toutes : vous pourrez ensuite les sélectionner directement
+            depuis l'onglet "Pilotes" de chaque mission, sans les ressaisir.
+          </p>
+          <div className="space-y-4">
+            {savedPilots.map((p) => (
+              <div key={p.id} className="border-l-2 border-slate-300 bg-slate-50 p-4">
+                <div className="mb-2 flex items-center justify-between text-sm text-slate-500">
+                  <span>{[p.prenom, p.nom].filter(Boolean).join(" ") || "Nouveau pilote"}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeSavedPilot(p.id)}
+                    className="text-red-500 hover:underline"
+                  >
+                    Retirer
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Prénom" value={p.prenom} onChange={(v) => updateSavedPilot(p.id, { prenom: v })} />
+                  <Field label="Nom" value={p.nom} onChange={(v) => updateSavedPilot(p.id, { nom: v })} />
+                  <Field
+                    label="Date de naissance"
+                    type="date"
+                    value={p.date_naissance}
+                    onChange={(v) => updateSavedPilot(p.id, { date_naissance: v })}
+                  />
+                  <Field
+                    label="Lieu de naissance (ville, pays)"
+                    value={p.lieu_naissance}
+                    onChange={(v) => updateSavedPilot(p.id, { lieu_naissance: v })}
+                  />
+                  <Field
+                    label="Adresse"
+                    value={p.adresse}
+                    onChange={(v) => updateSavedPilot(p.id, { adresse: v })}
+                    className="sm:col-span-2"
+                  />
+                  <label className="block text-sm">
+                    <span className="mb-1 block text-slate-600">Statut</span>
+                    <select
+                      value={p.statut}
+                      onChange={(e) => updateSavedPilot(p.id, { statut: e.target.value as RosterPilot["statut"] })}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 focus:border-brand focus:outline-none"
+                    >
+                      <option value="independant">Indépendant</option>
+                      <option value="salarie">Salarié</option>
+                    </select>
+                  </label>
+                  <Field
+                    label="Téléphone"
+                    value={p.telephone_portable}
+                    onChange={(v) => updateSavedPilot(p.id, { telephone_portable: v })}
+                  />
+                  <Field label="Email" type="email" value={p.courriel} onChange={(v) => updateSavedPilot(p.id, { courriel: v })} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={addSavedPilot} className="mt-4 text-sm text-brand hover:underline">
+            + Ajouter un pilote
+          </button>
         </div>
 
         <div className="bg-glass p-5" ref={personalizationSectionRef}>

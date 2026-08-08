@@ -5,23 +5,26 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FileDropzone from "../../components/FileDropzone";
 import StatusMessage from "../../components/StatusMessage";
-import { Pilot, EMPTY_PILOT, MAX_PILOTS, parsePilotFile } from "@/lib/pilots";
+import { Pilot, EMPTY_PILOT, MAX_PILOTS, parsePilotFile, RosterPilot } from "@/lib/pilots";
 import DroneLoader from "../../components/DroneLoader";
 
 // Case n°2 du Cerfa ("Télépilote(s)") : jusqu'à 4 télépilotes déclarés sur
 // une même mission. Par défaut, seul le profil connecté est proposé (repris
 // tel quel ici pour que ce qu'on voit corresponde à ce qui sera utilisé si
 // la section n'est jamais ouverte/modifiée) ; on peut en ajouter d'autres à
-// la main, ou importer le fichier exporté par un collègue depuis sa propre
-// page Profil, pour lui éviter de tout ressaisir.
+// la main, les sélectionner depuis le roster de pilotes enregistré sur le
+// profil (retour bêta-testeur), ou importer le fichier exporté par un
+// collègue depuis sa propre page Profil, pour lui éviter de tout ressaisir.
 export default function MissionPilots({
   missionId,
   profileAsPilot,
   initialPilots,
+  savedPilots,
 }: {
   missionId: string;
   profileAsPilot: Pilot;
   initialPilots: Pilot[] | null;
+  savedPilots?: RosterPilot[];
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -42,6 +45,14 @@ export default function MissionPilots({
   function addPilot() {
     setSaved(false);
     setPilots((prev) => (prev.length >= MAX_PILOTS ? prev : [...prev, { ...EMPTY_PILOT }]));
+  }
+
+  function addPilotFromRoster(id: string) {
+    const rosterPilot = (savedPilots || []).find((p) => p.id === id);
+    if (!rosterPilot || pilots.length >= MAX_PILOTS) return;
+    setSaved(false);
+    const { id: _drop, ...pilotFields } = rosterPilot;
+    setPilots((prev) => [...prev, pilotFields]);
   }
 
   function removePilot(i: number) {
@@ -133,7 +144,7 @@ export default function MissionPilots({
         ))}
       </div>
 
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={addPilot}
@@ -142,6 +153,23 @@ export default function MissionPilots({
         >
           + Ajouter un télépilote
         </button>
+        {savedPilots && savedPilots.length > 0 && pilots.length < MAX_PILOTS && (
+          <label className="flex items-center gap-2 text-sm text-slate-500">
+            <span>ou depuis vos pilotes enregistrés :</span>
+            <select
+              value=""
+              onChange={(e) => e.target.value && addPilotFromRoster(e.target.value)}
+              className="rounded-md border border-slate-300 px-2 py-1 text-sm focus:border-brand focus:outline-none"
+            >
+              <option value="">Choisir...</option>
+              {savedPilots.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {[p.prenom, p.nom].filter(Boolean).join(" ") || "(sans nom)"}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {pilots.length >= MAX_PILOTS && (
           <span className="text-xs text-slate-400">Maximum {MAX_PILOTS} télépilotes (limite du Cerfa)</span>
         )}

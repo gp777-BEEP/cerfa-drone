@@ -28,6 +28,22 @@ export const EMPTY_PILOT: Pilot = {
 
 export const MAX_PILOTS = 4; // le Cerfa officiel a 4 emplacements "Télépilote"
 
+// Pilote enregistré dans le "roster" du profil (retour bêta-testeur : quand
+// on n'est pas seul télépilote de son exploitation, autant ajouter une fois
+// pour toutes ses collègues/collaborateurs dans son profil, puis simplement
+// les sélectionner mission par mission, plutôt que de tout ressaisir ou de
+// jongler avec des fichiers JSON à chaque fois). Même forme qu'un Pilot,
+// avec un identifiant stable pour la sélection/édition côté profil.
+export type RosterPilot = Pilot & { id: string };
+
+export function newRosterPilot(): RosterPilot {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `pilote_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  return { id, ...EMPTY_PILOT };
+}
+
 // Fichier exporté depuis la page Profil ("Exporter mes infos") : un JSON
 // minimal, sans dépendance à un compte, importable tel quel dans l'onglet
 // "Pilotes" d'une mission par n'importe quel destinataire.

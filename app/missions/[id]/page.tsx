@@ -159,7 +159,12 @@ export default async function MissionPage({ params }: { params: { id: string } }
               ? "Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Vous êtes ajouté par défaut ; ajoutez-en d'autres à la main ou importez le fichier partagé par un collègue."
               : "Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Votre profil indique que vous n'êtes pas vous-même télépilote : ajoutez directement les pilotes concernés, à la main ou en important le fichier qu'ils vous ont partagé."}
           </p>
-          <MissionPilots missionId={mission.id} profileAsPilot={profileAsPilot} initialPilots={mission.pilots} />
+          <MissionPilots
+            missionId={mission.id}
+            profileAsPilot={profileAsPilot}
+            initialPilots={mission.pilots}
+            savedPilots={profile?.saved_pilots || []}
+          />
         </div>
       ),
     },
