@@ -145,6 +145,12 @@ export default function TutorielDetailPage() {
               remplacer cette image plus tard, en cliquant sur "Modifier" sur une zone déjà créée.
             </p>
             <p>
+              Vous utilisez <strong className="text-ink">FlyBy</strong> pour vos demandes d'autorisation ?{" "}
+              <a href="/tutoriel/flyby" className="text-brand hover:underline">
+                Voir comment récupérer votre dossier de vol →
+              </a>
+            </p>
+            <p>
               Pour chaque zone, une petite pastille orange apparaît si la "Description du site" n'est pas
               encore remplie (rassurez-vous, ce n'est pas bloquant, juste un rappel). Deux zones qui
               décrivent en fait le même endroit (importées séparément par KML et par Cerfa, par exemple)
