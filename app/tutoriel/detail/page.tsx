@@ -87,7 +87,7 @@ export default function TutorielDetailPage() {
         <p className="mb-6 text-sm text-slate-500">
           Tout ce qu'il faut savoir pour constituer un dossier de déclaration de vol de drone, quel que
           soit ce que vous avez sous la main pour décrire votre zone de vol : un fichier KML, une simple
-          capture d'écran, ou même un Cerfa déjà rempli par ailleurs.
+          capture d'écran, ou même un Cerfa pré-rempli par ailleurs.
         </p>
 
         <div className="mb-6 flex flex-wrap gap-2 text-xs">
@@ -128,7 +128,7 @@ export default function TutorielDetailPage() {
           <Section id="zones" title="2. Décrire votre zone de vol" icon={<IconZone />}>
             <p>Trois façons d'ajouter une zone, à combiner librement, y compris sur une même mission :</p>
             <p>
-              <strong className="text-ink">Un Cerfa déjà rempli</strong> (par un autre outil, ou par un
+              <strong className="text-ink">Un Cerfa pré-rempli</strong> (par un autre outil, ou par un
               client) : déposez-le dans "Importer un Cerfa" et l'adresse, les dates, le régime de vol, les
               drones et jusqu'à 2 zones sont préremplis automatiquement.
             </p>

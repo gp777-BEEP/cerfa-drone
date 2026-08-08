@@ -82,7 +82,7 @@ export default function TutorielPage() {
             être complété plus tard.
           </Step>
           <Step icon={<IconZone />} title="3. Décrivez la zone de vol">
-            <strong className="text-ink">Cerfa déjà rempli</strong>,{" "}
+            <strong className="text-ink">Cerfa pré-rempli</strong>,{" "}
             <strong className="text-ink">fichier KML</strong>, ou{" "}
             <strong className="text-ink">simple capture d'écran</strong> : les trois fonctionnent, à
             combiner librement.
