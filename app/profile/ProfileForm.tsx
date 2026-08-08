@@ -442,7 +442,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               ) : (
                 <FileDropzone
                   label="Glisser un logo ici, ou cliquer pour parcourir"
-                  hint="PNG ou JPG · 2 Mo maximum"
+                  hint="PNG ou JPG · 2 Mo maximum · redimensionné automatiquement si plus grand que 800 px"
                   accept="image/*"
                   onFiles={(files) => handleLogoFile(files[0])}
                 />
