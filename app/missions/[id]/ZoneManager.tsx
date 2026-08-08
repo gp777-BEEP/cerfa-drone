@@ -124,6 +124,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [kmlMsg, setKmlMsg] = useState("");
   const [importingCerfa, setImportingCerfa] = useState(false);
   const [cerfaMsg, setCerfaMsg] = useState("");
+  const [importingFlyBy, setImportingFlyBy] = useState(false);
+  const [flyByMsg, setFlyByMsg] = useState("");
   const [merging, setMerging] = useState(false);
   const spotlightMerge = useSpotlightHoverBgOnly();
   const spotlightAddZoneSubmit = useSpotlightHoverBgOnly();
@@ -284,6 +286,98 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     return { imported, lastError };
   }
 
+  // Logique commune de préremplissage à partir d'un fichier importé sur une
+  // mission déjà créée : partagée entre l'import Cerfa et l'import FlyBy
+  // (même forme de données renvoyée par les deux endpoints).
+  async function applyImportedFile(json: any, sourceLabel: string, setMsg: (m: string) => void) {
+    // Dates et régime de vol : importés indépendamment des zones (même si
+    // aucune zone n'est détectée, ces infos-là restent récupérables).
+    const missionUpdate: Record<string, any> = {};
+    const d = json.data.dates;
+    if (d?.debut_date) missionUpdate.date_debut = frToIso(d.debut_date);
+    if (d?.debut_heure) missionUpdate.heure_debut = `${d.debut_heure}:${d.debut_min || "00"}`;
+    if (d?.fin_date) missionUpdate.date_fin = frToIso(d.fin_date);
+    if (d?.fin_heure) missionUpdate.heure_fin = `${d.fin_heure}:${d.fin_min || "00"}`;
+    const r = json.data.regime;
+    if (r) {
+      missionUpdate.regime = {
+        categorie_ouverte: !!r.categorie_ouverte,
+        sous_categorie_a1: !!r.sous_categorie_a1,
+        sous_categorie_a2: !!r.sous_categorie_a2,
+        sous_categorie_a3: !!r.sous_categorie_a3,
+        sts01: !!r.sts01,
+        s3: !!r.s3,
+      };
+    }
+    // Drones : un fichier importé sur une mission déjà créée remplace la
+    // sélection de drones de CETTE mission par ceux qu'il décrit (visible
+    // et modifiable ensuite dans "Drones utilisés", cf. MissionDrones.tsx)
+    // plutôt que de les ajouter au profil global.
+    const importedDrones = [1, 2, 3, 4, 5]
+      .map((i) => json.data[`aeronef${i}`])
+      .filter((dr: any) => dr && dr.constructeur)
+      .map((dr: any) => ({
+        constructeur: dr.constructeur || "",
+        modele: dr.modele || "",
+        type: dr.type || "Drone",
+        numero_serie: dr.numero_serie || "",
+        masse_kg: dr.masse_kg || "",
+        classe_c5: dr.classe_c5 || "non",
+        captif: dr.captif || "non",
+        numero_enregistrement: dr.numero_enregistrement || "",
+        numero_signalement: dr.numero_signalement || "",
+      }));
+    if (importedDrones.length > 0) missionUpdate.drones = importedDrones;
+
+    if (Object.keys(missionUpdate).length > 0) {
+      await supabase.from("missions").update(missionUpdate).eq("id", missionId);
+      router.refresh();
+    }
+
+    // La source ne décrit que 2 sites max (limite du Cerfa page 1 / de la
+    // "Vue d'ensemble" FlyBy, pas de notre app) ; ils s'ajoutent à la liste
+    // existante, quelle que soit sa taille (les zones au-delà de 2 partent
+    // sur l'annexe à la génération du dossier).
+    const sites = [json.data.site1, json.data.site2].filter(Boolean);
+    if (sites.length === 0) {
+      // On inclut le détail technique (champs détectés/remplis) dans le
+      // message : ça évite un aller-retour pour comprendre pourquoi rien
+      // n'est ressorti (PDF sans formulaire, ou champs qui ne correspondent
+      // pas à la structure attendue).
+      const dbg = json.debug;
+      const detail = dbg
+        ? ` (${dbg.totalFields} champ(s) détecté(s), ${dbg.textFieldsWithValue} rempli(s), ${dbg.matched} reconnu(s), secours utilisé ${dbg.usedRawFallback} fois, ${dbg.bytesReceived} octets reçus)`
+        : "";
+      const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
+      const droneNote = importedDrones.length > 0 ? ` ${importedDrones.length} drone(s) importé(s) (voir "Drones utilisés" plus bas).` : "";
+      const gotMissionInfo = Object.keys(missionUpdate).length > 0 ? ` Les dates et le régime de vol ont été importés.${droneNote}` : droneNote;
+      setMsg(`Aucune zone trouvée dans ce ${sourceLabel}.${detail}${w}${gotMissionInfo}`);
+      return;
+    }
+
+    const { imported, lastError } = await insertZones(
+      sites.map((s: any) => ({
+        title: s.adresse || null,
+        adresse: s.adresse || null,
+        code_postal: s.code_postal || null,
+        localite: s.localite || null,
+        en_agglomeration: !!s.en_agglomeration,
+        rassemblement: !!s.rassemblement,
+        distance_max_m: s.eloignement_max_m ? Number(s.eloignement_max_m) : null,
+        hauteur_max_m: s.hauteur_max_m ? Number(s.hauteur_max_m) : null,
+        notes: s.autres_infos || null,
+        image_paths: [],
+      }))
+    );
+    const droneNote2 = importedDrones.length > 0 ? ` ${importedDrones.length} drone(s) importé(s) (voir "Drones utilisés" plus bas).` : "";
+    const gotMissionInfo2 = Object.keys(missionUpdate).length > 0 ? ` Dates et régime de vol importés aussi.${droneNote2}` : droneNote2;
+    setMsg(
+      imported > 0
+        ? `${imported} zone(s) importée(s) depuis le ${sourceLabel}.${gotMissionInfo2} Pensez à ajouter une carte (via KML ou une capture) si besoin.`
+        : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}${gotMissionInfo2}`
+    );
+  }
+
   async function handleImportCerfa(file: File) {
     setImportingCerfa(true);
     setCerfaMsg("");
@@ -293,97 +387,28 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       const res = await fetch("/api/parse-cerfa", { method: "POST", body });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur d'import");
-
-      // Dates et régime de vol : importés indépendamment des zones (même si
-      // aucune zone n'est détectée, ces infos-là restent récupérables).
-      const missionUpdate: Record<string, any> = {};
-      const d = json.data.dates;
-      if (d?.debut_date) missionUpdate.date_debut = frToIso(d.debut_date);
-      if (d?.debut_heure) missionUpdate.heure_debut = `${d.debut_heure}:${d.debut_min || "00"}`;
-      if (d?.fin_date) missionUpdate.date_fin = frToIso(d.fin_date);
-      if (d?.fin_heure) missionUpdate.heure_fin = `${d.fin_heure}:${d.fin_min || "00"}`;
-      const r = json.data.regime;
-      if (r) {
-        missionUpdate.regime = {
-          categorie_ouverte: !!r.categorie_ouverte,
-          sous_categorie_a1: !!r.sous_categorie_a1,
-          sous_categorie_a2: !!r.sous_categorie_a2,
-          sous_categorie_a3: !!r.sous_categorie_a3,
-          sts01: !!r.sts01,
-          s3: !!r.s3,
-        };
-      }
-      // Drones : un Cerfa importé sur une mission déjà créée remplace la
-      // sélection de drones de CETTE mission par ceux qu'il décrit (visible
-      // et modifiable ensuite dans "Drones utilisés", cf. MissionDrones.tsx)
-      // plutôt que de les ajouter au profil global.
-      const importedDrones = [1, 2, 3, 4, 5]
-        .map((i) => json.data[`aeronef${i}`])
-        .filter((dr: any) => dr && dr.constructeur)
-        .map((dr: any) => ({
-          constructeur: dr.constructeur || "",
-          modele: dr.modele || "",
-          type: dr.type || "Drone",
-          numero_serie: dr.numero_serie || "",
-          masse_kg: dr.masse_kg || "",
-          classe_c5: dr.classe_c5 || "non",
-          captif: dr.captif || "non",
-          numero_enregistrement: dr.numero_enregistrement || "",
-          numero_signalement: dr.numero_signalement || "",
-        }));
-      if (importedDrones.length > 0) missionUpdate.drones = importedDrones;
-
-      if (Object.keys(missionUpdate).length > 0) {
-        await supabase.from("missions").update(missionUpdate).eq("id", missionId);
-        router.refresh();
-      }
-
-      // Le Cerfa source ne décrit que 2 sites max sur sa page 1 (limite du
-      // formulaire importé, pas de notre app) ; ils s'ajoutent à la liste
-      // existante, quelle que soit sa taille (les zones au-delà de 2 partent
-      // sur l'annexe à la génération du dossier).
-      const sites = [json.data.site1, json.data.site2].filter(Boolean);
-      if (sites.length === 0) {
-        // On inclut le détail technique (champs détectés/remplis) dans le
-        // message : ça évite un aller-retour pour comprendre pourquoi rien
-        // n'est ressorti (PDF sans formulaire, ou champs qui ne correspondent
-        // pas à la structure attendue).
-        const dbg = json.debug;
-        const detail = dbg
-          ? ` (${dbg.totalFields} champ(s) détecté(s), ${dbg.textFieldsWithValue} rempli(s), ${dbg.matched} reconnu(s), secours utilisé ${dbg.usedRawFallback} fois, ${dbg.bytesReceived} octets reçus)`
-          : "";
-        const w = json.warnings?.length ? ` ${json.warnings.join(" ")}` : "";
-        const droneNote = importedDrones.length > 0 ? ` ${importedDrones.length} drone(s) importé(s) (voir "Drones utilisés" plus bas).` : "";
-        const gotMissionInfo = Object.keys(missionUpdate).length > 0 ? ` Les dates et le régime de vol ont été importés.${droneNote}` : droneNote;
-        setCerfaMsg(`Aucune zone trouvée dans ce Cerfa.${detail}${w}${gotMissionInfo}`);
-        return;
-      }
-
-      const { imported, lastError } = await insertZones(
-        sites.map((s: any) => ({
-          title: s.adresse || null,
-          adresse: s.adresse || null,
-          code_postal: s.code_postal || null,
-          localite: s.localite || null,
-          en_agglomeration: !!s.en_agglomeration,
-          rassemblement: !!s.rassemblement,
-          distance_max_m: s.eloignement_max_m ? Number(s.eloignement_max_m) : null,
-          hauteur_max_m: s.hauteur_max_m ? Number(s.hauteur_max_m) : null,
-          notes: s.autres_infos || null,
-          image_paths: [],
-        }))
-      );
-      const droneNote2 = importedDrones.length > 0 ? ` ${importedDrones.length} drone(s) importé(s) (voir "Drones utilisés" plus bas).` : "";
-      const gotMissionInfo2 = Object.keys(missionUpdate).length > 0 ? ` Dates et régime de vol importés aussi.${droneNote2}` : droneNote2;
-      setCerfaMsg(
-        imported > 0
-          ? `${imported} zone(s) importée(s) depuis le Cerfa.${gotMissionInfo2} Pensez à ajouter une carte (via KML ou une capture) si besoin.`
-          : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}${gotMissionInfo2}`
-      );
+      await applyImportedFile(json, "Cerfa", setCerfaMsg);
     } catch (e: any) {
       setCerfaMsg(`Erreur : ${e.message}`);
     } finally {
       setImportingCerfa(false);
+    }
+  }
+
+  async function handleImportFlyBy(file: File) {
+    setImportingFlyBy(true);
+    setFlyByMsg("");
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/api/parse-flyby", { method: "POST", body });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Erreur d'import");
+      await applyImportedFile(json, "dossier de vol FlyBy", setFlyByMsg);
+    } catch (e: any) {
+      setFlyByMsg(`Erreur : ${e.message}`);
+    } finally {
+      setImportingFlyBy(false);
     }
   }
 
@@ -839,7 +864,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 </button>
               )}
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <span className="mb-1 block text-xs text-slate-500">Cerfa déjà rempli</span>
                 <FileDropzone
@@ -851,6 +876,21 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 />
                 {importingCerfa && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
                 <StatusMessage text={cerfaMsg} />
+              </div>
+              <div>
+                <span className="mb-1 block text-xs text-slate-500">Dossier de vol FlyBy</span>
+                <FileDropzone
+                  label="Glisser le dossier de vol FlyBy ici, ou cliquer pour parcourir"
+                  hint="PDF exporté depuis FlyBy (by ASD)"
+                  accept="application/pdf"
+                  disabled={importingFlyBy}
+                  onFiles={(files) => handleImportFlyBy(files[0])}
+                />
+                {importingFlyBy && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
+                <StatusMessage text={flyByMsg} />
+                <a href="/tutoriel/flyby" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
+                  Comment récupérer ce fichier ?
+                </a>
               </div>
               <div>
                 <span className="mb-1 block text-xs text-slate-500">Fichier KML</span>

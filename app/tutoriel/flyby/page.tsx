@@ -3,10 +3,9 @@ import AppHeader from "../../components/AppHeader";
 
 // Sous-page dédiée : comment récupérer le "Dossier de vol" depuis FlyBy (by
 // ASD), pour les pilotes qui utilisent cette app pour leurs demandes
-// d'autorisation mais n'en tirent pas de Cerfa rempli automatiquement.
-// L'import automatique de ce fichier dans Cerfa Drone est en préparation
-// (nécessite un exemple réel complet pour être fiable) ; en attendant, les
-// infos du PDF téléchargé ici (titre, dates, zone) se saisissent à la main.
+// d'autorisation mais n'en tirent pas de Cerfa rempli automatiquement. Ce
+// PDF peut ensuite être déposé directement dans "Nouvelle mission" (ou dans
+// une mission existante) pour préremplir zone, dates, régime et drone.
 export default function TutorielFlyByPage() {
   return (
     <>
@@ -49,14 +48,16 @@ export default function TutorielFlyByPage() {
           </div>
 
           <div className="bg-glass p-5">
-            <h2 className="mb-2 font-medium text-ink">4. Utilisez ce PDF pour créer votre mission ici</h2>
+            <h2 className="mb-2 font-medium text-ink">4. Déposez ce PDF directement dans Cerfa Drone</h2>
             <p className="text-sm text-slate-600">
-              L'import automatique de ce fichier (comme pour un Cerfa DroneKeeper) est en préparation. En
-              attendant, gardez le PDF ouvert à côté et reportez les informations (titre, dates, zone) dans{" "}
+              Dans{" "}
               <Link href="/missions/new" className="text-brand hover:underline">
                 Nouvelle mission
-              </Link>
-              .
+              </Link>{" "}
+              (rubrique "Dossier de vol FlyBy"), ou depuis une mission existante : zone, dates, régime de vol
+              et drone sont préremplis automatiquement. Vérifiez les champs prérempli et complétez ce qui
+              manque (comme le fichier ne contient pas de carte, pensez à ajouter un KML ou une capture
+              d'écran pour la zone).
             </p>
           </div>
         </div>
