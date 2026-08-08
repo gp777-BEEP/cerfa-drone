@@ -123,8 +123,16 @@ export default function MissionList({
         </label>
       )}
 
-      {selected.size > 0 && (
-        <div className="mb-3 flex items-center justify-between rounded-lg border border-brand/30 bg-brand-light px-3 py-2 text-sm">
+      {/* Barre d'actions groupées : en position flottante (fixed) plutôt que
+          dans le flux normal, pour qu'apparaître/disparaître ne fasse plus
+          sauter toute la liste de missions vers le bas -- retour
+          bêta-testeur ("ça me déplace toutes mes missions", "dur à l'œil"). */}
+      <div
+        className={`fixed inset-x-0 bottom-5 z-40 flex justify-center px-4 transition-all duration-200 ease-out ${
+          selected.size > 0 ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
+        }`}
+      >
+        <div className="bg-glass flex items-center gap-4 rounded-full border-brand/30 px-4 py-2.5 text-sm shadow-lg">
           <span className="text-ink">
             {selected.size} mission{selected.size > 1 ? "s" : ""} sélectionnée{selected.size > 1 ? "s" : ""}
           </span>
@@ -159,7 +167,7 @@ export default function MissionList({
             </button>
           </div>
         </div>
-      )}
+      </div>
 
       <div className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10">
         {visible.length === 0 && (
@@ -179,14 +187,18 @@ export default function MissionList({
                 m.archived ? "opacity-60" : ""
               } ${borderColor}`}
             >
-              <input
-                type="checkbox"
-                checked={selected.has(m.id)}
-                onChange={() => toggleSelect(m.id)}
+              <label
+                className="-m-2 mr-1 flex shrink-0 cursor-pointer items-center p-2"
                 onClick={(e) => e.stopPropagation()}
-                className="mr-3 shrink-0"
-                aria-label={`Sélectionner ${m.title}`}
-              />
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(m.id)}
+                  onChange={() => toggleSelect(m.id)}
+                  className="mission-checkbox"
+                  aria-label={`Sélectionner ${m.title}`}
+                />
+              </label>
               <Link href={`/missions/${m.id}`} className="flex min-w-0 flex-1 items-baseline gap-2">
                 {m.status === "draft" && (
                   <span className="shrink-0 text-xs font-semibold text-slate-400" title="Pas encore de dossier généré">

@@ -14,6 +14,11 @@ export default function SignOutButton() {
     <button
       onClick={async (e) => {
         spotlight.onClick(e);
+        // Retour bêta-testeur : la déconnexion était immédiate, sans
+        // confirmation -- trop brutal en cas de clic accidentel (bouton
+        // discret, juste une icône). Même schéma que les suppressions
+        // (window.confirm) ailleurs dans l'app.
+        if (!window.confirm("Se déconnecter de Cerfa Drone ?")) return;
         await supabase.auth.signOut();
         router.push("/login");
         router.refresh();
