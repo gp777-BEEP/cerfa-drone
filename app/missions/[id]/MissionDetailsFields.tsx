@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import FieldHint from "../../components/FieldHint";
+import AutoTextarea from "../../components/AutoTextarea";
 
 // Édition de "objet précis de la mission" / "commanditaire", séparés du
 // titre interne de la mission (cf. NewMissionForm.tsx pour la création) :
@@ -55,11 +56,12 @@ export default function MissionDetailsFields({
             Objet précis de la mission
             <FieldHint text="Décrit ce que fait le vol (ex : inspection de toiture, prise de vue publicitaire...). Apparaît tel quel sur le Cerfa." />
           </span>
-          <input
+          <AutoTextarea
             value={objetMission}
             onChange={(e) => setObjetMission(e.target.value)}
             onBlur={save}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            rows={1}
+            className="w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
         </label>
         <label className="block text-sm">
@@ -67,11 +69,12 @@ export default function MissionDetailsFields({
             Commanditaire de la mission
             <FieldHint text="Qui a demandé cette mission : un client, une entreprise, une administration, ou vous-même si vous volez pour votre compte." />
           </span>
-          <input
+          <AutoTextarea
             value={commanditaire}
             onChange={(e) => setCommanditaire(e.target.value)}
             onBlur={save}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            rows={1}
+            className="w-full resize-none rounded-md border border-slate-300 px-3 py-2 text-sm"
           />
         </label>
       </div>

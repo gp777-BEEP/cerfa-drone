@@ -7,6 +7,7 @@ import FileDropzone from "../../components/FileDropzone";
 import StatusMessage from "../../components/StatusMessage";
 import { Pilot, EMPTY_PILOT, MAX_PILOTS, parsePilotFile, RosterPilot } from "@/lib/pilots";
 import DroneLoader from "../../components/DroneLoader";
+import AutoTextarea from "../../components/AutoTextarea";
 
 // Case n°2 du Cerfa ("Télépilote(s)") : jusqu'à 4 télépilotes déclarés sur
 // une même mission. Par défaut, seul le profil connecté est proposé (repris
@@ -121,9 +122,14 @@ export default function MissionPilots({
                 onChange={(v) => update(i, { date_naissance: v })}
               />
               <MiniField
-                label="Lieu de naissance (ville, pays)"
-                value={p.lieu_naissance}
-                onChange={(v) => update(i, { lieu_naissance: v })}
+                label="Ville de naissance"
+                value={p.naissance_ville}
+                onChange={(v) => update(i, { naissance_ville: v })}
+              />
+              <MiniField
+                label="Pays de naissance"
+                value={p.naissance_pays}
+                onChange={(v) => update(i, { naissance_pays: v })}
               />
               <MiniField label="Adresse" value={p.adresse} onChange={(v) => update(i, { adresse: v })} className="sm:col-span-2" />
               <label className="block text-sm">
@@ -137,6 +143,9 @@ export default function MissionPilots({
                   <option value="salarie">Salarié</option>
                 </select>
               </label>
+              {p.statut === "salarie" && (
+                <MiniField label="Employeur" value={p.employeur} onChange={(v) => update(i, { employeur: v })} />
+              )}
               <MiniField label="Téléphone" value={p.telephone_portable} onChange={(v) => update(i, { telephone_portable: v })} />
               <MiniField label="Email" type="email" value={p.courriel} onChange={(v) => update(i, { courriel: v })} />
             </div>
@@ -222,6 +231,23 @@ function MiniField({
   type?: string;
   className?: string;
 }) {
+  // Zone auto-agrandissable pour les champs texte libre (pas date/email) --
+  // retour bêta-testeur : un contenu plus long que la case ne devait plus
+  // être coupé/invisible.
+  if (type === "text") {
+    return (
+      <label className={`block text-sm ${className}`}>
+        <span className="mb-1 block text-slate-600">{label}</span>
+        <AutoTextarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={1}
+          className="w-full resize-none rounded-md border border-slate-300 px-3 py-2 focus:border-brand focus:outline-none"
+        />
+      </label>
+    );
+  }
+
   return (
     <label className={`block text-sm ${className}`}>
       <span className="mb-1 block text-slate-600">{label}</span>

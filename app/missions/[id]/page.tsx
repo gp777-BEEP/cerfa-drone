@@ -11,6 +11,7 @@ import MissionActions from "./MissionActions";
 import DocumentsList from "./DocumentsList";
 import MissionDrones from "./MissionDrones";
 import MissionPilots from "./MissionPilots";
+import MissionContactGeneral from "./MissionContactGeneral";
 import MissionSectionsLayout from "./MissionSectionsLayout";
 import type { Pilot } from "@/lib/pilots";
 import { EMPTY_PILOT } from "@/lib/pilots";
@@ -83,9 +84,11 @@ export default async function MissionPage({ params }: { params: { id: string } }
         nom: profile?.last_name || (profile?.full_name || "").trim().split(/\s+/).slice(1).join(" ") || "",
         prenom: profile?.first_name || (profile?.full_name || "").trim().split(/\s+/)[0] || "",
         date_naissance: profile?.date_naissance || "",
-        lieu_naissance: profile?.lieu_naissance || "",
+        naissance_ville: profile?.naissance_ville || "",
+        naissance_pays: profile?.naissance_pays || "",
         adresse: profile?.address || "",
-        statut: "independant",
+        statut: profile?.statut_pilote === "salarie" ? "salarie" : "independant",
+        employeur: profile?.employeur || "",
         telephone_portable: profile?.phone || "",
         courriel: profile?.email || "",
       }
@@ -152,20 +155,23 @@ export default async function MissionPage({ params }: { params: { id: string } }
       label: "Pilotes",
       done: true, // facultatif : le télépilote 1 (vous) suffit, ce n'est jamais bloquant
       content: (
-        <div className="bg-glass p-5">
-          <h2 className="mb-1 font-medium text-ink">Télépilotes déclarés</h2>
-          <p className="mb-3 text-xs text-slate-400">
-            {profileIsPilot
-              ? "Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Vous êtes ajouté par défaut ; ajoutez-en d'autres à la main ou importez le fichier partagé par un collègue."
-              : "Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Votre profil indique que vous n'êtes pas vous-même télépilote : ajoutez directement les pilotes concernés, à la main ou en important le fichier qu'ils vous ont partagé."}
-          </p>
-          <MissionPilots
-            missionId={mission.id}
-            profileAsPilot={profileAsPilot}
-            initialPilots={mission.pilots}
-            savedPilots={profile?.saved_pilots || []}
-          />
-        </div>
+        <>
+          <div className="bg-glass p-5">
+            <h2 className="mb-1 font-medium text-ink">Télépilotes déclarés</h2>
+            <p className="mb-3 text-xs text-slate-400">
+              {profileIsPilot
+                ? "Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Vous êtes ajouté par défaut ; ajoutez-en d'autres à la main ou importez le fichier partagé par un collègue."
+                : "Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Votre profil indique que vous n'êtes pas vous-même télépilote : ajoutez directement les pilotes concernés, à la main ou en important le fichier qu'ils vous ont partagé."}
+            </p>
+            <MissionPilots
+              missionId={mission.id}
+              profileAsPilot={profileAsPilot}
+              initialPilots={mission.pilots}
+              savedPilots={profile?.saved_pilots || []}
+            />
+          </div>
+          <MissionContactGeneral missionId={mission.id} initialAccompagnant={mission.accompagnant || null} />
+        </>
       ),
     },
     {

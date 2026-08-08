@@ -17,15 +17,19 @@ create table if not exists profiles (
   phone text,
   email text,
   date_naissance date, -- demandée par le Cerfa pour chaque télépilote (case n°2)
-  lieu_naissance text,
+  lieu_naissance text, -- obsolète, conservé pour ne rien perdre : remplacé par naissance_ville/naissance_pays ci-dessous
+  naissance_ville text,
+  naissance_pays text,
   qualite text default 'Télépilote',
   siren_siret text, -- réutilisé pour l'identifiant SIREN/SIRET/RCS/RNE si exploitant_type = 'morale'
-  numero_exploitant text, -- numéro d'enregistrement AlphaTango (FRAxxxxxxxxxxxx), parfois demandé par la préfecture
+  numero_exploitant text, -- obsolète (non utilisé sur le Cerfa), colonne conservée pour ne rien perdre
   exploitant_type text default 'physique', -- 'physique' | 'morale', cf. section 1 du Cerfa
   raison_sociale text,
   siege_social text,
   mandataire_qualite text, -- ex: "Gérant", "Président" (si exploitant_type = 'morale')
   est_telepilote boolean not null default true, -- false = ne pas préremplir le profil comme télépilote 1 (dirigeant qui ne vole pas)
+  statut_pilote text default 'independant', -- 'salarie' | 'independant', pour le profil connecté en tant que télépilote 1
+  employeur text, -- nom de l'employeur, rempli sur le Cerfa si statut_pilote = 'salarie'
   saved_pilots jsonb not null default '[]', -- roster de pilotes réutilisables (RosterPilot[]), sélectionnables sur chaque mission
   drones jsonb default '[]',
   logo_path text, -- chemin dans le bucket "logos", pour le filigrane des fiches de zone générées
@@ -119,6 +123,7 @@ create table if not exists missions (
   regime jsonb not null default '{}', -- {categorie_ouverte, sous_categorie_a1/a2/a3, sts01, s3}
   drones jsonb, -- sous-ensemble des drones du profil utilisés pour CETTE mission ; null/vide = tous les drones du profil (comportement par défaut)
   pilots jsonb, -- télépilotes déclarés pour CETTE mission (Cerfa case n°2, jusqu'à 4) ; null/vide = seul le profil connecté (télépilote 1)
+  accompagnant jsonb, -- colonne "Accompagnant / Observateur" du Cerfa (case n°2), facultatif -- null = colonne laissée vide
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

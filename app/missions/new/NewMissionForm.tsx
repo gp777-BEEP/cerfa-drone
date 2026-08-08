@@ -446,12 +446,13 @@ export default function NewMissionForm({
               spotlightHasCerfaOui.onClick(e);
               setHasCerfa("oui");
             }}
-            className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
+            className="flex max-w-xs flex-col items-start gap-1 rounded-md border border-brand px-6 py-3 text-left outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
             style={spotlightHasCerfaOui.style}
             onMouseMove={spotlightHasCerfaOui.onMouseMove}
             onMouseLeave={spotlightHasCerfaOui.onMouseLeave}
           >
-            Cerfa pré-rempli (DroneKeeper ou autre)
+            <span className="font-medium text-brand">Cerfa pré-rempli (DroneKeeper ou autre)</span>
+            <span className="text-xs text-slate-500">Déposez le fichier, tout est repris automatiquement.</span>
           </button>
           <button
             type="button"
@@ -459,12 +460,13 @@ export default function NewMissionForm({
               spotlightHasCerfaNon.onClick(e);
               setHasCerfa("non");
             }}
-            className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
+            className="flex max-w-xs flex-col items-start gap-1 rounded-md border border-brand px-6 py-3 text-left outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
             style={spotlightHasCerfaNon.style}
             onMouseMove={spotlightHasCerfaNon.onMouseMove}
             onMouseLeave={spotlightHasCerfaNon.onMouseLeave}
           >
-            Partir de zéro
+            <span className="font-medium text-brand">Partir de zéro</span>
+            <span className="text-xs text-slate-500">Vous pourrez importer un KML ou tout saisir à la main.</span>
           </button>
         </div>
       </div>
@@ -586,11 +588,12 @@ export default function NewMissionForm({
             Objet précis de la mission (Cerfa)
             <FieldHint text="Décrit ce que fait le vol (ex : inspection de toiture, prise de vue publicitaire, relevé topographique...). Apparaît tel quel sur le Cerfa, pour chaque zone de vol." />
           </span>
-          <input
+          <AutoTextarea
             value={objetMission}
             onChange={(e) => setObjetMission(e.target.value)}
             placeholder={title || "Laissez vide pour reprendre le titre ci-dessus"}
-            className="w-full rounded-md border border-slate-300 px-3 py-2"
+            rows={1}
+            className="w-full resize-none rounded-md border border-slate-300 px-3 py-2"
           />
         </label>
 
@@ -599,11 +602,12 @@ export default function NewMissionForm({
             Commanditaire de la mission
             <FieldHint text="Qui a demandé cette mission : un client, une entreprise, une administration, ou vous-même si vous volez pour votre compte." />
           </span>
-          <input
+          <AutoTextarea
             value={commanditaire}
             onChange={(e) => setCommanditaire(e.target.value)}
             placeholder="ex : Mairie de Cabourg, particulier, ma société..."
-            className="w-full rounded-md border border-slate-300 px-3 py-2"
+            rows={1}
+            className="w-full resize-none rounded-md border border-slate-300 px-3 py-2"
           />
         </label>
 

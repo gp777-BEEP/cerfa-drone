@@ -750,9 +750,9 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                   label={
                     editNewFiles.length > 0
                       ? `${editNewFiles.length} nouvelle(s) image(s) sélectionnée(s)`
-                      : "Glisser une image ou un fichier KML ici, ou cliquer pour parcourir"
+                      : "Glisser un fichier KML ici, ou une image en complément"
                   }
-                  hint="Image : ajoutée en plus des images déjà attachées. KML : importé comme nouvelle zone."
+                  hint="KML : génère la carte avec échelle (recommandé), importé comme nouvelle zone. Image : ajoutée en plus, en complément."
                   accept="image/*,.kml"
                   multiple
                   onFiles={(fs) => {
@@ -889,8 +889,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               )}
             </div>
             <FileDropzone
-              label="Glisser un fichier KML ici (recommandé), ou un Cerfa/dossier FlyBy pré-rempli, ou cliquer pour parcourir"
-              hint="Le KML donne une carte avec échelle, bien plus lisible pour la préfecture. Un Cerfa ou un dossier FlyBy pré-rempli fonctionne aussi et remplit vos infos automatiquement -- le type est détecté automatiquement."
+              label="Glisser un fichier KML ici (recommandé), ou un Cerfa/dossier FlyBy pré-rempli"
+              hint="Le type est détecté automatiquement : KML pour la carte, Cerfa/FlyBy pour préremplir vos infos."
               accept="application/pdf,.kml"
               multiple
               disabled={importingCerfa || importingKml}
@@ -993,8 +993,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               <FieldHint text="Un fichier KML donne une bien meilleure carte (avec échelle) qu'une simple capture d'écran -- préférez-le si vous l'avez. Sinon, une carte, une capture d'écran ou un export DroneKeeper fonctionne aussi, en complément ou à la place." />
             </span>
             <FileDropzone
-              label={files.length > 0 ? `${files.length} image(s) sélectionnée(s)` : "Glisser des images ou un fichier KML ici, ou cliquer pour parcourir"}
-              hint="Un KML est directement importé comme carte de la zone (recommandé) ; une image est simplement jointe."
+              label={files.length > 0 ? `${files.length} image(s) sélectionnée(s)` : "Glisser un fichier KML ici, ou des images en complément"}
+              hint="KML : génère la carte avec échelle (recommandé). Images : simplement jointes en complément."
               accept="image/*,.kml"
               multiple
               onFiles={(fs) => {

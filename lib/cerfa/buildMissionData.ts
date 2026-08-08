@@ -27,8 +27,17 @@ export interface Profile {
   // Demandés par le Cerfa pour chaque télépilote (case n°2) ; jamais
   // collectés avant l'ajout du multi-pilotes, donc facultatifs.
   date_naissance?: string | null; // ISO yyyy-mm-dd
-  lieu_naissance?: string | null;
+  // Ville/pays de naissance en deux champs distincts (retour bêta-testeur) --
+  // recombinés en une seule case Cerfa par formatNaissance() ci-dessous.
+  naissance_ville?: string | null;
+  naissance_pays?: string | null;
   qualite?: string | null;
+  // Statut de télépilote pour le profil connecté lui-même (utilisé comme
+  // télépilote 1 par défaut) : rempli sur le Cerfa dans la case "Employeur
+  // (Salarié)" / "Indépendant (Oui/Non)" de la case n°2, cf. pilotsList
+  // ci-dessous.
+  statut_pilote?: "salarie" | "independant" | null;
+  employeur?: string | null;
   // Personne physique (par défaut) ou personne morale : détermine quelle
   // colonne de la section "1. L'exploitant" du Cerfa est remplie. Si
   // "morale", full_name/address/phone/email/qualite ci-dessus décrivent le
@@ -83,9 +92,11 @@ export interface MissionRow {
     nom?: string;
     prenom?: string;
     date_naissance?: string | null;
-    lieu_naissance?: string | null;
+    naissance_ville?: string | null;
+    naissance_pays?: string | null;
     adresse?: string;
     statut?: "salarie" | "independant";
+    employeur?: string;
     telephone_portable?: string;
     courriel?: string;
   }> | null;
@@ -99,6 +110,24 @@ export interface MissionRow {
   // -> Texte59/Texte60), remplacent l'ancien bloc "questions par zone".
   raisons_horaires?: string | null;
   prescriptions_restrictives?: string | null;
+  // "Accompagnant / Observateur" du Cerfa (case n°2, colonne dédiée à droite
+  // des télépilotes 1-4) : une personne présente sur le vol sans être
+  // télépilote elle-même, facultatif -- absent/null = case laissée vide
+  // (jamais rempli avant). Même forme qu'un télépilote (adresse, statut
+  // salarié/indépendant compris), sans limite de nombre à gérer (une seule
+  // colonne sur le Cerfa officiel).
+  accompagnant?: {
+    nom?: string;
+    prenom?: string;
+    date_naissance?: string | null;
+    naissance_ville?: string | null;
+    naissance_pays?: string | null;
+    adresse?: string;
+    statut?: "salarie" | "independant";
+    employeur?: string;
+    telephone_portable?: string;
+    courriel?: string;
+  } | null;
 }
 
 export interface ZoneRow {
@@ -129,10 +158,11 @@ function toDdMmYyyy(iso?: string | null): string {
 }
 
 // Le Cerfa n'a qu'un seul champ texte "Date et lieu de naissance ville et
-// pays" par télépilote (pas deux champs séparés) : on les combine ici.
-function formatNaissance(dateIso?: string | null, lieu?: string | null): string {
+// pays" par télépilote (pas deux champs séparés, contrairement à la saisie
+// -- ville/pays distincts, retour bêta-testeur) : on les combine ici.
+function formatNaissance(dateIso?: string | null, ville?: string | null, pays?: string | null): string {
   const d = toDdMmYyyy(dateIso);
-  const l = (lieu || "").trim();
+  const l = [ville, pays].filter((v) => (v || "").trim()).join(", ");
   if (d && l) return `${d} à ${l}`;
   return d || l;
 }
@@ -244,10 +274,8 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
   // emplacements sur le formulaire officiel) : si l'utilisateur en a
   // explicitement ajouté via l'onglet "Pilotes" d'une mission, on les
   // utilise tous ; sinon, le profil connecté est déclaré comme télépilote 1
-  // par défaut (comportement historique). Dans ce cas de repli, on ne
-  // devine pas le statut salarié/indépendant (jamais demandé avant l'ajout
-  // du multi-pilotes) : les cases correspondantes restent simplement
-  // décochées, comme avant.
+  // par défaut (comportement historique), avec son statut salarié/indépendant
+  // s'il l'a renseigné dans son profil (profile.statut_pilote).
   //
   // Exception (continuité exploitant/pilotes) : si le profil a explicitement
   // indiqué ne pas être lui-même télépilote (typiquement le dirigeant d'une
@@ -263,9 +291,11 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
             nom,
             prenom,
             date_naissance: profile.date_naissance,
-            lieu_naissance: profile.lieu_naissance,
+            naissance_ville: profile.naissance_ville,
+            naissance_pays: profile.naissance_pays,
             adresse: profile.address || "",
-            statut: undefined,
+            statut: profile.statut_pilote || undefined,
+            employeur: profile.employeur || "",
             telephone_portable: profile.phone || "",
             courriel: profile.email || "",
           },
@@ -276,16 +306,46 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
     data[`telepilote${i + 1}`] = {
       nom: pilot.nom || "",
       prenom: pilot.prenom || "",
-      naissance: formatNaissance(pilot.date_naissance, pilot.lieu_naissance),
+      naissance: formatNaissance(pilot.date_naissance, pilot.naissance_ville, pilot.naissance_pays),
       adresse: pilot.adresse || "",
       telephone_portable: pilot.telephone_portable || "",
       courriel: pilot.courriel || "",
-      // Uniquement rempli quand le statut a été explicitement renseigné
-      // (jamais le cas pour le télépilote 1 par défaut, cf. ci-dessus) :
-      // sinon les deux cases restent décochées plutôt que de deviner.
-      ...(pilot.statut ? { employeur: pilot.statut === "salarie", independant: pilot.statut === "independant" } : {}),
+      // Bug corrigé : "Télépilote XEmployeur Salarié" et "...Indépendant
+      // OuiNon" sont des champs TEXTE sur le Cerfa officiel (pas des cases à
+      // cocher) -- y écrire un booléen affichait littéralement "true"/"false"
+      // dans le PDF généré. On y écrit maintenant le nom de l'employeur (si
+      // salarié) et "Oui"/"Non" (indépendant), et on laisse les deux cases
+      // vides quand le statut n'a jamais été renseigné (mieux vaut une case
+      // vide qu'une case fausse sur un document officiel).
+      ...(pilot.statut
+        ? {
+            employeur: pilot.statut === "salarie" ? pilot.employeur || "Oui" : "",
+            independant: pilot.statut === "independant" ? "Oui" : "Non",
+          }
+        : {}),
     };
   });
+
+  // Accompagnant / Observateur (case n°2, colonne dédiée) : facultatif,
+  // saisi depuis la page de la mission (cf. MissionContactGeneral.tsx).
+  // Même logique employeur/indépendant que les télépilotes ci-dessus.
+  if (mission.accompagnant) {
+    const acc = mission.accompagnant;
+    data.accompagnant = {
+      nom: acc.nom || "",
+      prenom: acc.prenom || "",
+      naissance: formatNaissance(acc.date_naissance, acc.naissance_ville, acc.naissance_pays),
+      adresse: acc.adresse || "",
+      telephone_portable: acc.telephone_portable || "",
+      courriel: acc.courriel || "",
+      ...(acc.statut
+        ? {
+            employeur: acc.statut === "salarie" ? acc.employeur || "Oui" : "",
+            independant: acc.statut === "independant" ? "Oui" : "Non",
+          }
+        : {}),
+    };
+  }
 
   // Objet précis de la mission / commanditaire : champs dédiés (saisis à la
   // création de la mission ou préremplis depuis un Cerfa importé) si

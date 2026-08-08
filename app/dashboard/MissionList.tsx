@@ -126,9 +126,12 @@ export default function MissionList({
       {/* Barre d'actions groupées : en position flottante (fixed) plutôt que
           dans le flux normal, pour qu'apparaître/disparaître ne fasse plus
           sauter toute la liste de missions vers le bas -- retour
-          bêta-testeur ("ça me déplace toutes mes missions", "dur à l'œil"). */}
+          bêta-testeur ("ça me déplace toutes mes missions", "dur à l'œil").
+          Remontée à bottom-24 (au lieu de bottom-5) : à cette hauteur-là elle
+          recouvrait le footer (liens Confidentialité/Mentions légales),
+          autre retour bêta-testeur. */}
       <div
-        className={`fixed inset-x-0 bottom-5 z-40 flex justify-center px-4 transition-all duration-200 ease-out ${
+        className={`fixed inset-x-0 bottom-24 z-40 flex justify-center px-4 transition-all duration-200 ease-out ${
           selected.size > 0 ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
         }`}
       >

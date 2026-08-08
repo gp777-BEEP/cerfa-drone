@@ -12,7 +12,8 @@ import DroneIcon from "../components/DroneIcon";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 import UnsavedChangesGuard from "../components/UnsavedChangesGuard";
 import DroneLoader from "../components/DroneLoader";
-import { RosterPilot, newRosterPilot } from "@/lib/pilots";
+import { RosterPilot, newRosterPilot, splitLegacyLieuNaissance } from "@/lib/pilots";
+import AutoTextarea from "../components/AutoTextarea";
 
 type Drone = {
   constructeur: string;
@@ -89,9 +90,26 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   // pour "Exporter mes infos" (partage à un collègue, cf. onglet Pilotes
   // d'une mission).
   const [dateNaissance, setDateNaissance] = useState(initialProfile?.date_naissance || "");
-  const [lieuNaissance, setLieuNaissance] = useState(initialProfile?.lieu_naissance || "");
+  // Ville et pays de naissance en deux champs distincts (retour bêta-testeur :
+  // un seul champ texte libre "ville, pays" n'était pas assez clair). Si le
+  // profil existant n'a que l'ancien champ "lieu_naissance" à plat (avant
+  // cette migration), on le répartit une première fois pour ne rien perdre.
+  const legacyNaissance = splitLegacyLieuNaissance(initialProfile?.lieu_naissance);
+  const [naissanceVille, setNaissanceVille] = useState(
+    initialProfile?.naissance_ville || legacyNaissance.ville || ""
+  );
+  const [naissancePays, setNaissancePays] = useState(
+    initialProfile?.naissance_pays || legacyNaissance.pays || ""
+  );
   const [qualite, setQualite] = useState(initialProfile?.qualite || "Télépilote");
-  const [numeroExploitant, setNumeroExploitant] = useState(initialProfile?.numero_exploitant || "");
+  // Statut de télépilote (retour bêta-testeur) : le Cerfa a deux cases par
+  // télépilote déclaré ("Employeur (Salarié)" / "Indépendant (Oui/Non)"),
+  // jamais demandées avant pour le profil connecté lui-même (utilisé comme
+  // télépilote 1 par défaut). Facultatif, "independant" par défaut.
+  const [statutPilote, setStatutPilote] = useState<"salarie" | "independant">(
+    initialProfile?.statut_pilote === "salarie" ? "salarie" : "independant"
+  );
+  const [employeurPilote, setEmployeurPilote] = useState(initialProfile?.employeur || "");
   const [exploitantType, setExploitantType] = useState<"physique" | "morale">(
     initialProfile?.exploitant_type === "morale" ? "morale" : "physique"
   );
@@ -320,7 +338,6 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         setFirstName(parts[0] || "");
         setLastName(parts.slice(1).join(" "));
       }
-      if (json.data.numero_exploitant) setNumeroExploitant(json.data.numero_exploitant);
       setImportMsgInfos(
         json.data.full_name
           ? `Nom importé : ${json.data.full_name}.`
@@ -403,15 +420,17 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         phone,
         email,
         date_naissance: dateNaissance || null,
-        lieu_naissance: lieuNaissance,
+        naissance_ville: naissanceVille,
+        naissance_pays: naissancePays,
         qualite,
-        numero_exploitant: numeroExploitant,
         exploitant_type: exploitantType,
         raison_sociale: exploitantType === "morale" ? raisonSociale : null,
         siege_social: exploitantType === "morale" ? siegeSocial : null,
         siren_siret: exploitantType === "morale" ? sirenSiret : null,
         mandataire_qualite: exploitantType === "morale" ? mandataireQualite : null,
         est_telepilote: exploitantType === "morale" ? estTelepilote : true,
+        statut_pilote: statutPilote,
+        employeur: statutPilote === "salarie" ? employeurPilote : "",
         saved_pilots: savedPilots.filter((p) => p.nom || p.prenom),
         drones: drones.filter((d) => d.constructeur || d.modele),
         logo_path: finalLogoPath,
@@ -458,11 +477,13 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       nom: lastName,
       prenom: [firstName, secondaryFirstNames].filter(Boolean).join(" "),
       date_naissance: dateNaissance,
-      lieu_naissance: lieuNaissance,
+      naissance_ville: naissanceVille,
+      naissance_pays: naissancePays,
       adresse: [addressStreet, [addressPostalCode, addressCity].filter(Boolean).join(" ")]
         .filter(Boolean)
         .join(", "),
-      statut: "independant",
+      statut: statutPilote,
+      employeur: statutPilote === "salarie" ? employeurPilote : "",
       telephone_portable: phone,
       courriel: email,
     };
@@ -510,9 +531,20 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             <SummaryRow label="Email" value={email} />
             <SummaryRow
               label="Naissance"
-              value={dateNaissance || lieuNaissance ? `${toFrDate(dateNaissance)}${lieuNaissance ? ` à ${lieuNaissance}` : ""}`.trim() : ""}
+              value={
+                dateNaissance || naissanceVille || naissancePays
+                  ? `${toFrDate(dateNaissance)}${
+                      naissanceVille || naissancePays
+                        ? ` à ${[naissanceVille, naissancePays].filter(Boolean).join(", ")}`
+                        : ""
+                    }`.trim()
+                  : ""
+              }
             />
-            <SummaryRow label="Numéro d'exploitant" value={numeroExploitant} />
+            <SummaryRow
+              label="Statut"
+              value={statutPilote === "salarie" ? `Salarié${employeurPilote ? ` (${employeurPilote})` : ""}` : "Indépendant"}
+            />
             <SummaryRow
               label="Type d'exploitant"
               value={exploitantType === "morale" ? `Personne morale (${raisonSociale || "raison sociale non renseignée"})` : "Personne physique"}
@@ -681,13 +713,37 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               type="date"
               hint="Demandée par le Cerfa pour chaque télépilote déclaré. Facultatif si vous ne comptez pas générer de dossier tout de suite."
             />
-            <Field label="Lieu de naissance (ville, pays)" value={lieuNaissance} onChange={setLieuNaissance} />
-            <Field
-              label="Numéro d'exploitant"
-              value={numeroExploitant}
-              onChange={setNumeroExploitant}
-              hint="Numéro d'enregistrement AlphaTango (format FRA...). Pas de case dédiée sur le Cerfa, mais la préfecture le demande parfois en complément."
-            />
+            <Field label="Ville de naissance" value={naissanceVille} onChange={setNaissanceVille} />
+            <Field label="Pays de naissance" value={naissancePays} onChange={setNaissancePays} />
+            <div className="sm:col-span-2">
+              <span className="mb-1.5 block text-sm text-slate-600">
+                Statut
+                <FieldHint text="Rempli sur le Cerfa dans la case « Employeur (Salarié) » ou « Indépendant (Oui/Non) », pour vous en tant que télépilote 1 par défaut." />
+              </span>
+              <div className="flex gap-4 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="statut_pilote"
+                    checked={statutPilote === "independant"}
+                    onChange={() => setStatutPilote("independant")}
+                  />
+                  Indépendant
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="statut_pilote"
+                    checked={statutPilote === "salarie"}
+                    onChange={() => setStatutPilote("salarie")}
+                  />
+                  Salarié
+                </label>
+              </div>
+            </div>
+            {statutPilote === "salarie" && (
+              <Field label="Employeur" value={employeurPilote} onChange={setEmployeurPilote} className="sm:col-span-2" />
+            )}
           </div>
           <button
             type="button"
@@ -702,12 +758,6 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             Exporter mes infos
           </button>
           <p className="mt-1.5 text-xs text-slate-500">Fichier à partager avec un collègue télépilote.</p>
-          <p className="mt-3 text-xs text-slate-500">
-            Numéro d'enregistrement AlphaTango (format FRA...), pas de case dédiée sur le Cerfa mais
-            la préfecture le demande parfois en complément : garde-le sous la main. C'est un identifiant
-            professionnel, du même ordre que votre SIREN/SIRET (pas un mot de passe), stocké comme le
-            reste de votre profil.
-          </p>
         </div>
 
         <div className="bg-glass p-5">
@@ -806,8 +856,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
           <h2 className="mb-1 font-medium text-ink">Vos pilotes</h2>
           <p className="mb-4 text-xs text-slate-500">
             Vous n'êtes pas le seul télépilote de votre exploitation ? Ajoutez ici vos collègues ou
-            collaborateurs une bonne fois pour toutes : vous pourrez ensuite les sélectionner directement
-            depuis l'onglet "Pilotes" de chaque mission, sans les ressaisir.
+            collaborateurs : vous pourrez ensuite les sélectionner directement depuis l'onglet "Pilotes" de
+            chaque mission, sans les ressaisir.
           </p>
           <div className="space-y-4">
             {savedPilots.map((p) => (
@@ -832,9 +882,14 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                     onChange={(v) => updateSavedPilot(p.id, { date_naissance: v })}
                   />
                   <Field
-                    label="Lieu de naissance (ville, pays)"
-                    value={p.lieu_naissance}
-                    onChange={(v) => updateSavedPilot(p.id, { lieu_naissance: v })}
+                    label="Ville de naissance"
+                    value={p.naissance_ville}
+                    onChange={(v) => updateSavedPilot(p.id, { naissance_ville: v })}
+                  />
+                  <Field
+                    label="Pays de naissance"
+                    value={p.naissance_pays}
+                    onChange={(v) => updateSavedPilot(p.id, { naissance_pays: v })}
                   />
                   <Field
                     label="Adresse"
@@ -853,6 +908,13 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                       <option value="salarie">Salarié</option>
                     </select>
                   </label>
+                  {p.statut === "salarie" && (
+                    <Field
+                      label="Employeur"
+                      value={p.employeur}
+                      onChange={(v) => updateSavedPilot(p.id, { employeur: v })}
+                    />
+                  )}
                   <Field
                     label="Téléphone"
                     value={p.telephone_portable}
@@ -1207,6 +1269,29 @@ function Field({
   className?: string;
   hint?: string;
 }) {
+  // Champs texte libre (pas date/email/number) : zone auto-agrandissable
+  // plutôt qu'un <input> à défilement horizontal, pour qu'un contenu plus
+  // long qu'attendu (adresse à rallonge, raison sociale...) reste lisible en
+  // entier au lieu d'être coupé -- retour bêta-testeur ("on ne voit pas ce
+  // qu'on a écrit avant ou après"). Mêmes classes visuelles qu'un <input>
+  // classique tant que le texte tient sur une ligne.
+  if (type === "text") {
+    return (
+      <label className={`block text-sm ${className}`}>
+        <span className="mb-1 block text-slate-600">
+          {label}
+          {hint && <FieldHint text={hint} />}
+        </span>
+        <AutoTextarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={1}
+          className="w-full resize-none rounded-md border border-slate-300 px-3 py-2 focus:border-brand focus:outline-none"
+        />
+      </label>
+    );
+  }
+
   return (
     <label className={`block text-sm ${className}`}>
       <span className="mb-1 block text-slate-600">
