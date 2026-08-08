@@ -517,7 +517,7 @@ export default function NewMissionForm({
               text="Pas de fichier KML sous la main ? Pas de problème : vous pourrez décrire votre zone de vol manuellement, avec juste une capture d'écran, une fois la mission créée."
               className="mb-3"
             />
-            <div className="max-w-sm">
+            <div>
               <span className="mb-2 block text-sm font-medium text-ink">Zones de vol (fichier KML)</span>
               <FileDropzone
                 label={kmlFile ? kmlFile.name : "Glisser le fichier KML ici, ou cliquer pour parcourir"}

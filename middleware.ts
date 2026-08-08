@@ -31,8 +31,11 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPrivate = request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/missions");
+  const isPrivate =
+    request.nextUrl.pathname.startsWith("/dashboard") ||
+    request.nextUrl.pathname.startsWith("/missions") ||
+    request.nextUrl.pathname.startsWith("/accueil") ||
+    request.nextUrl.pathname.startsWith("/admin");
 
   if (isPrivate && !user) {
     const url = request.nextUrl.clone();

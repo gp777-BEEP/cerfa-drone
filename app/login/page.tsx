@@ -41,7 +41,7 @@ function LoginForm() {
     setOrigin(window.location.origin);
     const { data: listener } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN") {
-        router.push("/dashboard");
+        router.push("/accueil");
         router.refresh();
       }
     });

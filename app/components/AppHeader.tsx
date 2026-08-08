@@ -1,11 +1,14 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import SignOutButton from "../dashboard/SignOutButton";
 import DroneIcon from "./DroneIcon";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
+import { createClient } from "@/lib/supabase/client";
+import { ADMIN_EMAILS } from "@/lib/adminEmails";
 
 function NavLink({ href, children }: { href: string; children: ReactNode }) {
   // Contour vert 100% CSS (classe Tailwind statique), jamais piloté par le
@@ -35,10 +38,21 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
 }
 
 export default function AppHeader() {
+  // Lien "Admin" affiché uniquement pour le compte fondateur : vérifié
+  // côté client juste pour l'affichage (la page /admin fait sa propre
+  // vérification côté serveur, seule source de vérité pour l'accès réel).
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.email && ADMIN_EMAILS.includes(data.user.email)) setIsAdmin(true);
+    });
+  }, []);
+
   return (
     <header className="sticky top-0 z-50 nav-glass border-b border-white/10">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3.5">
-        <Link href="/dashboard" className="flex items-center gap-2 font-medium text-ink">
+        <Link href="/accueil" className="flex items-center gap-2 font-medium text-ink">
           <DroneIcon
             size={20}
             className="text-brand"
@@ -47,8 +61,10 @@ export default function AppHeader() {
           Cerfa Drone
         </Link>
         <nav className="flex items-center gap-2 text-sm text-slate-500">
+          <NavLink href="/accueil">Accueil</NavLink>
           <NavLink href="/dashboard">Missions</NavLink>
           <NavLink href="/profile">Profil</NavLink>
+          {isAdmin && <NavLink href="/admin">Admin</NavLink>}
           <SignOutButton />
         </nav>
       </div>

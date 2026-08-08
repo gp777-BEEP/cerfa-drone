@@ -1,11 +1,7 @@
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AppHeader from "../components/AppHeader";
-
-// Accès réservé : une seule vraie option d'auth admin pour l'instant (pas de
-// rôle "admin" en base), donc restreint à l'email du fondateur plutôt que
-// d'ajouter une colonne/table de rôles pour un usage à une seule personne.
-const ADMIN_EMAILS = ["gonnetpaul74@gmail.com"];
+import { ADMIN_EMAILS } from "@/lib/adminEmails";
 
 function daysAgo(iso: string | null | undefined, days: number): boolean {
   if (!iso) return false;
