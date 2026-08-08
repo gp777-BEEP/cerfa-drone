@@ -84,8 +84,7 @@ ${pilotName || ""}`;
   return (
     <div className="mt-4 space-y-2">
       <p className="text-xs text-slate-400">
-        Avant d'envoyer : le mail s'ouvre pré-rempli dans votre logiciel de messagerie habituel, mais un lien de ce
-        type ne peut pas joindre de fichier automatiquement (limitation de sécurité des navigateurs). Pensez à{" "}
+        Le mail s'ouvrira pré-rempli dans votre logiciel de messagerie habituel. Pensez à{" "}
         <strong className="text-ink">joindre le dossier PDF téléchargé</strong> et à relire le message avant de
         l'envoyer.
       </p>

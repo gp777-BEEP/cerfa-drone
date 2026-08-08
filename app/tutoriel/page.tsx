@@ -72,20 +72,20 @@ export default function TutorielPage() {
         <p className="mb-6 text-sm text-slate-500">L'essentiel pour générer un dossier, en 5 étapes.</p>
 
         <div className="space-y-3">
-          <Step icon={<IconMission />} title="1. Créez une mission">
+          <Step icon={<IconProfile />} title="1. Complétez profil et drones">
+            Une seule fois : <strong className="text-ink">identité</strong> et{" "}
+            <strong className="text-ink">drones</strong> se réutilisent automatiquement sur toutes vos
+            missions.
+          </Step>
+          <Step icon={<IconMission />} title="2. Créez une mission">
             <strong className="text-ink">"+ Nouvelle mission"</strong>, un titre et des dates. Le reste peut
             être complété plus tard.
           </Step>
-          <Step icon={<IconZone />} title="2. Décrivez la zone de vol">
+          <Step icon={<IconZone />} title="3. Décrivez la zone de vol">
             <strong className="text-ink">Cerfa déjà rempli</strong>,{" "}
             <strong className="text-ink">fichier KML</strong>, ou{" "}
             <strong className="text-ink">simple capture d'écran</strong> : les trois fonctionnent, à
             combiner librement.
-          </Step>
-          <Step icon={<IconProfile />} title="3. Complétez profil et drones">
-            Une seule fois : <strong className="text-ink">identité</strong> et{" "}
-            <strong className="text-ink">drones</strong> se réutilisent automatiquement sur toutes vos
-            missions.
           </Step>
           <Step icon={<IconGenerate />} title="4. Générez le dossier PDF">
             Un aperçu s'affiche avant le téléchargement.{" "}

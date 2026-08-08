@@ -124,8 +124,6 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   const [kmlMsg, setKmlMsg] = useState("");
   const [importingCerfa, setImportingCerfa] = useState(false);
   const [cerfaMsg, setCerfaMsg] = useState("");
-  const [importingFlyBy, setImportingFlyBy] = useState(false);
-  const [flyByMsg, setFlyByMsg] = useState("");
   const [merging, setMerging] = useState(false);
   const spotlightMerge = useSpotlightHoverBgOnly();
   const spotlightAddZoneSubmit = useSpotlightHoverBgOnly();
@@ -376,18 +374,26 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
         ? `${imported} zone(s) importée(s) depuis le ${sourceLabel}.${gotMissionInfo2} Pensez à ajouter une carte (via KML ou une capture) si besoin.`
         : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}${gotMissionInfo2}`
     );
+    // Referme automatiquement le panneau d'import une fois une zone ajoutée
+    // (retour bêta-testeur : la zone déjà créée et le panneau d'import
+    // restaient affichés ensemble, place inutilement encombrée).
+    if (imported > 0) setShowAddZone(false);
   }
 
-  async function handleImportCerfa(file: File) {
+  // Import unifié (Cerfa ou dossier FlyBy, détecté automatiquement côté
+  // serveur) : remplace les deux dropzones PDF séparées, mêmes raisons que
+  // dans NewMissionForm.tsx (2-3 zones de dépôt donnaient l'impression que
+  // tout était obligatoire).
+  async function handleImportPdf(file: File) {
     setImportingCerfa(true);
     setCerfaMsg("");
     try {
       const body = new FormData();
       body.append("file", file);
-      const res = await fetch("/api/parse-cerfa", { method: "POST", body });
+      const res = await fetch("/api/parse-import", { method: "POST", body });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur d'import");
-      await applyImportedFile(json, "Cerfa", setCerfaMsg);
+      await applyImportedFile(json, json.source === "flyby" ? "dossier de vol FlyBy" : "Cerfa", setCerfaMsg);
     } catch (e: any) {
       setCerfaMsg(`Erreur : ${e.message}`);
     } finally {
@@ -395,20 +401,13 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     }
   }
 
-  async function handleImportFlyBy(file: File) {
-    setImportingFlyBy(true);
-    setFlyByMsg("");
-    try {
-      const body = new FormData();
-      body.append("file", file);
-      const res = await fetch("/api/parse-flyby", { method: "POST", body });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || "Erreur d'import");
-      await applyImportedFile(json, "dossier de vol FlyBy", setFlyByMsg);
-    } catch (e: any) {
-      setFlyByMsg(`Erreur : ${e.message}`);
-    } finally {
-      setImportingFlyBy(false);
+  function handleImportFiles(files: File[]) {
+    for (const file of files) {
+      if (file.name.toLowerCase().endsWith(".kml")) {
+        handleImportKml(file);
+      } else {
+        handleImportPdf(file);
+      }
     }
   }
 
@@ -449,6 +448,9 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
           ? `${imported} zone(s) importée(s) depuis le KML. Vérifiez l'adresse, la hauteur et l'éloignement avant de générer le dossier.${warnings}`
           : `Aucune zone importée.${lastError ? ` Erreur : ${lastError}` : ""}${warnings}`
       );
+      // Referme automatiquement le panneau d'import une fois une zone
+      // ajoutée (cf. applyImportedFile ci-dessus, même logique).
+      if (imported > 0) setShowAddZone(false);
     } catch (e: any) {
       setKmlMsg(`Erreur : ${e.message}`);
     } finally {
@@ -864,53 +866,31 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
                 </button>
               )}
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <span className="mb-1 block text-xs text-slate-500">Cerfa déjà rempli</span>
-                <FileDropzone
-                  label="Glisser le Cerfa ici, ou cliquer pour parcourir"
-                  hint="PDF rempli (DroneKeeper ou autre)"
-                  accept="application/pdf"
-                  disabled={importingCerfa}
-                  onFiles={(files) => handleImportCerfa(files[0])}
-                />
-                {importingCerfa && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
-                <StatusMessage text={cerfaMsg} />
-              </div>
-              <div>
-                <span className="mb-1 block text-xs text-slate-500">Dossier de vol FlyBy</span>
-                <FileDropzone
-                  label="Glisser le dossier de vol FlyBy ici, ou cliquer pour parcourir"
-                  hint="PDF exporté depuis FlyBy (by ASD)"
-                  accept="application/pdf"
-                  disabled={importingFlyBy}
-                  onFiles={(files) => handleImportFlyBy(files[0])}
-                />
-                {importingFlyBy && <p className="mt-2 text-sm text-slate-500">Lecture du PDF...</p>}
-                <StatusMessage text={flyByMsg} />
-                <a href="/tutoriel/flyby" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
-                  Comment récupérer ce fichier ?
-                </a>
-              </div>
-              <div>
-                <span className="mb-1 block text-xs text-slate-500">Fichier KML</span>
-                <FileDropzone
-                  label="Glisser le fichier KML ici, ou cliquer pour parcourir"
-                  hint="Export des zones de vol (DroneKeeper ou autre), avec carte et échelle générées"
-                  accept=".kml"
-                  disabled={importingKml}
-                  onFiles={(files) => handleImportKml(files[0])}
-                />
-                {importingKml && <p className="mt-2 text-sm text-slate-500">Lecture et géolocalisation en cours...</p>}
-                <StatusMessage text={kmlMsg} />
-                <a href="/tutoriel#pas-de-carte" target="_blank" className="mt-1 inline-block text-xs text-brand hover:underline">
-                  Pas de carte sous la main ?
-                </a>
-              </div>
-            </div>
+            <FileDropzone
+              label="Glisser un Cerfa, un dossier FlyBy ou un fichier KML ici, ou cliquer pour parcourir"
+              hint="PDF pré-rempli (DroneKeeper, FlyBy...) ou export KML (carte + échelle) -- le type est détecté automatiquement"
+              accept="application/pdf,.kml"
+              multiple
+              disabled={importingCerfa || importingKml}
+              onFiles={handleImportFiles}
+            />
+            {(importingCerfa || importingKml) && (
+              <p className="mt-2 text-sm text-slate-500">
+                {importingKml ? "Lecture et géolocalisation en cours..." : "Lecture du fichier..."}
+              </p>
+            )}
+            <StatusMessage text={cerfaMsg} />
+            <StatusMessage text={kmlMsg} />
             <p className="mt-2 text-xs text-slate-400">
-              Les deux remplissent l'adresse et la localité. Seul le KML calcule automatiquement la hauteur,
-              l'éloignement et génère une carte avec échelle.
+              Un Cerfa ou un dossier FlyBy remplit l'adresse et la localité. Seul le KML calcule automatiquement la
+              hauteur, l'éloignement et génère une carte avec échelle.{" "}
+              <a href="/tutoriel/flyby" target="_blank" className="text-brand hover:underline">
+                Récupérer un dossier FlyBy
+              </a>{" "}
+              ·{" "}
+              <a href="/tutoriel#pas-de-carte" target="_blank" className="text-brand hover:underline">
+                Pas de carte sous la main ?
+              </a>
             </p>
           </div>
 

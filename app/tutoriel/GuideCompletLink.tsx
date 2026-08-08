@@ -15,7 +15,7 @@ export default function GuideCompletLink() {
       onMouseLeave={spotlight.onMouseLeave}
       onClick={spotlight.onClick}
     >
-      <span>Besoin de plus de détails, cas par cas ?</span>
+      <span>Besoin de plus de détails ?</span>
       <span className="text-brand">Guide complet →</span>
     </Link>
   );

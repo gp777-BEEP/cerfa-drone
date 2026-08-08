@@ -45,6 +45,14 @@ export default function MissionList({
 
   const archivedCount = missions.filter((m) => m.archived).length;
   const visible = missions.filter((m) => showArchived || !m.archived);
+  // Retour bêta-testeur : "Archiver" et "Désarchiver" apparaissaient tous
+  // les deux même quand la sélection ne contenait que des missions déjà
+  // dans l'état correspondant (ex. proposer "Désarchiver" une mission qui
+  // n'est pas archivée). On n'affiche que l'action pertinente pour la
+  // sélection actuelle.
+  const selectedMissions = missions.filter((m) => selected.has(m.id));
+  const canArchive = selectedMissions.some((m) => !m.archived);
+  const canUnarchive = selectedMissions.some((m) => m.archived);
 
   function toggleSelect(id: string) {
     setSelected((prev) => {
@@ -121,20 +129,24 @@ export default function MissionList({
             {selected.size} mission{selected.size > 1 ? "s" : ""} sélectionnée{selected.size > 1 ? "s" : ""}
           </span>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => bulkArchive(true)}
-              disabled={bulkBusy}
-              className="text-xs font-medium text-brand hover:underline disabled:opacity-50"
-            >
-              Archiver
-            </button>
-            <button
-              onClick={() => bulkArchive(false)}
-              disabled={bulkBusy}
-              className="text-xs font-medium text-brand hover:underline disabled:opacity-50"
-            >
-              Désarchiver
-            </button>
+            {canArchive && (
+              <button
+                onClick={() => bulkArchive(true)}
+                disabled={bulkBusy}
+                className="text-xs font-medium text-brand hover:underline disabled:opacity-50"
+              >
+                Archiver
+              </button>
+            )}
+            {canUnarchive && (
+              <button
+                onClick={() => bulkArchive(false)}
+                disabled={bulkBusy}
+                className="text-xs font-medium text-brand hover:underline disabled:opacity-50"
+              >
+                Désarchiver
+              </button>
+            )}
             <button
               onClick={bulkDelete}
               disabled={bulkBusy}

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ErrorBanner, WarningBanner } from "../../components/Banner";
-import Coachmark from "../../components/Coachmark";
 import { useSpotlightHoverFilled } from "@/lib/useSpotlightHover";
 
 export default function GenerateButton({ missionId }: { missionId: string }) {
@@ -17,6 +16,7 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
   // dans une modale (l'iframe utilise le lecteur PDF natif du navigateur,
   // qui gère déjà pagination/zoom/impression sans code supplémentaire).
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   // Ce bouton est rendu à l'intérieur d'une carte .bg-glass (backdrop-filter),
   // qui crée un nouveau "containing block" pour tout descendant en
   // position:fixed (comportement CSS standard) : la modale se retrouvait donc
@@ -63,13 +63,36 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
     }
   }
 
+  // Un simple <a href target="_blank"> laisse le navigateur ouvrir le PDF
+  // dans son visualiseur intégré plutôt que le télécharger (retour
+  // bêta-testeur : "s'ouvre dans une page Google" -- le lien pointe vers le
+  // stockage Supabase, cross-origin, où l'attribut download seul n'est pas
+  // fiable). On récupère le fichier en blob et on force le téléchargement
+  // via une URL locale, ce qui marche quelle que soit l'origine.
+  async function handleDownload() {
+    setDownloading(true);
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = "dossier-cerfa-drone.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch {
+      // Filet de sécurité : si le téléchargement forcé échoue (réseau...),
+      // on retombe sur l'ouverture classique plutôt que de ne rien faire.
+      window.open(url, "_blank");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <div>
-      <Coachmark
-        id="apercu-avant-generation"
-        text="Le dossier s'affichera d'abord dans un aperçu, avant le téléchargement, pour vérifier que tout est correct."
-        className="mb-3"
-      />
       <button
         onClick={(e) => {
           spotlightMain.onClick(e);
@@ -122,18 +145,19 @@ export default function GenerateButton({ missionId }: { missionId: string }) {
                 <WarningBanner className="flex-1">
                   Avant de l'envoyer à la préfecture, n'oubliez pas de signer le document.
                 </WarningBanner>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50"
+                <button
+                  onClick={(e) => {
+                    spotlightDownload.onClick(e);
+                    handleDownload();
+                  }}
+                  disabled={downloading}
+                  className="shrink-0 rounded-md bg-brand px-4 py-2 text-sm font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50 disabled:opacity-50"
                   style={spotlightDownload.style}
                   onMouseMove={spotlightDownload.onMouseMove}
                   onMouseLeave={spotlightDownload.onMouseLeave}
-                  onClick={spotlightDownload.onClick}
                 >
-                  Télécharger
-                </a>
+                  {downloading ? "Téléchargement..." : "Télécharger"}
+                </button>
               </div>
             </div>
           </div>,

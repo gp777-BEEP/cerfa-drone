@@ -32,17 +32,23 @@ export default async function AccueilPage() {
               <h2 className="font-medium text-ink">Ce que fait Cerfa Drone</h2>
             </div>
             <p className="mb-2 text-sm text-slate-400">
-              Cerfa Drone génère automatiquement votre dossier de déclaration préfectorale de vol de drone : le
-              formulaire officiel Cerfa 15476*04 rempli, accompagné de fiches décrivant chaque zone de vol (carte,
-              hauteur, éloignement...), prêts à envoyer à la préfecture compétente.
+              Cerfa Drone génère automatiquement votre dossier de déclaration préfectorale de vol de drone :
             </p>
-            <p className="mb-4 text-sm text-slate-400">
-              Ce que le site ne fait <span className="text-ink">pas</span> : il ne remplace pas votre vérification de
-              l'espace aérien (utilisez Géoportail ou l'app Clearance pour ça), ne délivre aucune autorisation de vol,
-              et ne vous dispense pas de vérifier la réglementation applicable à votre mission.
+            <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-slate-400">
+              <li>Le formulaire officiel Cerfa 15476*04 rempli</li>
+              <li>Des fiches décrivant chaque zone de vol (carte, hauteur, éloignement...)</li>
+              <li>Prêts à envoyer à la préfecture compétente</li>
+            </ul>
+            <p className="mb-2 text-sm text-slate-400">
+              <span className="font-medium text-ink">Ce que le site ne fait pas :</span>
             </p>
+            <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-slate-400">
+              <li>Il ne remplace pas votre vérification de l'espace aérien (utilisez Géoportail ou l'app Clearance pour ça)</li>
+              <li>Il ne délivre aucune autorisation de vol</li>
+              <li>Il ne vous dispense pas de vérifier la réglementation applicable à votre mission</li>
+            </ul>
             <Link href="/tutoriel" className="text-sm font-medium text-brand hover:underline">
-              Voir le petit tutoriel →
+              Voir le tutoriel →
             </Link>
           </section>
 
@@ -52,9 +58,9 @@ export default async function AccueilPage() {
               <h2 className="font-medium text-ink">Complétez votre profil</h2>
             </div>
             <p className="mb-4 text-sm text-slate-400">
-              Votre nom, votre adresse et vos drones sont réutilisés automatiquement pour remplir le Cerfa de{" "}
-              <span className="text-ink">toutes</span> vos missions : ne les ressaisissez qu'une fois, ici. Sans
-              profil rempli, le Cerfa généré aura des champs manquants.
+              Votre nom, votre adresse et vos drones sont réutilisés automatiquement pour remplir le Cerfa de toutes
+              vos missions : ne les ressaisissez qu'une fois, ici. Sans profil rempli, le Cerfa généré aura des
+              champs manquants.
             </p>
             <Link href="/profile" className="text-sm font-medium text-brand hover:underline">
               Compléter mon profil →
@@ -67,39 +73,28 @@ export default async function AccueilPage() {
               <h2 className="font-medium text-ink">Créez votre première mission</h2>
             </div>
             <p className="mb-4 text-sm text-slate-400">
-              Une mission regroupe les dates de vol, les zones survolées et les drones utilisés. Importez un Cerfa ou
-              un KML déjà existant pour préremplir automatiquement, ou partez de zéro.
+              Que vous partiez de zéro ou que vous ayez déjà un Cerfa prérempli (DroneKeeper ou autre) ou un fichier
+              KML existant, remplissez tous les éléments importants pour finaliser votre mission.
             </p>
             <Link href="/missions/new" className="text-sm font-medium text-brand hover:underline">
               Créer une mission →
             </Link>
           </section>
+
+          <section className="bg-glass p-6">
+            <div className="mb-3 flex items-center gap-2">
+              <StepNumber n={4} />
+              <h2 className="font-medium text-ink">Soutenez le projet</h2>
+            </div>
+            <p className="mb-4 text-sm text-slate-400">
+              Cerfa Drone est et restera 100 % gratuit. Si l'outil vous fait gagner du temps, un don est toujours
+              apprécié, mais reste entièrement optionnel.
+            </p>
+            <Link href="/don" className="text-sm font-medium text-brand hover:underline">
+              Faire un don →
+            </Link>
+          </section>
         </div>
-
-        <p className="mt-8 text-center text-sm text-slate-500">
-          <Link href="/dashboard" className="hover:text-brand hover:underline">
-            Aller directement à mes missions →
-          </Link>
-        </p>
-
-        {/* Don libre : n'apparaît que si NEXT_PUBLIC_DONATION_URL est
-            configuré (Vercel > Settings > Environment Variables) -- reste
-            invisible tant qu'aucun lien de don réel n'a été fourni, plutôt
-            qu'un bouton mort. Cerfa Drone reste gratuit, ce bandeau est
-            volontairement discret (pas de pop-up, pas de relance). */}
-        {process.env.NEXT_PUBLIC_DONATION_URL && (
-          <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-center text-xs text-slate-500">
-            Cerfa Drone est et restera gratuit.{" "}
-            <a
-              href={process.env.NEXT_PUBLIC_DONATION_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-brand hover:underline"
-            >
-              Si l'outil vous fait gagner du temps, un petit don est toujours apprécié →
-            </a>
-          </div>
-        )}
       </main>
     </>
   );

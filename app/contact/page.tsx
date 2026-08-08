@@ -7,9 +7,12 @@ export default function ContactPage() {
       <main className="mx-auto max-w-2xl px-6 py-12">
         <h1 className="mb-4 text-2xl font-medium text-ink">Contact</h1>
         <p className="mb-6 text-slate-600">
-          Une question, un problème avec un dossier généré, ou besoin d'aide pour démarrer ? Le formulaire de
-          contact direct arrive bientôt. En attendant, passez par la page Suggestions ci-dessous, les
-          messages y sont lus personnellement.
+          Une question, un problème avec un dossier généré, ou besoin d'aide pour démarrer ? Passez par la page
+          Suggestions ci-dessous (les messages y sont lus personnellement), ou écrivez directement à{" "}
+          <a href="mailto:gonnetpaul74+cerfa@gmail.com" className="text-brand hover:underline">
+            gonnetpaul74+cerfa@gmail.com
+          </a>
+          .
         </p>
         <a
           href="/suggestions"

@@ -17,8 +17,9 @@ export default function ConfidentialitePage() {
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Pourquoi ces données</h2>
       <p>
-        Uniquement pour pré-remplir et générer vos déclarations Cerfa 15476*04 et leurs annexes. Aucune
-        donnée n'est vendue, partagée avec des tiers à des fins commerciales, ou utilisée à d'autres fins.
+        Uniquement pour pré-remplir et générer vos déclarations Cerfa 15476*04 et leurs annexes. Vos données ne
+        sont ni vendues, ni échangées, ni cédées à un tiers de quelque manière que ce soit, et ne sont utilisées
+        à aucune autre fin que celle décrite ici.
       </p>
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Où sont stockées les données</h2>

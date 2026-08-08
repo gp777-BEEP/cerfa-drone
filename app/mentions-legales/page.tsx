@@ -9,15 +9,19 @@ export default function MentionsLegalesPage() {
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Éditeur du site</h2>
       <p>
-        Cerfa Drone est édité à titre individuel par un télépilote de drone.
-        <br />
-        <span className="text-slate-400">
-          [Coordonnées complètes de l'éditeur (nom, adresse, contact) à compléter prochainement]
-        </span>
+        Cerfa Drone est édité à titre individuel et non professionnel par un télépilote de drone, contactable via{" "}
+        <a href="/contact" className="text-brand hover:underline">
+          la page Contact
+        </a>
+        . Conformément à l'article 1-1, II de la loi n° 2004-575 du 21 juin 2004 (LCEN), les éditeurs non
+        professionnels agissant à titre personnel peuvent ne pas rendre publiques leurs coordonnées
+        d'identification, à condition de les avoir communiquées à leur hébergeur : c'est le choix fait ici. Ces
+        informations restent transmissibles à toute autorité qui en ferait la demande dans les conditions prévues
+        par la loi.
       </p>
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Directeur de la publication</h2>
-      <p className="text-slate-400">[À compléter]</p>
+      <p>L'éditeur du site, tel que défini ci-dessus.</p>
 
       <h2 className="mb-2 mt-6 font-medium text-ink">Hébergement</h2>
       <p>

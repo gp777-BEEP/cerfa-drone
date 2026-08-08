@@ -7,10 +7,14 @@ export default function DroneChecklist({
   drones,
   checkedKeys,
   onToggle,
+  onSetAll,
 }: {
   drones: Drone[];
   checkedKeys: Set<string>;
   onToggle: (key: string) => void;
+  // Optionnel : "tout cocher" / "tout décocher" (retour bêta-testeur), pas
+  // affiché si absent (ex. listes très courtes où ça n'apporte rien).
+  onSetAll?: (keys: string[]) => void;
 }) {
   if (drones.length === 0) {
     return (
@@ -24,17 +28,43 @@ export default function DroneChecklist({
     );
   }
 
+  const allKeys = drones.map(droneKey);
+  const allChecked = allKeys.every((k) => checkedKeys.has(k));
+  const noneChecked = allKeys.every((k) => !checkedKeys.has(k));
+
   return (
-    <div className="space-y-1.5">
-      {drones.map((d) => {
-        const key = droneKey(d);
-        return (
-          <label key={key} className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={checkedKeys.has(key)} onChange={() => onToggle(key)} />
-            {droneLabel(d)}
-          </label>
-        );
-      })}
+    <div>
+      {onSetAll && drones.length > 1 && (
+        <div className="mb-2 flex gap-3 text-xs">
+          <button
+            type="button"
+            onClick={() => onSetAll(allKeys)}
+            disabled={allChecked}
+            className="text-brand hover:underline disabled:cursor-default disabled:text-slate-400 disabled:no-underline"
+          >
+            Tout sélectionner
+          </button>
+          <button
+            type="button"
+            onClick={() => onSetAll([])}
+            disabled={noneChecked}
+            className="text-brand hover:underline disabled:cursor-default disabled:text-slate-400 disabled:no-underline"
+          >
+            Tout désélectionner
+          </button>
+        </div>
+      )}
+      <div className="space-y-1.5">
+        {drones.map((d) => {
+          const key = droneKey(d);
+          return (
+            <label key={key} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={checkedKeys.has(key)} onChange={() => onToggle(key)} />
+              {droneLabel(d)}
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -62,13 +62,19 @@ async function handle(req: NextRequest) {
 
   // Filigrane discret (logo + couleur) sur les fiches de zone / page de
   // garde générées -- jamais sur le Cerfa officiel. N'est appliqué que si
-  // l'utilisateur a effectivement importé un logo dans son profil.
+  // l'utilisateur a explicitement activé le toggle "Personnalisation du
+  // dossier" dans son profil (colonne personalization_enabled). Avant, ce
+  // signal était uniquement la présence d'un logo importé : un utilisateur
+  // qui choisissait juste une couleur d'accent sans logo ne voyait donc
+  // jamais rien s'appliquer sur son dossier généré, même après avoir
+  // enregistré son choix -- retour bêta-testeur "la personnalisation
+  // n'apparaît jamais dans le PDF généré".
   let logoBytes: Uint8Array | null = null;
   if (profile?.logo_path) {
     const { data: logoData } = await admin.storage.from("logos").download(profile.logo_path);
     if (logoData) logoBytes = new Uint8Array(await logoData.arrayBuffer());
   }
-  const branding = logoBytes
+  const branding = profile?.personalization_enabled
     ? { logoBytes, color: profile?.brand_color || "#41fabb", style: profile?.dossier_style || "filigrane" }
     : null;
 
@@ -93,9 +99,20 @@ async function handle(req: NextRequest) {
       const { data: imgData } = await admin.storage.from("zone-images").download(imgPath);
       if (imgData) images.push(new Uint8Array(await imgData.arrayBuffer()));
     }
+    // Le titre retombe sur l'adresse quand la zone n'a pas de nom propre
+    // (import Cerfa/FlyBy notamment) : dans ce cas, ne pas aussi répéter
+    // l'adresse complète dans le sous-titre en dessous -- ne garder que
+    // code postal + localité, sinon la fiche affiche deux fois la même
+    // information ("69002, Lyon, Rhône, France, 69002, Lyon").
+    const zoneTitle = zone.title || zone.adresse || "Zone de vol";
+    const cpLocalite = [zone.code_postal, zone.localite].filter(Boolean).join(" ");
+    const address =
+      zone.adresse && zone.adresse !== zoneTitle
+        ? [zone.adresse, cpLocalite].filter(Boolean).join(", ")
+        : cpLocalite || undefined;
     zoneCardInputs.push({
-      title: zone.title || zone.adresse || "Zone de vol",
-      address: [zone.adresse, zone.code_postal, zone.localite].filter(Boolean).join(", "),
+      title: zoneTitle,
+      address,
       images,
       notes: zone.notes || undefined,
       descriptionSite: zone.description_site || undefined,

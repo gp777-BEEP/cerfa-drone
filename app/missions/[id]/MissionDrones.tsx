@@ -70,7 +70,15 @@ export default function MissionDrones({
 
   return (
     <div>
-      <DroneChecklist drones={visibleDrones} checkedKeys={checkedKeys} onToggle={toggle} />
+      <DroneChecklist
+        drones={visibleDrones}
+        checkedKeys={checkedKeys}
+        onToggle={toggle}
+        onSetAll={(keys) => {
+          setSaved(false);
+          setCheckedKeys(new Set(keys));
+        }}
+      />
       {collapsed && checkedKeys.size < allDrones.length && (
         <button
           type="button"

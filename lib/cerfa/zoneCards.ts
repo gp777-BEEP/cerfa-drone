@@ -162,10 +162,11 @@ export async function generateZoneCards(
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // Filigrane discret : uniquement si un logo a été fourni (le profil a
-  // toujours une couleur en base dès qu'il est enregistré une fois, donc on
-  // se cale sur la présence du logo pour ne rien afficher tant que
-  // l'utilisateur n'a pas explicitement personnalisé son dossier).
+  // "branding" n'est passé (non-null) que si la personnalisation est
+  // explicitement activée côté profil (cf. generate-dossier/route.ts) : la
+  // couleur d'accent s'applique donc même sans logo importé (bandeau /
+  // page de garde colorés), le logo venant simplement s'ajouter par-dessus
+  // quand il est présent.
   let logoImg: PDFImage | null = null;
   if (branding?.logoBytes) {
     try {
@@ -174,7 +175,7 @@ export async function generateZoneCards(
       logoImg = null;
     }
   }
-  const brandColor = branding?.logoBytes ? hexToRgbColor(branding.color || "#41fabb") : null;
+  const brandColor = branding ? hexToRgbColor(branding.color || "#41fabb") : null;
   const dossierStyle: DossierStyle = branding?.style || "filigrane";
 
   if (missionTitle) {

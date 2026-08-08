@@ -9,6 +9,13 @@
 
 export interface Profile {
   full_name?: string | null;
+  // Nom et prénom saisis séparément (retour bêta-testeur : deviner la
+  // coupure dans un "nom complet" à rallonge, ex. "Pierre-Louis Marie Jean
+  // Gonnet", n'est pas fiable). Prioritaires sur full_name quand présents ;
+  // ce dernier reste recalculé/conservé pour compatibilité (affichage
+  // "Bienvenue, prénom" sur /accueil notamment).
+  first_name?: string | null;
+  last_name?: string | null;
   address?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -95,7 +102,10 @@ function toDdMmYyyy(iso?: string | null): string {
 }
 
 export function buildMissionData(profile: Profile, mission: MissionRow, zones: ZoneRow[]) {
-  const { nom, prenom } = splitName(profile.full_name);
+  const { nom, prenom } =
+    profile.first_name || profile.last_name
+      ? { nom: profile.last_name || "", prenom: profile.first_name || "" }
+      : splitName(profile.full_name);
   const answers = mission.answers || {};
 
   // Section "1. L'exploitant" du Cerfa a deux colonnes bien distinctes :

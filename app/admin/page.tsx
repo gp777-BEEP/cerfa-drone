@@ -29,15 +29,22 @@ export default async function AdminPage() {
   const { data: usersPage } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   const users = usersPage?.users || [];
 
-  const [{ count: missionsCount }, { count: documentsCount }, { count: suggestionsCount }, { data: recentSuggestions }] =
+  const [{ count: missionsCount }, { count: documentsCount }, { count: suggestionsCount }, { data: recentSuggestions }, { data: profiles }] =
     await Promise.all([
       admin.from("missions").select("id", { count: "exact", head: true }),
       admin.from("documents").select("id", { count: "exact", head: true }),
       admin.from("suggestions").select("id", { count: "exact", head: true }),
       admin.from("suggestions").select("id, message, created_at, user_id").order("created_at", { ascending: false }).limit(30),
+      admin.from("profiles").select("id, full_name"),
     ]);
 
   const emailByUserId = new Map<string, string>(users.map((u: any) => [u.id as string, (u.email as string) || ""]));
+  // Nom affiché à côté de l'email pour chaque suggestion (retour
+  // bêta-testeur) : facultatif, un profil non rempli retombe juste sur
+  // l'email seul.
+  const nameByUserId = new Map<string, string>(
+    (profiles || []).filter((p: any) => p.full_name).map((p: any) => [p.id as string, p.full_name as string])
+  );
 
   const totalUsers = users.length;
   const activeUsers7d = users.filter((u: any) => daysAgo(u.last_sign_in_at, 7)).length;
@@ -92,7 +99,10 @@ export default async function AdminPage() {
                 <div key={s.id} className="border-l-2 border-brand px-4 py-3">
                   <p className="text-sm text-ink">{s.message}</p>
                   <p className="mt-1 text-xs text-slate-400">
-                    {emailByUserId.get(s.user_id) || "Utilisateur inconnu"} · {fmtDateTime(s.created_at)}
+                    {nameByUserId.get(s.user_id)
+                      ? `${nameByUserId.get(s.user_id)} (${emailByUserId.get(s.user_id) || "email inconnu"})`
+                      : emailByUserId.get(s.user_id) || "Utilisateur inconnu"}{" "}
+                    · {fmtDateTime(s.created_at)}
                   </p>
                 </div>
               ))}

@@ -10,6 +10,7 @@ import StatusMessage from "../components/StatusMessage";
 import FieldHint from "../components/FieldHint";
 import DroneIcon from "../components/DroneIcon";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
+import UnsavedChangesGuard from "../components/UnsavedChangesGuard";
 
 type Drone = {
   constructeur: string;
@@ -40,7 +41,19 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const router = useRouter();
   const [tab, setTab] = useState<"infos" | "drones">("infos");
 
-  const [fullName, setFullName] = useState(initialProfile?.full_name || "");
+  // Nom et prénom en deux champs distincts (retour bêta-testeur : un seul
+  // "Nom complet" oblige à deviner où couper pour remplir les cases Nom /
+  // Prénom du Cerfa, pas fiable pour les noms composés). Si le profil n'a
+  // que l'ancien full_name (avant cette migration), on le répartit une
+  // première fois entre les deux champs pour ne rien perdre.
+  const [firstName, setFirstName] = useState(
+    initialProfile?.first_name || (initialProfile?.full_name || "").trim().split(/\s+/)[0] || ""
+  );
+  const [lastName, setLastName] = useState(
+    initialProfile?.last_name ||
+      (initialProfile?.full_name || "").trim().split(/\s+/).slice(1).join(" ") ||
+      ""
+  );
   // Adresse en 3 champs séparés (rue / code postal / ville) plutôt qu'un
   // seul champ texte libre, plus fiable à relire et à recopier sur le Cerfa
   // -- retour bêta-testeur. Si le profil existant n'a que l'ancienne adresse
@@ -67,6 +80,11 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const spotlightSave = useSpotlightHoverBgOnly();
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
+  // Avertissement avant de quitter la page avec des modifs non enregistrées
+  // (cf. UnsavedChangesGuard) : mis à true au moindre clic ou changement de
+  // champ dans le formulaire (capture sur le <form> plus bas), remis à
+  // false une fois l'enregistrement réussi.
+  const [dirty, setDirty] = useState(false);
 
   // Personnalisation du dossier généré (filigrane discret sur les fiches de
   // zone et la page de garde -- jamais sur le Cerfa officiel lui-même,
@@ -85,6 +103,18 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   ];
   const [dossierStyle, setDossierStyle] = useState<"bandeau" | "garde" | "filigrane" | "combine">(
     initialProfile?.dossier_style || "filigrane"
+  );
+  // Repliée et désactivée par défaut (retour bêta-testeur : "avoir une
+  // option pour activer/désactiver la personnalisation, désactivée et
+  // pliée par défaut, dépliée au clic sur le toggle"). Ce même booléen sert
+  // à la fois d'état d'affichage (replié/déplié) ET de signal enregistré en
+  // base pour la génération du PDF -- avant, seule la présence d'un logo
+  // déclenchait la personnalisation côté serveur, ce qui fait qu'une couleur
+  // seule (sans logo) ne s'affichait jamais sur le dossier généré, même
+  // choisie explicitement. Un profil qui avait déjà un logo avant l'ajout de
+  // ce toggle reste ouvert/activé par défaut, pour ne rien casser.
+  const [personalizationOpen, setPersonalizationOpen] = useState<boolean>(
+    initialProfile?.personalization_enabled ?? !!initialProfile?.logo_path
   );
 
   // Le logo n'a besoin d'être affiché qu'en petit (coin de page, bandeau...) :
@@ -187,7 +217,11 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       const res = await fetch("/api/parse-alphatango-releve", { method: "POST", body });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur d'import");
-      if (json.data.full_name) setFullName(json.data.full_name);
+      if (json.data.full_name) {
+        const parts = json.data.full_name.trim().split(/\s+/);
+        setFirstName(parts[0] || "");
+        setLastName(parts.slice(1).join(" "));
+      }
       if (json.data.numero_exploitant) setNumeroExploitant(json.data.numero_exploitant);
       setImportMsgInfos(
         json.data.full_name
@@ -220,8 +254,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function doSave(): Promise<boolean> {
     setSaving(true);
     setSaved(false);
     setSaveError("");
@@ -231,7 +264,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
     if (!user) {
       setSaving(false);
       setSaveError("Session expirée, reconnectez-vous.");
-      return;
+      return false;
     }
 
     // Upload du logo si un nouveau fichier a été choisi (chemin scopé au
@@ -244,7 +277,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       if (uploadErr) {
         setSaving(false);
         setSaveError("Erreur lors de l'envoi du logo : " + uploadErr.message);
-        return;
+        return false;
       }
       finalLogoPath = path;
     }
@@ -256,10 +289,14 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       .filter(Boolean)
       .join(", ");
 
+    const composedFullName = [firstName, lastName].filter(Boolean).join(" ");
+
     const { error } = await supabase
       .from("profiles")
       .update({
-        full_name: fullName,
+        full_name: composedFullName,
+        first_name: firstName,
+        last_name: lastName,
         address: composedAddress,
         address_street: addressStreet,
         address_postal_code: addressPostalCode,
@@ -277,6 +314,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         logo_path: finalLogoPath,
         brand_color: brandColor,
         dossier_style: dossierStyle,
+        personalization_enabled: personalizationOpen,
         updated_at: new Date().toISOString(),
       })
       .eq("id", user.id);
@@ -284,18 +322,32 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
     setSaving(false);
     if (error) {
       setSaveError("Erreur lors de l'enregistrement : " + error.message);
-      return;
+      return false;
     }
     setLogoPath(finalLogoPath);
     setLogoFile(null);
     setSaved(true);
+    setDirty(false);
     router.refresh();
+    return true;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await doSave();
   }
 
   const dronesCount = drones.filter((d) => d.constructeur || d.modele).length;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <>
+      <UnsavedChangesGuard dirty={dirty} onSave={doSave} />
+      <form
+        onSubmit={handleSubmit}
+        onChangeCapture={() => setDirty(true)}
+        onClickCapture={() => setDirty(true)}
+        className="space-y-6"
+      >
       <div className="flex gap-1 border-b border-slate-200">
         <TabButton active={tab === "infos"} onClick={() => setTab("infos")}>
           Informations
@@ -326,7 +378,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         <div className="bg-glass p-5">
           <h2 className="mb-4 font-medium text-ink">Vous</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Nom complet" value={fullName} onChange={setFullName} />
+            <Field label="Prénom" value={firstName} onChange={setFirstName} />
+            <Field label="Nom" value={lastName} onChange={setLastName} />
             <Field
               label="Qualité"
               value={qualite}
@@ -419,8 +472,35 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         </div>
 
         <div className="bg-glass p-5">
-          <h2 className="mb-1 font-medium text-ink">Personnalisation du dossier</h2>
-          <p className="mb-4 text-xs text-slate-500">
+          <button
+            type="button"
+            onClick={() => setPersonalizationOpen((v) => !v)}
+            className="flex w-full items-center justify-between text-left"
+            aria-expanded={personalizationOpen}
+          >
+            <span>
+              <h2 className="font-medium text-ink">Personnalisation du dossier</h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Facultatif : logo et couleur d'accent sur la page de garde et les fiches de zone.
+              </p>
+            </span>
+            <span
+              role="switch"
+              aria-checked={personalizationOpen}
+              className={`ml-4 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                personalizationOpen ? "bg-brand" : "bg-white/15"
+              }`}
+            >
+              <span
+                className={`h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                  personalizationOpen ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </span>
+          </button>
+          {personalizationOpen && (
+            <>
+          <p className="mb-4 mt-4 text-xs text-slate-500">
             Un logo et une couleur d'accent, affichés sur la page de garde et les fiches de zone que l'app
             génère, selon le style choisi ci-dessous. Le Cerfa officiel, lui, reste toujours le formulaire
             standard, inchangé.
@@ -549,6 +629,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
               </p>
             )}
           </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -652,7 +734,8 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         {saved && <span className="text-sm text-brand">Enregistré ✓</span>}
       </div>
       {saveError && <ErrorBanner className="mt-3">{saveError}</ErrorBanner>}
-    </form>
+      </form>
+    </>
   );
 }
 

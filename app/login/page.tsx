@@ -55,7 +55,8 @@ function LoginForm() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <h1 className="mb-1 text-center text-2xl font-medium text-ink">Cerfa Drone</h1>
-      <p className="mb-6 text-center text-sm text-slate-400">{VIEW_TITLE[view]}</p>
+      <p className="mb-1 text-center text-sm text-slate-400">{VIEW_TITLE[view]}</p>
+      <p className="mb-6 text-center text-xs text-brand">100 % gratuit, sans limite</p>
 
       {authError === "confirmation_failed" && (
         <ErrorBanner className="mb-4">
