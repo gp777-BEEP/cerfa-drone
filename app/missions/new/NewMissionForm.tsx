@@ -432,11 +432,11 @@ export default function NewMissionForm({
   if (hasCerfa === null) {
     return (
       <div className="bg-glass p-6">
-        <h2 className="mb-2 text-lg font-medium text-ink">Avez-vous déjà un Cerfa pré-rempli pour cette mission ?</h2>
+        <h2 className="mb-2 text-lg font-medium text-ink">Nouvelle mission</h2>
         <p className="mb-5 text-sm text-slate-500">
-          Un fichier PDF déjà rempli (DroneKeeper ou un autre outil) permet de préremplir automatiquement vos
-          infos, vos drones et les dates. Sans Cerfa, pas de problème : vous pourrez tout saisir à la main juste
-          après (et importer un fichier KML pour la carte).
+          Pour remplir cette mission automatiquement, le site a besoin d'un fichier que vous avez peut-être déjà :
+          un Cerfa pré-rempli (DroneKeeper ou un autre outil), un dossier de vol FlyBy, ou un fichier KML pour la
+          carte des zones. Si vous n'avez rien de tout ça, pas de problème : vous pourrez tout saisir à la main.
         </p>
         <div className="flex flex-wrap gap-3">
           <button
@@ -445,12 +445,12 @@ export default function NewMissionForm({
               spotlightHasCerfaOui.onClick(e);
               setHasCerfa("oui");
             }}
-            className="rounded-md bg-brand px-6 py-2.5 font-medium text-brand-ink outline-none transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-brand/50"
+            className="rounded-md border border-brand px-6 py-2.5 font-medium text-brand outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
             style={spotlightHasCerfaOui.style}
             onMouseMove={spotlightHasCerfaOui.onMouseMove}
             onMouseLeave={spotlightHasCerfaOui.onMouseLeave}
           >
-            Oui, je l'ai
+            Cerfa pré-rempli (DroneKeeper ou autre)
           </button>
           <button
             type="button"
@@ -463,7 +463,7 @@ export default function NewMissionForm({
             onMouseMove={spotlightHasCerfaNon.onMouseMove}
             onMouseLeave={spotlightHasCerfaNon.onMouseLeave}
           >
-            Non
+            Partir de zéro
           </button>
         </div>
       </div>

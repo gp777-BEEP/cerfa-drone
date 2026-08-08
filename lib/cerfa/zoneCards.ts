@@ -45,6 +45,61 @@ function hexToRgbColor(hex: string) {
   return rgb(parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255);
 }
 
+function hexToRgbTuple(hex: string): [number, number, number] {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
+  if (!m) return [0.255, 0.98, 0.733];
+  return [parseInt(m[1], 16) / 255, parseInt(m[2], 16) / 255, parseInt(m[3], 16) / 255];
+}
+
+function lightenTuple([r, g, b]: [number, number, number], amount: number): [number, number, number] {
+  return [r + (1 - r) * amount, g + (1 - g) * amount, b + (1 - b) * amount];
+}
+
+// Dégradé "monochrome clair" (proposition retenue) : dérivé d'une seule
+// couleur choisie par l'utilisateur (celle du sélecteur existant), qui
+// s'éclaircit en 2 étapes -- pas besoin de stocker plusieurs couleurs en
+// base, tout se calcule à partir du brand_color existant.
+function gradientStopsFromHex(hex: string): [number, number, number][] {
+  const base = hexToRgbTuple(hex);
+  return [base, lightenTuple(base, 0.45), lightenTuple(base, 0.85)];
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+// Dessine un rectangle en dégradé horizontal en le découpant en fines
+// bandes verticales de couleur interpolée (pdf-lib n'a pas de remplissage
+// en dégradé natif) -- approche robuste plutôt que les patterns de
+// shading bas niveau du PDF, pour un document qui part en préfecture.
+function drawGradientRect(
+  page: any,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  stops: [number, number, number][]
+) {
+  const segments: number = 48;
+  const segW = width / segments;
+  const segCount = stops.length - 1;
+  for (let i = 0; i < segments; i++) {
+    const t = segments === 1 ? 0 : i / (segments - 1);
+    const scaled = t * segCount;
+    const idx = Math.min(Math.floor(scaled), segCount - 1);
+    const localT = scaled - idx;
+    const [r1, g1, b1] = stops[idx];
+    const [r2, g2, b2] = stops[idx + 1];
+    page.drawRectangle({
+      x: x + i * segW,
+      y,
+      width: segW + 0.5,
+      height,
+      color: rgb(lerp(r1, r2, localT), lerp(g1, g2, localT), lerp(b1, b2, localT)),
+    });
+  }
+}
+
 // Personnalisation du dossier : logo + couleur d'accent affichés sur la page
 // de garde et les fiches de zone générées, jamais sur le Cerfa officiel
 // lui-même (ce fichier ne touche que les fiches de zone / page de garde).
@@ -73,11 +128,11 @@ function drawCornerTick(page: any, logoImg: PDFImage | null, color: ReturnType<t
   }
 }
 
-// Style "bandeau" : petit logo en coin, filet de couleur sous le titre de
+// Style "bandeau" : petit logo en coin, filet en dégradé sous le titre de
 // chaque page (repris à l'identique sur la page de garde et les fiches).
-function drawHeaderBandeau(page: any, logoImg: PDFImage | null, color: ReturnType<typeof rgb>) {
+function drawHeaderBandeau(page: any, logoImg: PDFImage | null, colorHex: string) {
   const lineY = PAGE_H - MARGIN - 44;
-  page.drawRectangle({ x: MARGIN, y: lineY, width: PAGE_W - 2 * MARGIN, height: 1.4, color });
+  drawGradientRect(page, MARGIN, lineY, PAGE_W - 2 * MARGIN, 1.4, gradientStopsFromHex(colorHex));
   if (logoImg) {
     const maxDim = 20;
     const scale = Math.min(maxDim / logoImg.width, maxDim / logoImg.height, 1);
@@ -87,12 +142,12 @@ function drawHeaderBandeau(page: any, logoImg: PDFImage | null, color: ReturnTyp
   }
 }
 
-// Style "garde" (et variante "combine") : bandeau coloré en haut de la page
-// de garde, avec le logo centré dedans (en blanc si pas de logo, un simple
-// bandeau de couleur reste marquant).
-function drawCoverBand(page: any, logoImg: PDFImage | null, color: ReturnType<typeof rgb>, slim: boolean) {
+// Style "garde" (et variante "combine") : bandeau en dégradé en haut de la
+// page de garde, avec le logo centré dedans (en blanc si pas de logo, le
+// bandeau seul reste marquant).
+function drawCoverBand(page: any, logoImg: PDFImage | null, colorHex: string, slim: boolean) {
   const bandH = slim ? 70 : PAGE_H * 0.24;
-  page.drawRectangle({ x: 0, y: PAGE_H - bandH, width: PAGE_W, height: bandH, color });
+  drawGradientRect(page, 0, PAGE_H - bandH, PAGE_W, bandH, gradientStopsFromHex(colorHex));
   if (logoImg) {
     const maxDim = slim ? 34 : 64;
     const scale = Math.min(maxDim / logoImg.width, maxDim / logoImg.height, 1);
@@ -102,19 +157,20 @@ function drawCoverBand(page: any, logoImg: PDFImage | null, color: ReturnType<ty
   }
 }
 
-function drawBranding(page: any, style: DossierStyle, isCover: boolean, logoImg: PDFImage | null, color: ReturnType<typeof rgb>) {
+function drawBranding(page: any, style: DossierStyle, isCover: boolean, logoImg: PDFImage | null, colorHex: string) {
+  const color = hexToRgbColor(colorHex);
   if (style === "garde") {
-    if (isCover) drawCoverBand(page, logoImg, color, false);
+    if (isCover) drawCoverBand(page, logoImg, colorHex, false);
     else drawCornerTick(page, null, color); // fiches de zone : couleur seule, sobre
     return;
   }
   if (style === "combine") {
-    if (isCover) drawCoverBand(page, logoImg, color, true);
-    else drawHeaderBandeau(page, logoImg, color);
+    if (isCover) drawCoverBand(page, logoImg, colorHex, true);
+    else drawHeaderBandeau(page, logoImg, colorHex);
     return;
   }
   if (style === "bandeau") {
-    drawHeaderBandeau(page, logoImg, color);
+    drawHeaderBandeau(page, logoImg, colorHex);
     return;
   }
   drawCornerTick(page, logoImg, color); // "filigrane", par défaut
@@ -175,7 +231,7 @@ export async function generateZoneCards(
       logoImg = null;
     }
   }
-  const brandColor = branding ? hexToRgbColor(branding.color || "#41fabb") : null;
+  const brandColorHex = branding ? branding.color || "#41fabb" : null;
   const dossierStyle: DossierStyle = branding?.style || "filigrane";
 
   if (missionTitle) {
@@ -207,12 +263,12 @@ export async function generateZoneCards(
         subY -= 18;
       }
     }
-    if (brandColor) drawBranding(page, dossierStyle, true, logoImg, brandColor);
+    if (brandColorHex) drawBranding(page, dossierStyle, true, logoImg, brandColorHex);
   }
 
   for (const zone of zones) {
     const page = pdfDoc.addPage([PAGE_W, PAGE_H]);
-    if (brandColor) drawBranding(page, dossierStyle, false, logoImg, brandColor);
+    if (brandColorHex) drawBranding(page, dossierStyle, false, logoImg, brandColorHex);
     let y = PAGE_H - MARGIN;
 
     // Style "épuré" (option retenue parmi 4 propositions) : typographie

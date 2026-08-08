@@ -25,6 +25,7 @@ create table if not exists profiles (
   raison_sociale text,
   siege_social text,
   mandataire_qualite text, -- ex: "Gérant", "Président" (si exploitant_type = 'morale')
+  est_telepilote boolean not null default true, -- false = ne pas préremplir le profil comme télépilote 1 (dirigeant qui ne vole pas)
   drones jsonb default '[]',
   logo_path text, -- chemin dans le bucket "logos", pour le filigrane des fiches de zone générées
   brand_color text, -- couleur d'accent hex, même usage

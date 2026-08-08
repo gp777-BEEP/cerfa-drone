@@ -98,6 +98,14 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
   const [siegeSocial, setSiegeSocial] = useState(initialProfile?.siege_social || "");
   const [sirenSiret, setSirenSiret] = useState(initialProfile?.siren_siret || "");
   const [mandataireQualite, setMandataireQualite] = useState(initialProfile?.mandataire_qualite || "Gérant");
+  // Continuité exploitant/pilotes (retour bêta-testeur) : certaines sociétés
+  // ont un exploitant (le dirigeant, mandataire social) qui ne vole pas
+  // lui-même -- il ne faut alors pas le préremplir automatiquement comme
+  // télépilote 1 d'une mission. Uniquement pertinent pour une "personne
+  // morale" (un freelance en personne physique est presque toujours les
+  // deux à la fois, pas besoin de le demander). true par défaut (et pour
+  // tous les profils existants, comportement historique inchangé).
+  const [estTelepilote, setEstTelepilote] = useState<boolean>(initialProfile?.est_telepilote !== false);
   const [drones, setDrones] = useState<Drone[]>(initialProfile?.drones?.length ? initialProfile.drones : [EMPTY_DRONE]);
   const [saving, setSaving] = useState(false);
   const spotlightSave = useSpotlightHoverBgOnly();
@@ -369,6 +377,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
         siege_social: exploitantType === "morale" ? siegeSocial : null,
         siren_siret: exploitantType === "morale" ? sirenSiret : null,
         mandataire_qualite: exploitantType === "morale" ? mandataireQualite : null,
+        est_telepilote: exploitantType === "morale" ? estTelepilote : true,
         drones: drones.filter((d) => d.constructeur || d.modele),
         logo_path: finalLogoPath,
         brand_color: brandColor,
@@ -536,7 +545,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 Style « {dossierStyleLabel} »
                 {logoPreviewUrl && " · avec logo"}
               </span>
-              <span className="h-4 w-4 shrink-0 rounded-full" style={{ backgroundColor: brandColor }} />
+              <span className="h-4 w-4 shrink-0 rounded-full" style={{ background: brandGradientCss(brandColor) }} />
             </div>
           ) : (
             <span className="text-sm text-slate-500">Désactivée</span>
@@ -702,6 +711,33 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 Le mandataire (représentant légal) déclaré sur le Cerfa sera vous, avec les infos "Vous"
                 ci-dessus (nom, adresse, téléphone, email).
               </p>
+              <div className="sm:col-span-2">
+                <span className="mb-1.5 block text-sm text-ink">Êtes-vous vous-même télépilote sur les missions ?</span>
+                <div className="flex gap-4 text-sm">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="est_telepilote"
+                      checked={estTelepilote}
+                      onChange={() => setEstTelepilote(true)}
+                    />
+                    Oui
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="est_telepilote"
+                      checked={!estTelepilote}
+                      onChange={() => setEstTelepilote(false)}
+                    />
+                    Non
+                  </label>
+                </div>
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Si non, vos infos ne préremplissent plus automatiquement le télépilote 1 d'une nouvelle mission :
+                  vous ajouterez directement les vrais pilotes depuis la page de la mission.
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -825,20 +861,20 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
                 <div className="absolute left-3 top-6 right-3 bottom-9 rounded-sm bg-slate-100" />
                 <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1">
                   {logoSlot(12)}
-                  <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: brandColor, opacity: 0.55 }} />
+                  <div className="h-2 w-2 rounded-sm" style={{ background: brandGradientCss(brandColor), opacity: 0.55 }} />
                 </div>
               </div>
             )}
             {dossierStyle === "bandeau" && (
               <div className="relative h-40 w-28 rounded-md bg-white p-2.5">
                 {logoSlot(16)}
-                <div className="mt-2 h-[3px] w-full rounded-full" style={{ backgroundColor: brandColor }} />
+                <div className="mt-2 h-[3px] w-full rounded-full" style={{ background: brandGradientCss(brandColor) }} />
                 <div className="mt-2 h-24 rounded-sm bg-slate-100" />
               </div>
             )}
             {dossierStyle === "garde" && (
               <div className="relative h-40 w-28 overflow-hidden rounded-md bg-white">
-                <div className="flex h-9 items-center justify-center" style={{ backgroundColor: brandColor }}>
+                <div className="flex h-9 items-center justify-center" style={{ background: brandGradientCss(brandColor) }}>
                   {logoSlot(20)}
                 </div>
                 <div className="p-2.5">
@@ -849,7 +885,7 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
             )}
             {dossierStyle === "combine" && (
               <div className="relative h-40 w-28 overflow-hidden rounded-md bg-white">
-                <div className="flex h-6 items-center justify-center" style={{ backgroundColor: brandColor }}>
+                <div className="flex h-6 items-center justify-center" style={{ background: brandGradientCss(brandColor) }}>
                   {logoSlot(14)}
                 </div>
                 <div className="p-2.5">
@@ -982,6 +1018,22 @@ export default function ProfileForm({ initialProfile }: { initialProfile: any })
       </form>
     </>
   );
+}
+
+// Dégradé "monochrome clair" (proposition retenue pour la personnalisation) :
+// dérivé d'une seule couleur (celle du sélecteur existant), éclaircie en 2
+// étapes -- même logique que côté génération PDF (zoneCards.ts), pour que
+// l'aperçu dans le profil corresponde exactement au rendu du dossier.
+function lightenHex(hex: string, amount: number): string {
+  const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex.trim());
+  if (!m) return hex;
+  const [r, g, b] = [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+  const lighten = (c: number) => Math.round(c + (255 - c) * amount);
+  return `#${[lighten(r), lighten(g), lighten(b)].map((c) => c.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function brandGradientCss(hex: string): string {
+  return `linear-gradient(90deg, ${hex}, ${lightenHex(hex, 0.45)}, ${lightenHex(hex, 0.85)})`;
 }
 
 function SummaryRow({ label, value }: { label: string; value: string }) {

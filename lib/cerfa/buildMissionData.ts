@@ -38,6 +38,11 @@ export interface Profile {
   siege_social?: string | null;
   siren_siret?: string | null;
   mandataire_qualite?: string | null;
+  // Certaines sociétés ont un exploitant (mandataire) qui ne vole pas
+  // lui-même : true/absent (comportement historique) = on peut se
+  // prérempli comme télépilote 1 par défaut, false = ne jamais le faire
+  // (cf. fallback pilotsList ci-dessous).
+  est_telepilote?: boolean | null;
   drones?: Array<{
     constructeur?: string;
     modele?: string;
@@ -238,15 +243,22 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
   // Télépilotes déclarés pour CETTE mission (Cerfa case n°2, jusqu'à 4
   // emplacements sur le formulaire officiel) : si l'utilisateur en a
   // explicitement ajouté via l'onglet "Pilotes" d'une mission, on les
-  // utilise tous ; sinon, seul le profil connecté est déclaré comme
-  // télépilote 1 (comportement historique). Dans ce cas de repli, on ne
+  // utilise tous ; sinon, le profil connecté est déclaré comme télépilote 1
+  // par défaut (comportement historique). Dans ce cas de repli, on ne
   // devine pas le statut salarié/indépendant (jamais demandé avant l'ajout
   // du multi-pilotes) : les cases correspondantes restent simplement
   // décochées, comme avant.
+  //
+  // Exception (continuité exploitant/pilotes) : si le profil a explicitement
+  // indiqué ne pas être lui-même télépilote (typiquement le dirigeant d'une
+  // société qui ne vole pas), on ne le prérempli plus comme télépilote 1 --
+  // mieux vaut une case vide qu'une case fausse sur un document officiel.
+  const profileIsPilot = profile.est_telepilote !== false;
   const pilotsList =
     mission.pilots && mission.pilots.length > 0
       ? mission.pilots
-      : [
+      : profileIsPilot
+      ? [
           {
             nom,
             prenom,
@@ -257,7 +269,8 @@ export function buildMissionData(profile: Profile, mission: MissionRow, zones: Z
             telephone_portable: profile.phone || "",
             courriel: profile.email || "",
           },
-        ];
+        ]
+      : [];
 
   pilotsList.slice(0, 4).forEach((pilot, i) => {
     data[`telepilote${i + 1}`] = {

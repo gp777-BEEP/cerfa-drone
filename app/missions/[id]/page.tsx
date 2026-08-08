@@ -14,6 +14,7 @@ import MissionPilots from "./MissionPilots";
 import MissionSectionsLayout from "./MissionSectionsLayout";
 import AppHeader from "../../components/AppHeader";
 import type { Pilot } from "@/lib/pilots";
+import { EMPTY_PILOT } from "@/lib/pilots";
 
 export default async function MissionPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -72,16 +73,24 @@ export default async function MissionPage({ params }: { params: { id: string } }
   // buildMissionData.ts côté génération du PDF, pour que ce qu'on voit dans
   // l'onglet "Pilotes" corresponde à ce qui sera réellement utilisé tant
   // qu'on n'a rien ajouté/modifié soi-même).
-  const profileAsPilot: Pilot = {
-    nom: profile?.last_name || (profile?.full_name || "").trim().split(/\s+/).slice(1).join(" ") || "",
-    prenom: profile?.first_name || (profile?.full_name || "").trim().split(/\s+/)[0] || "",
-    date_naissance: profile?.date_naissance || "",
-    lieu_naissance: profile?.lieu_naissance || "",
-    adresse: profile?.address || "",
-    statut: "independant",
-    telephone_portable: profile?.phone || "",
-    courriel: profile?.email || "",
-  };
+  //
+  // Exception (continuité exploitant/pilotes) : si le profil a indiqué ne
+  // pas être lui-même télépilote (dirigeant d'une société qui ne vole pas),
+  // on ne le propose plus par défaut -- la liste démarre vide, pour inviter
+  // à ajouter directement les vrais pilotes.
+  const profileIsPilot = profile?.est_telepilote !== false;
+  const profileAsPilot: Pilot = profileIsPilot
+    ? {
+        nom: profile?.last_name || (profile?.full_name || "").trim().split(/\s+/).slice(1).join(" ") || "",
+        prenom: profile?.first_name || (profile?.full_name || "").trim().split(/\s+/)[0] || "",
+        date_naissance: profile?.date_naissance || "",
+        lieu_naissance: profile?.lieu_naissance || "",
+        adresse: profile?.address || "",
+        statut: "independant",
+        telephone_portable: profile?.phone || "",
+        courriel: profile?.email || "",
+      }
+    : { ...EMPTY_PILOT };
 
   const datesOk = !!mission.date_debut && !!mission.date_fin;
   const zonesOk =
@@ -147,8 +156,9 @@ export default async function MissionPage({ params }: { params: { id: string } }
         <div className="bg-glass p-5">
           <h2 className="mb-1 font-medium text-ink">Télépilotes déclarés</h2>
           <p className="mb-3 text-xs text-slate-400">
-            Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Vous êtes ajouté par défaut ;
-            ajoutez-en d'autres à la main ou importez le fichier partagé par un collègue.
+            {profileIsPilot
+              ? "Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Vous êtes ajouté par défaut ; ajoutez-en d'autres à la main ou importez le fichier partagé par un collègue."
+              : "Jusqu'à 4 télépilotes pour cette mission (case n°2 du Cerfa). Votre profil indique que vous n'êtes pas vous-même télépilote : ajoutez directement les pilotes concernés, à la main ou en important le fichier qu'ils vous ont partagé."}
           </p>
           <MissionPilots missionId={mission.id} profileAsPilot={profileAsPilot} initialPilots={mission.pilots} />
         </div>
