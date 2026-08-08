@@ -151,7 +151,7 @@ export default function TutorielDetailPage() {
             <p>
               Pour chaque zone, une petite pastille orange apparaît si la "Description du site" n'est pas
               encore remplie (rassurez-vous, ce n'est pas bloquant, juste un rappel). Deux zones qui
-              décrivent en fait le même endroit (importées séparément par KML et par Cerfa, par exemple)
+              décrivent le même endroit (importées séparément par KML et par Cerfa, par exemple)
               peuvent être fusionnées : sélectionnez-les avec la case à cocher, puis "Fusionner".
             </p>
           </Section>
