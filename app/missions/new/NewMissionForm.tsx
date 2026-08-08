@@ -519,6 +519,7 @@ export default function NewMissionForm({
             onClick={(e) => {
               spotlightHasCerfaNon.onClick(e);
               setHasCerfa("non");
+              setCerfaChecked(false);
             }}
             className="flex max-w-xs flex-col items-start gap-1 rounded-md border border-brand px-6 py-3 text-left outline-none transition-colors hover:bg-brand-light focus-visible:ring-2 focus-visible:ring-brand/50"
             style={spotlightHasCerfaNon.style}
@@ -566,7 +567,7 @@ export default function NewMissionForm({
           className="mb-3"
         />
         <FileDropzone
-          label="Glisser un fichier KML ici, ou une capture d'écran de la zone si vous n'avez pas de KML"
+          label="Glisser un KML ou capture d'écran de la zone"
           hint="KML : carte avec échelle et calculs automatiques (recommandé). Capture d'écran : une zone est créée avec l'image, à compléter ensuite."
           accept="image/*,.kml"
           disabled={importing}
@@ -581,12 +582,12 @@ export default function NewMissionForm({
             checked={cerfaChecked}
             onChange={(e) => setCerfaChecked(e.target.checked)}
           />
-          J'ai aussi un Cerfa pré-rempli (DroneKeeper, FlyBy...)
+          Cerfa pré-rempli (DroneKeeper, FlyBy...)
         </label>
         {cerfaChecked && (
           <div className="mt-3">
             <FileDropzone
-              label="Glisser le Cerfa ou dossier FlyBy pré-rempli ici, ou cliquer pour parcourir"
+              label="Glisser le Cerfa ou dossier FlyBy pré-rempli ici"
               hint="Reprend vos infos, vos drones et vos dates automatiquement -- le type (Cerfa ou FlyBy) est détecté automatiquement"
               accept="application/pdf"
               multiple
