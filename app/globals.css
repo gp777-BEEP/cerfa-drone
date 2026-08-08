@@ -114,3 +114,62 @@ a.border-brand:hover {
 button.border-brand:disabled {
   box-shadow: none;
 }
+
+/* Retour tactile instantané sur tout élément cliquable (audit "apple-design" :
+   la réponse doit démarrer au pointer-down, pas au relâchement -- attendre le
+   survol ou le clic pour donner un premier signe de vie fait paraître
+   l'interface "morte"). Un simple scale down au clic, imperceptible mais
+   perçu comme "j'ai bien appuyé", appliqué globalement plutôt que sur
+   chaque bouton un par un (même logique que le glow ci-dessus). exclut les
+   liens/boutons "vrais" désactivés et les cases à cocher/radios (leur propre
+   retour visuel suffit, un scale y serait bizarre). */
+button:not(:disabled):active,
+a:active {
+  transform: scale(0.97);
+}
+button:not(:disabled),
+a {
+  transition: transform 0.1s ease-out;
+}
+
+/* Confort de lecture : réduit les mouvements pour qui le demande (vertiges,
+   sensibilité au mouvement) sans supprimer le retour visuel lui-même --
+   on garde les changements d'état (couleur, ombre) mais on coupe les
+   transitions/temps d'animation associés. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Confort de lecture : pour qui préfère moins de transparence, les cartes
+   "verre dépoli" deviennent quasi opaques et perdent leur flou -- la
+   hiérarchie visuelle reste (contour + fond distinct), juste sans l'effet
+   de matière translucide. */
+@media (prefers-reduced-transparency: reduce) {
+  .bg-glass,
+  .nav-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .bg-glass {
+    background: #0c100e;
+  }
+  .nav-glass {
+    background: #05100c;
+  }
+}
+
+/* Confort de lecture : contraste renforcé -- bords plus marqués sur les
+   cartes plutôt que de compter sur la seule différence de luminosité du
+   fond translucide pour distinguer les zones de contenu. */
+@media (prefers-contrast: more) {
+  .bg-glass {
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+}

@@ -186,11 +186,21 @@ export async function generateZoneCards(
       size: 26,
       font,
     });
+    // Même filet fin que sur les fiches de zone (style "épuré") : sépare
+    // visuellement le titre du sous-titre sans ajouter de bloc/encadré.
+    const ruleW = 160;
+    page.drawRectangle({
+      x: PAGE_W / 2 - ruleW / 2,
+      y: PAGE_H / 2 - 16,
+      width: ruleW,
+      height: 0.75,
+      color: rgb(0.75, 0.75, 0.75),
+    });
     const showSubtitle =
       missionDescription && missionDescription.trim() && missionDescription.trim() !== missionTitle.trim();
     if (showSubtitle) {
       const subtitleLines = wrapText(missionDescription!.trim(), font, 13, PAGE_W - 2 * MARGIN - 40);
-      let subY = PAGE_H / 2 - 34;
+      let subY = PAGE_H / 2 - 42;
       for (const line of subtitleLines.slice(0, 4)) {
         const w = font.widthOfTextAtSize(line, 13);
         page.drawText(line, { x: PAGE_W / 2 - w / 2, y: subY, size: 13, font, color: GRAY });
@@ -205,38 +215,39 @@ export async function generateZoneCards(
     if (brandColor) drawBranding(page, dossierStyle, false, logoImg, brandColor);
     let y = PAGE_H - MARGIN;
 
+    // Style "épuré" (option retenue parmi 4 propositions) : typographie
+    // centrée, beaucoup de blanc, la carte respire au centre de la page et
+    // les infos numériques (distance/hauteur) passent en-dessous d'elle
+    // plutôt qu'en tête -- moins "formulaire", plus lisible d'un coup d'œil.
     if (missionTitle) {
-      page.drawText(missionTitle, { x: MARGIN, y: PAGE_H - 34, size: 10, font, color: rgb(0.4, 0.4, 0.4) });
+      const w = font.widthOfTextAtSize(missionTitle, 10);
+      page.drawText(missionTitle, { x: PAGE_W / 2 - w / 2, y: PAGE_H - 34, size: 10, font, color: GRAY });
     }
 
-    page.drawText(zone.title, { x: MARGIN, y: y - 34, size: 30, font });
-    y -= 56;
+    const titleSize = 22;
+    const titleW = font.widthOfTextAtSize(zone.title, titleSize);
+    page.drawText(zone.title, { x: PAGE_W / 2 - titleW / 2, y: y - 30, size: titleSize, font });
+    y -= 52;
 
     if (zone.address) {
       const w = font.widthOfTextAtSize(zone.address, 11);
-      page.drawText(zone.address, { x: PAGE_W / 2 - w / 2, y, size: 11, font });
+      page.drawText(zone.address, { x: PAGE_W / 2 - w / 2, y, size: 11, font, color: GRAY });
       y -= 22;
-    }
-
-    if (zone.distanceMaxM || zone.heightMaxM) {
-      if (zone.distanceMaxM) {
-        const t = `Distance max ${zone.distanceMaxM} m`;
-        const w = fontBold.widthOfTextAtSize(t, 12);
-        page.drawText(t, { x: PAGE_W / 2 - w / 2, y, size: 12, font: fontBold });
-        y -= 17;
-      }
-      if (zone.heightMaxM) {
-        const t = `Hauteur max ${zone.heightMaxM} m`;
-        const w = fontBold.widthOfTextAtSize(t, 12);
-        page.drawText(t, { x: PAGE_W / 2 - w / 2, y, size: 12, font: fontBold });
-        y -= 17;
-      }
+    } else {
       y -= 6;
     }
 
+    // Filet fin, centré, sous le titre -- respire l'espace plutôt que de
+    // cloisonner la page avec un bloc d'infos dense.
+    const ruleW = 160;
+    page.drawRectangle({ x: PAGE_W / 2 - ruleW / 2, y, width: ruleW, height: 0.75, color: rgb(0.75, 0.75, 0.75) });
+    y -= 26;
+
+    const hasStats = !!(zone.distanceMaxM || zone.heightMaxM);
     const descLines = zone.descriptionSite ? wrapText(zone.descriptionSite, font, 10, PAGE_W - 2 * MARGIN) : [];
     const descBlockH = descLines.length > 0 ? 20 + descLines.length * 13 + 10 : 0;
-    const reserveBottom = MARGIN + 70 + descBlockH; // description + notes + légende
+    const statsBlockH = hasStats ? 26 : 0;
+    const reserveBottom = MARGIN + 70 + descBlockH + statsBlockH; // stats + description + notes + légende
     const availableH = y - reserveBottom;
     const perImageH = availableH / Math.max(zone.images.length, 1);
     let hasPilotOnMap = false;
@@ -285,6 +296,21 @@ export async function generateZoneCards(
         // image illisible : on l'ignore plutôt que de faire échouer tout le dossier
         y -= 10;
       }
+    }
+
+    // Distance/hauteur max sous la carte plutôt qu'au-dessus (retenu parmi 4
+    // propositions de mise en page, style "épuré") : une seule ligne
+    // compacte, l'œil va du titre à la carte sans bloc de chiffres entre les
+    // deux.
+    if (hasStats) {
+      const parts = [
+        zone.distanceMaxM ? `Distance max ${zone.distanceMaxM} m` : null,
+        zone.heightMaxM ? `Hauteur max ${zone.heightMaxM} m` : null,
+      ].filter(Boolean) as string[];
+      const t = parts.join("   ·   ");
+      const w = fontBold.widthOfTextAtSize(t, 11);
+      page.drawText(t, { x: PAGE_W / 2 - w / 2, y, size: 11, font: fontBold, color: DARK });
+      y -= 24;
     }
 
     if (descLines.length > 0) {
