@@ -152,8 +152,10 @@ export default function TutorielDetailPage() {
 
           <Section id="pas-de-carte" title="Pas de carte sous la main ?" icon={<IconCompass />}>
             <p>
-              L'app ne propose pas d'éditeur de carte intégré (dessiner un polygone précis demande un vrai
-              outil de cartographie). Deux solutions simples et gratuites :
+              <strong className="text-ink">L'éditeur de carte intégré</strong> : sur une mission, dans "Zones
+              de vol" → "Ou tracer une zone sur une carte", vous pouvez dessiner directement votre zone (et
+              placer le télépilote) sans sortir de l'app -- l'éloignement est calculé automatiquement. Sinon,
+              deux solutions simples et gratuites en dehors du site :
             </p>
             <p>
               <strong className="text-ink">DroneKeeper</strong> (gratuit) : cette app de gestion de vol

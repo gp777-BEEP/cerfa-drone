@@ -9,6 +9,7 @@ import StatusMessage from "../../components/StatusMessage";
 import FieldHint from "../../components/FieldHint";
 import AutoTextarea from "../../components/AutoTextarea";
 import Coachmark from "../../components/Coachmark";
+import MapZoneEditor from "./MapZoneEditor";
 import { useSpotlightHoverBgOnly } from "@/lib/useSpotlightHover";
 
 function frToIso(dmy?: string): string {
@@ -138,6 +139,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
   // grosses zones de dépôt bien visibles alors qu'elles ne servent qu'à
   // ajouter une zone SUPPLÉMENTAIRE.
   const [showAddZone, setShowAddZone] = useState(initialZones.length === 0);
+  const [showMapEditor, setShowMapEditor] = useState(false);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState(EMPTY);
@@ -898,6 +900,23 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
             )}
             <StatusMessage text={cerfaMsg} />
             <StatusMessage text={kmlMsg} />
+
+            <button
+              type="button"
+              onClick={() => setShowMapEditor((v) => !v)}
+              className="mt-3 text-xs font-medium text-brand hover:underline"
+            >
+              {showMapEditor ? "Fermer l'éditeur de carte" : "Ou tracer une zone sur une carte →"}
+            </button>
+            {showMapEditor && (
+              <MapZoneEditor
+                missionId={missionId}
+                onCancel={() => setShowMapEditor(false)}
+                onZoneCreated={async (zonesFromKml) => {
+                  await insertZones(zonesFromKml);
+                }}
+              />
+            )}
           </div>
 
           <form onSubmit={addZone} className="space-y-3 border-t border-slate-100 pt-4">

@@ -566,7 +566,7 @@ export default function NewMissionForm({
         </p>
         <Coachmark
           id="import-optionnel-mission"
-          text="Rien sous la main ? Vous pouvez tracer gratuitement votre zone de vol via DroneKeeper et l'exporter en KML pour l'importer ci-dessous. Une simple capture d'écran de la zone suffit, et vous pourrez tout saisir à la main juste après."
+          text="Rien sous la main ? Une fois la mission créée, vous pourrez tracer votre zone directement sur une carte dans l'app, ou déposer une simple capture d'écran. Vous pourrez aussi tout saisir à la main."
           linkHref="/tutoriel#pas-de-carte"
           linkLabel="Comment faire"
           className="mb-3"
