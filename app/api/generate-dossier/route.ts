@@ -100,7 +100,7 @@ async function handle(req: NextRequest) {
       if (imgData) images.push(new Uint8Array(await imgData.arrayBuffer()));
     }
     // Le titre retombe sur l'adresse quand la zone n'a pas de nom propre
-    // (import Cerfa/FlyBy notamment) : dans ce cas, ne pas aussi répéter
+    // (import Cerfa notamment) : dans ce cas, ne pas aussi répéter
     // l'adresse complète dans le sous-titre en dessous -- ne garder que
     // code postal + localité, sinon la fiche affiche deux fois la même
     // information ("69002, Lyon, Rhône, France, 69002, Lyon").

@@ -23,7 +23,7 @@ export default function DonPage() {
             <h2 className="mb-2 font-medium text-ink">Le site restera 100 % gratuit</h2>
             <p className="text-sm text-slate-600">
               Aucune fonctionnalité n'est ni ne sera jamais réservée à un don : toutes les missions, tous les
-              imports (Cerfa, FlyBy, KML) et toutes les personnalisations restent accessibles gratuitement, sans
+              imports (Cerfa, KML) et toutes les personnalisations restent accessibles gratuitement, sans
               limite, à tous les utilisateurs.
             </p>
           </div>

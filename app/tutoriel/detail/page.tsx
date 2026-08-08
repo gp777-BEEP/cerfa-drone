@@ -143,12 +143,6 @@ export default function TutorielDetailPage() {
               remplacer cette image plus tard, en cliquant sur "Modifier" sur une zone déjà créée.
             </p>
             <p>
-              Vous utilisez <strong className="text-ink">FlyBy</strong> pour vos demandes d'autorisation ?{" "}
-              <a href="/tutoriel/flyby" className="text-brand hover:underline">
-                Voir comment récupérer votre dossier de vol →
-              </a>
-            </p>
-            <p>
               Pour chaque zone, une petite pastille orange apparaît si la "Description du site" n'est pas
               encore remplie (rassurez-vous, ce n'est pas bloquant, juste un rappel). Deux zones qui
               décrivent le même endroit (importées séparément par KML et par Cerfa, par exemple)
@@ -162,10 +156,9 @@ export default function TutorielDetailPage() {
               outil de cartographie). Deux solutions simples et gratuites :
             </p>
             <p>
-              <strong className="text-ink">DroneKeeper</strong> ou{" "}
-              <strong className="text-ink">FlyBy</strong> (gratuit) : ces apps de gestion de vol proposent
-              un éditeur de zone intégré. Tracez votre zone de vol, puis exportez-la au format KML depuis
-              l'app. Déposez le fichier obtenu dans "Importer un KML" ci-dessus.
+              <strong className="text-ink">DroneKeeper</strong> (gratuit) : cette app de gestion de vol
+              propose un éditeur de zone intégré. Tracez votre zone de vol, puis exportez-la au format KML
+              depuis l'app. Déposez le fichier obtenu dans "Importer un KML" ci-dessus.
             </p>
             <p>
               <strong className="text-ink">Google My Maps</strong> (mymaps.google.com, gratuit, aucun

@@ -285,9 +285,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     return { imported, lastError };
   }
 
-  // Logique commune de préremplissage à partir d'un fichier importé sur une
-  // mission déjà créée : partagée entre l'import Cerfa et l'import FlyBy
-  // (même forme de données renvoyée par les deux endpoints).
+  // Logique de préremplissage à partir d'un Cerfa importé sur une mission
+  // déjà créée.
   async function applyImportedFile(json: any, sourceLabel: string, setMsg: (m: string) => void) {
     // Dates et régime de vol : importés indépendamment des zones (même si
     // aucune zone n'est détectée, ces infos-là restent récupérables).
@@ -333,10 +332,10 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       router.refresh();
     }
 
-    // La source ne décrit que 2 sites max (limite du Cerfa page 1 / de la
-    // "Vue d'ensemble" FlyBy, pas de notre app) ; ils s'ajoutent à la liste
-    // existante, quelle que soit sa taille (les zones au-delà de 2 partent
-    // sur l'annexe à la génération du dossier).
+    // La source ne décrit que 2 sites max (limite du Cerfa page 1, pas de
+    // notre app) ; ils s'ajoutent à la liste existante, quelle que soit sa
+    // taille (les zones au-delà de 2 partent sur l'annexe à la génération
+    // du dossier).
     const sites = [json.data.site1, json.data.site2].filter(Boolean);
     if (sites.length === 0) {
       // On inclut le détail technique (champs détectés/remplis) dans le
@@ -381,10 +380,6 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
     if (imported > 0) setShowAddZone(false);
   }
 
-  // Import unifié (Cerfa ou dossier FlyBy, détecté automatiquement côté
-  // serveur) : remplace les deux dropzones PDF séparées, mêmes raisons que
-  // dans NewMissionForm.tsx (2-3 zones de dépôt donnaient l'impression que
-  // tout était obligatoire).
   async function handleImportPdf(file: File) {
     setImportingCerfa(true);
     setCerfaMsg("");
@@ -394,7 +389,7 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
       const res = await fetch("/api/parse-import", { method: "POST", body });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Erreur d'import");
-      await applyImportedFile(json, json.source === "flyby" ? "dossier de vol FlyBy" : "Cerfa", setCerfaMsg);
+      await applyImportedFile(json, "Cerfa", setCerfaMsg);
     } catch (e: any) {
       setCerfaMsg(`Erreur : ${e.message}`);
     } finally {
@@ -889,8 +884,8 @@ export default function ZoneManager({ missionId, initialZones }: { missionId: st
               )}
             </div>
             <FileDropzone
-              label="Glisser un fichier KML ici (recommandé), ou un Cerfa/dossier FlyBy pré-rempli"
-              hint="Le type est détecté automatiquement : KML pour la carte, Cerfa/FlyBy pour préremplir vos infos."
+              label="Glisser un fichier KML ici (recommandé), ou un Cerfa pré-rempli"
+              hint="Le type est détecté automatiquement : KML pour la carte, Cerfa pour préremplir vos infos."
               accept="application/pdf,.kml"
               multiple
               disabled={importingCerfa || importingKml}
